@@ -5,6 +5,11 @@
 package org.ghrobotics.frc2022;
 
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.RunCommand;
+import org.ghrobotics.frc2022.subsystems.Drivetrain;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -13,36 +18,50 @@ import edu.wpi.first.wpilibj.TimedRobot;
  * project.
  */
 public class Robot extends TimedRobot {
-  /**
-   * This function is run when the robot is first started up and should be used for any
-   * initialization code.
-   */
-  @Override
-  public void robotInit() {}
+  // Create our Xbox Controller
+  private final XboxController controller_ = new XboxController(0);
+
+  // Create subsystems.
+  private final Drivetrain drivetrain_ = new Drivetrain();
 
   @Override
-  public void robotPeriodic() {}
-
-  @Override
-  public void autonomousInit() {}
-
-  @Override
-  public void autonomousPeriodic() {}
-
-  @Override
-  public void teleopInit() {}
-
-  @Override
-  public void teleopPeriodic() {}
+  public void robotInit() {
+    // Set our default command.
+    drivetrain_.setDefaultCommand(
+        new RunCommand(() -> {
+          DifferentialDrive.WheelSpeeds speeds = DifferentialDrive.curvatureDriveIK(
+              -controller_.getLeftY(), controller_.getLeftX(), controller_.getAButton()
+          );
+          drivetrain_.setVoltages(speeds.left * 1, speeds.right * 1);
+        }, drivetrain_)
+    );
+  }
 
   @Override
   public void disabledInit() {}
 
   @Override
-  public void disabledPeriodic() {}
+  public void autonomousInit() {}
+
+  @Override
+  public void teleopInit() {}
 
   @Override
   public void testInit() {}
+
+  @Override
+  public void robotPeriodic() {
+    CommandScheduler.getInstance().run();
+  }
+
+  @Override
+  public void disabledPeriodic() {}
+
+  @Override
+  public void autonomousPeriodic() {}
+
+  @Override
+  public void teleopPeriodic() {}
 
   @Override
   public void testPeriodic() {}
