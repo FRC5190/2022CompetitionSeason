@@ -24,7 +24,7 @@ public class DrivetrainTeleopCommand extends CommandBase {
   public void execute() {
     // Get the forward-backward direction source. We multiply by -1 because pushing forward on
     // the joystick gives us negative values.
-    double forward = controller_.getLeftY();
+    double forward = -controller_.getLeftY();
 
     // Get the curvature direction source.
     double curvature = controller_.getLeftX();
