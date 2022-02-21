@@ -4,9 +4,20 @@
 
 package org.ghrobotics.frc2022;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.trajectory.Trajectory;
+import edu.wpi.first.math.trajectory.TrajectoryConfig;
+import edu.wpi.first.math.trajectory.TrajectoryGenerator;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import java.util.List;
+import org.ghrobotics.frc2022.commands.DrivetrainAutoCommand;
 import org.ghrobotics.frc2022.commands.DrivetrainTeleopCommand;
 import org.ghrobotics.frc2022.subsystems.Drivetrain;
 
@@ -27,13 +38,20 @@ public class Robot extends TimedRobot {
   public void robotInit() {
     // Set default commands for subsystems.
     drivetrain_.setDefaultCommand(new DrivetrainTeleopCommand(drivetrain_, controller_));
+
   }
 
   @Override
   public void disabledInit() {}
 
   @Override
-  public void autonomousInit() {}
+  public void autonomousInit() {
+    Trajectory trajectory = TrajectoryGenerator.generateTrajectory(new Pose2d(0, 0, new Rotation2d()),
+        List.of(new Translation2d(1, 1), new Translation2d(2, -1)), new Pose2d(3, 0, new Rotation2d()),
+        new TrajectoryConfig(0.5, 0.5));
+    drivetrain_.resetPosition(new Pose2d());
+    new DrivetrainAutoCommand(drivetrain_, trajectory).schedule();
+  }
 
   @Override
   public void teleopInit() {}
@@ -44,6 +62,7 @@ public class Robot extends TimedRobot {
   @Override
   public void robotPeriodic() {
     CommandScheduler.getInstance().run();
+    NetworkTableInstance.getDefault().flush();
   }
 
   @Override

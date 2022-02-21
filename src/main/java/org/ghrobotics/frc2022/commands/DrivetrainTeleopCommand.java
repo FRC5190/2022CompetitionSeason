@@ -30,7 +30,7 @@ public class DrivetrainTeleopCommand extends CommandBase {
     double curvature = controller_.getLeftX();
 
     // Get the quick-turn source.
-    boolean quick_turn = controller_.getAButton();
+    boolean quick_turn = controller_.getXButton();
 
     // Compute the individual wheel percentages.
     DifferentialDrive.WheelSpeeds speeds = DifferentialDrive.curvatureDriveIK(

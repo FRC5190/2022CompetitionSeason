@@ -5,9 +5,13 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxPIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
+import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.SPI;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import static com.revrobotics.CANSparkMaxLowLevel.MotorType.kBrushless;
@@ -34,6 +38,11 @@ public class Drivetrain extends SubsystemBase {
   // Feedback
   private final SparkMaxPIDController left_fb_;
   private final SparkMaxPIDController right_fb_;
+
+  // Odometry
+  private final DifferentialDriveOdometry odometry_;
+  private final DifferentialDriveKinematics kinematics_;
+  private final Field2d field_;
 
   // IO
   private OutputType output_type_ = OutputType.VOLTAGE;
@@ -74,6 +83,13 @@ public class Drivetrain extends SubsystemBase {
     left_fb_.setP(kLeftKp);
     right_fb_ = right_leader_.getPIDController();
     right_fb_.setP(kRightKp);
+
+    // Initialize odometry.
+    odometry_ = new DifferentialDriveOdometry(new Rotation2d());
+    kinematics_ = new DifferentialDriveKinematics(kTrackWidth);
+    field_ = new Field2d();
+
+    SmartDashboard.putData("Field", field_);
   }
 
   // Runs periodically every 20 ms.
@@ -87,8 +103,15 @@ public class Drivetrain extends SubsystemBase {
     io_.r_velocity = right_encoder_.getVelocity();
     io_.angle = gyro_.getRotation2d();
 
+    odometry_.update(io_.angle, io_.l_position, io_.r_position);
+    field_.setRobotPose(odometry_.getPoseMeters());
+
     SmartDashboard.putNumber("L Position", io_.l_position);
     SmartDashboard.putNumber("R Position", io_.r_position);
+    SmartDashboard.putNumber("L Velocity", io_.l_velocity);
+    SmartDashboard.putNumber("R Velocity", io_.r_velocity);
+    SmartDashboard.putNumber("L Demand", io_.l_demand);
+    SmartDashboard.putNumber("R Demand", io_.r_demand);
     SmartDashboard.putNumber("Angle", io_.angle.getDegrees());
 
 
@@ -129,7 +152,19 @@ public class Drivetrain extends SubsystemBase {
   public void reset() {
     left_encoder_.setPosition(0);
     right_encoder_.setPosition(0);
-    gyro_.reset();
+  }
+
+  public void resetPosition(Pose2d pose) {
+    reset();
+    odometry_.resetPosition(pose, io_.angle);
+  }
+
+  public Pose2d getPosition() {
+    return odometry_.getPoseMeters();
+  }
+
+  public DifferentialDriveKinematics getKinematics() {
+    return kinematics_;
   }
 
   enum OutputType {
@@ -162,6 +197,7 @@ public class Drivetrain extends SubsystemBase {
     // Hardware
     public static double kGearRatio = 7.29;
     public static double kWheelRadius = 0.076;
+    public static double kTrackWidth = 0.71;
 
     // Feedforward
     public static double kLeftKs = 0.15323;
@@ -172,7 +208,7 @@ public class Drivetrain extends SubsystemBase {
     public static double kRightKa = 0.12036;
 
     // Feedback
-    public static double kLeftKp = 3.0;
-    public static double kRightKp = 3.0;
+    public static double kLeftKp = 0.000;
+    public static double kRightKp = 0.00;
   }
 }
