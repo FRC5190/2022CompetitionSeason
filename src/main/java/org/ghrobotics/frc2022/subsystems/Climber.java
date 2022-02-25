@@ -44,6 +44,12 @@ public class Climber extends SubsystemBase {
   public void periodic() {
     // TODO: read inputs.
 
+    // Write outputs.
+    if (io_.wants_pneumatics_update) {
+      io_.wants_pneumatics_update = false;
+      // TODO: set solenoids.
+    }
+
     switch (output_type_) {
       case PERCENT:
         // Stop the orchestra if it is playing.
@@ -83,6 +89,28 @@ public class Climber extends SubsystemBase {
    */
   public void setPosition(double l, double r) {
     // TODO
+  }
+
+  /**
+   * Sets the climber pivot.
+   *
+   * @param l The left pivot value; true when arm should be pivoted back.
+   * @param r The right pivot value; true when arm should be pivoted back.
+   */
+  public void setPivot(boolean l, boolean r) {
+    io_.wants_pneumatics_update = true;
+    io_.l_pivot_value = l;
+    io_.r_pivot_value = r;
+  }
+
+  /**
+   * Sets the climber brake.
+   *
+   * @param value The brake value; true if brake should be engaged.
+   */
+  public void setBrake(boolean value) {
+    io_.wants_pneumatics_update = true;
+    io_.brake_value = value;
   }
 
   /**
@@ -135,6 +163,7 @@ public class Climber extends SubsystemBase {
 
   /**
    * Returns whether the left reverse limit switch is closed.
+   *
    * @return Whether the left reverse limit switch is closed.
    */
   public boolean getLeftReverseLimitSwitchClosed() {
@@ -144,6 +173,7 @@ public class Climber extends SubsystemBase {
 
   /**
    * Returns whether the right reverse limit switch is closed.
+   *
    * @return Whether the right reverse limit switch is closed.
    */
   public boolean getRightReverseLimitSwitchClosed() {
@@ -167,6 +197,11 @@ public class Climber extends SubsystemBase {
     // Outputs
     double l_demand;
     double r_demand;
+
+    boolean brake_value;
+    boolean l_pivot_value;
+    boolean r_pivot_value;
+    boolean wants_pneumatics_update;
   }
 
   public static class Constants {
