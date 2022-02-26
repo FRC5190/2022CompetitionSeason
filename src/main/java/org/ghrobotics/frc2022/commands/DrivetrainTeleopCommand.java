@@ -37,6 +37,6 @@ public class DrivetrainTeleopCommand extends CommandBase {
         forward, curvature, quick_turn);
 
     // Set the wheel percentages.
-    drivetrain_.setPercents(speeds.left, speeds.right);
+    drivetrain_.setPercent(speeds.left, speeds.right);
   }
 }

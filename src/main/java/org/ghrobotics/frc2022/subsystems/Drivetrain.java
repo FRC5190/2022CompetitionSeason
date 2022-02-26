@@ -1,214 +1,287 @@
 package org.ghrobotics.frc2022.subsystems;
 
-import com.kauailabs.navx.frc.AHRS;
+import com.ctre.phoenix.sensors.WPI_PigeonIMU;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxPIDController;
+import edu.wpi.first.math.controller.RamseteController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
-import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
-import edu.wpi.first.wpilibj.RobotController;
-import edu.wpi.first.wpilibj.SPI;
-import edu.wpi.first.wpilibj.smartdashboard.Field2d;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import static com.revrobotics.CANSparkMaxLowLevel.MotorType.kBrushless;
-import static org.ghrobotics.frc2022.subsystems.Drivetrain.Constants.*;
+import org.ghrobotics.frc2022.RobotState;
+import static com.revrobotics.CANSparkMax.ControlType;
+import static com.revrobotics.CANSparkMax.IdleMode;
+import static com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 public class Drivetrain extends SubsystemBase {
-  // Motor Controllers
-  private final CANSparkMax left_leader_ = new CANSparkMax(kLeftLeader, kBrushless);
-  private final CANSparkMax left_follower_ = new CANSparkMax(kLeftFollower, kBrushless);
-  private final CANSparkMax right_leader_ = new CANSparkMax(kRightLeader, kBrushless);
-  private final CANSparkMax right_follower_ = new CANSparkMax(kRightFollower, kBrushless);
+  // Robot State
+  private final RobotState robot_state_;
 
-  // Encoders
+  // Motor Controllers
+  private final CANSparkMax left_leader_;
+  private final CANSparkMax left_follower_;
+  private final CANSparkMax right_leader_;
+  private final CANSparkMax right_follower_;
+
+  // Sensors
   private final RelativeEncoder left_encoder_;
   private final RelativeEncoder right_encoder_;
+  private final WPI_PigeonIMU gyro_;
 
-  // Gyro
-  private final AHRS gyro_ = new AHRS(SPI.Port.kMXP);
+  // Control
+  private final SparkMaxPIDController left_pid_controller_;
+  private final SparkMaxPIDController right_pid_controller_;
+  private final SimpleMotorFeedforward left_feedforward_;
+  private final SimpleMotorFeedforward right_feedforward_;
 
-  // Feedforward
-  private final SimpleMotorFeedforward left_ff_;
-  private final SimpleMotorFeedforward right_ff_;
-
-  // Feedback
-  private final SparkMaxPIDController left_fb_;
-  private final SparkMaxPIDController right_fb_;
-
-  // Odometry
-  private final DifferentialDriveOdometry odometry_;
+  // Trajectory Tracking
   private final DifferentialDriveKinematics kinematics_;
-  private final Field2d field_;
+  private final RamseteController ramsete_controller_;
+
 
   // IO
-  private OutputType output_type_ = OutputType.VOLTAGE;
+  private OutputType output_type_ = OutputType.PERCENT;
   private final PeriodicIO io_ = new PeriodicIO();
 
-  // Constructor
-  public Drivetrain() {
-    // Restore factory defaults.
-    left_leader_.restoreFactoryDefaults();
-    left_follower_.restoreFactoryDefaults();
-    right_leader_.restoreFactoryDefaults();
-    right_follower_.restoreFactoryDefaults();
+  /**
+   * Constructs an instance of the Drivetrain subsystem. Only one instance of this subsystem should
+   * be created in the main Robot class and references to this instance should be passed around
+   * the robot code.
+   *
+   * @param robot_state Reference to the global robot state instance.
+   */
+  public Drivetrain(RobotState robot_state) {
+    // Store reference to robot state.
+    robot_state_ = robot_state;
 
-    // Invert right side of drivetrain.
+    // Initialize motor controllers.
+    left_leader_ = new CANSparkMax(Constants.kLeftLeaderId, MotorType.kBrushless);
+    left_leader_.restoreFactoryDefaults();
+    left_leader_.setIdleMode(IdleMode.kBrake);
+    left_leader_.enableVoltageCompensation(12);
+    left_leader_.setInverted(false);
+
+    right_leader_ = new CANSparkMax(Constants.kRightLeaderId, MotorType.kBrushless);
+    right_leader_.restoreFactoryDefaults();
+    right_leader_.setIdleMode(IdleMode.kBrake);
     right_leader_.setInverted(true);
 
-    // Set leader-follower relationship.
+    left_follower_ = new CANSparkMax(Constants.kLeftFollowerId, MotorType.kBrushless);
+    left_follower_.restoreFactoryDefaults();
+    left_follower_.setIdleMode(IdleMode.kBrake);
+    left_follower_.enableVoltageCompensation(12);
     left_follower_.follow(left_leader_);
+
+    right_follower_ = new CANSparkMax(Constants.kRightFollowerId, MotorType.kBrushless);
+    right_follower_.restoreFactoryDefaults();
+    right_follower_.setIdleMode(IdleMode.kBrake);
+    right_follower_.enableVoltageCompensation(12);
     right_follower_.follow(right_leader_);
 
     // Initialize encoders.
     left_encoder_ = left_leader_.getEncoder();
-    left_encoder_.setPositionConversionFactor(1 / kGearRatio * 2 * Math.PI * kWheelRadius);
-    left_encoder_.setVelocityConversionFactor(1 / kGearRatio * 2 * Math.PI * kWheelRadius / 60);
-    right_encoder_ = right_leader_.getEncoder();
-    right_encoder_.setPositionConversionFactor(1 / kGearRatio * 2 * Math.PI * kWheelRadius);
-    right_encoder_.setVelocityConversionFactor(1 / kGearRatio * 2 * Math.PI * kWheelRadius / 60);
+    left_encoder_.setPositionConversionFactor(
+        2 * Math.PI * Constants.kWheelRadius / Constants.kGearRatio);
+    left_encoder_.setVelocityConversionFactor(
+        2 * Math.PI * Constants.kWheelRadius / Constants.kGearRatio / 60);
 
-    // Reset all sensors.
-    reset();
+    right_encoder_ = right_leader_.getEncoder();
+    right_encoder_.setPositionConversionFactor(
+        2 * Math.PI * Constants.kWheelRadius / Constants.kGearRatio);
+    right_encoder_.setVelocityConversionFactor(
+        2 * Math.PI * Constants.kWheelRadius / Constants.kGearRatio / 60);
+
+    // Initialize gyro.
+    gyro_ = new WPI_PigeonIMU(Constants.kPigeonIMUId);
+
+    // Initialize PID controllers.
+    left_pid_controller_ = left_leader_.getPIDController();
+    left_pid_controller_.setP(Constants.kLeftKp);
+
+    right_pid_controller_ = right_leader_.getPIDController();
+    right_pid_controller_.setP(Constants.kRightKp);
 
     // Initialize feedforward.
-    left_ff_ = new SimpleMotorFeedforward(kLeftKs, kLeftKv, kLeftKa);
-    right_ff_ = new SimpleMotorFeedforward(kRightKs, kRightKv, kRightKa);
+    left_feedforward_ = new SimpleMotorFeedforward(
+        Constants.kLeftKs, Constants.kLeftKv, Constants.kLeftKa);
+    right_feedforward_ = new SimpleMotorFeedforward(Constants.kRightKs, Constants.kRightKv,
+        Constants.kRightKa);
 
-    // Initialize feedback.
-    left_fb_ = left_leader_.getPIDController();
-    left_fb_.setP(kLeftKp);
-    right_fb_ = right_leader_.getPIDController();
-    right_fb_.setP(kRightKp);
-
-    // Initialize odometry.
-    odometry_ = new DifferentialDriveOdometry(new Rotation2d());
-    kinematics_ = new DifferentialDriveKinematics(kTrackWidth);
-    field_ = new Field2d();
-
-    SmartDashboard.putData("Field", field_);
+    // Initialize trajectory tracking.
+    kinematics_ = new DifferentialDriveKinematics(Constants.kTrackWidth);
+    ramsete_controller_ = new RamseteController();
   }
 
-  // Runs periodically every 20 ms.
+  /**
+   * This method runs periodically every 20 ms. Here, all sensor values are read and all motor
+   * outputs should be set.
+   */
   @Override
   public void periodic() {
     // Read inputs.
-    io_.robot_controller_voltage = RobotController.getBatteryVoltage();
     io_.l_position = left_encoder_.getPosition();
     io_.r_position = right_encoder_.getPosition();
     io_.l_velocity = left_encoder_.getVelocity();
     io_.r_velocity = right_encoder_.getVelocity();
     io_.angle = gyro_.getRotation2d();
+    io_.angular_rate = -Math.toRadians(gyro_.getRate());
 
-    odometry_.update(io_.angle, io_.l_position, io_.r_position);
-    field_.setRobotPose(odometry_.getPoseMeters());
-
-    SmartDashboard.putNumber("L Position", io_.l_position);
-    SmartDashboard.putNumber("R Position", io_.r_position);
-    SmartDashboard.putNumber("L Velocity", io_.l_velocity);
-    SmartDashboard.putNumber("R Velocity", io_.r_velocity);
-    SmartDashboard.putNumber("L Demand", io_.l_demand);
-    SmartDashboard.putNumber("R Demand", io_.r_demand);
-    SmartDashboard.putNumber("Angle", io_.angle.getDegrees());
-
+    // Update robot state with measurements.
+    robot_state_.updateRobotPose(
+        io_.l_position, io_.r_position, io_.l_velocity, io_.r_velocity, io_.angle);
+    robot_state_.updateRobotSpeeds(
+        new ChassisSpeeds((io_.l_velocity + io_.r_velocity) / 2, 0, io_.angular_rate));
 
     // Write outputs.
     switch (output_type_) {
-      case VOLTAGE:
-        left_leader_.setVoltage(io_.l_demand);
-        right_leader_.setVoltage(io_.r_demand);
+      case PERCENT:
+        // Send the percent output values directly to the motor controller.
+        left_leader_.set(io_.l_demand);
+        right_leader_.set(io_.r_demand);
         break;
       case VELOCITY:
-        double left_voltage = left_ff_.calculate(io_.l_demand, 0);
-        double right_voltage = right_ff_.calculate(io_.r_demand, 0);
-        left_fb_.setReference(io_.l_demand, CANSparkMax.ControlType.kVelocity, 0, left_voltage);
-        right_fb_.setReference(io_.l_demand, CANSparkMax.ControlType.kVelocity, 0, right_voltage);
+        // Calculate feedforward value and add to built-in motor controller PID.
+        left_pid_controller_.setReference(io_.l_demand, ControlType.kVelocity, 0,
+            left_feedforward_.calculate(io_.l_demand, (io_.l_demand - io_.l_velocity) / 0.02));
+        right_pid_controller_.setReference(io_.r_demand, ControlType.kVelocity, 0,
+            right_feedforward_.calculate(io_.r_demand, (io_.r_demand - io_.r_velocity) / 0.02));
         break;
     }
   }
 
-  // Sets the desired motor voltages.
-  public void setVoltages(double left, double right) {
-    output_type_ = OutputType.VOLTAGE;
-    io_.l_demand = left;
-    io_.r_demand = right;
+  /**
+   * Sets the idle mode on each of the drivetrain motors.
+   *
+   * @param mode The desired idle mode (brake or coast).
+   */
+  public void setIdleMode(IdleMode mode) {
+    left_leader_.setIdleMode(mode);
+    left_follower_.setIdleMode(mode);
+    right_leader_.setIdleMode(mode);
+    right_follower_.setIdleMode(mode);
   }
 
-  // Sets the desired motor percent outputs. This is automatically multiplied by the robot
-  // controller voltage to determine the appropriate voltages.
-  public void setPercents(double left, double right) {
-    setVoltages(left * io_.robot_controller_voltage, right * io_.robot_controller_voltage);
+  /**
+   * Sets the % output on the drivetrain.
+   *
+   * @param l The left % output in [-1, 1].
+   * @param r The right % output in [-1, 1].
+   */
+  public void setPercent(double l, double r) {
+    output_type_ = OutputType.PERCENT;
+    io_.l_demand = l;
+    io_.r_demand = r;
   }
 
-  public void setVelocity(double left, double right) {
+  /**
+   * Sets the desired drivetrain velocity for closed loop control.
+   *
+   * @param l Desired left velocity in m/s.
+   * @param r Desired right velocity in m/s.
+   */
+  public void setVelocity(double l, double r) {
     output_type_ = OutputType.VELOCITY;
-    io_.l_demand = left;
-    io_.r_demand = right;
+    io_.l_demand = l;
+    io_.r_demand = r;
   }
 
-  public void reset() {
-    left_encoder_.setPosition(0);
-    right_encoder_.setPosition(0);
+  /**
+   * Returns the left position in meters.
+   *
+   * @return The left position in meters.
+   */
+  public double getLeftPosition() {
+    return io_.l_position;
   }
 
-  public void resetPosition(Pose2d pose) {
-    reset();
-    odometry_.resetPosition(pose, io_.angle);
+  /**
+   * Returns the right position in meters.
+   *
+   * @return The right position in meters.
+   */
+  public double getRightPosition() {
+    return io_.r_position;
   }
 
-  public Pose2d getPosition() {
-    return odometry_.getPoseMeters();
+  /**
+   * Returns the left velocity in meters per second.
+   *
+   * @return The left velocity in meters per second.
+   */
+  public double getLeftVelocity() {
+    return io_.l_velocity;
   }
 
+  /**
+   * Returns the right velocity in meters per second.
+   *
+   * @return The right velocity in meters per second.
+   */
+  public double getRightVelocity() {
+    return io_.r_velocity;
+  }
+
+  /**
+   * Returns the kinematics for the drivetrain.
+   *
+   * @return The kinematics for the drivetrain.
+   */
   public DifferentialDriveKinematics getKinematics() {
     return kinematics_;
   }
 
-  enum OutputType {
-    VOLTAGE, VELOCITY
+  /**
+   * Returns the Ramsete controller for this drivetrain.
+   *
+   * @return The Ramsete controller for this drivetrain.
+   */
+  public RamseteController getRamseteController() {
+    return ramsete_controller_;
   }
 
-  // IO
-  static class PeriodicIO {
+  enum OutputType {
+    PERCENT, VELOCITY
+  }
+
+  public static class PeriodicIO {
     // Inputs
-    double robot_controller_voltage;
     double l_position;
     double r_position;
     double l_velocity;
     double r_velocity;
     Rotation2d angle;
+    double angular_rate;
 
     // Outputs
     double l_demand;
     double r_demand;
   }
 
-  // Constants
-  static class Constants {
+  public static class Constants {
     // Motor Controller IDs
-    public static final int kLeftLeader = 1;
-    public static final int kLeftFollower = 2;
-    public static final int kRightLeader = 3;
-    public static final int kRightFollower = 4;
+    public static final int kLeftLeaderId = 1;
+    public static final int kLeftFollowerId = 2;
+    public static final int kRightLeaderId = 3;
+    public static final int kRightFollowerId = 4;
+
+    // Sensors
+    public static final int kPigeonIMUId = 17;
 
     // Hardware
-    public static double kGearRatio = 7.29;
-    public static double kWheelRadius = 0.076;
-    public static double kTrackWidth = 0.71;
+    public static double kGearRatio = 6.07;
+    public static double kWheelRadius = 0.0508;
+    public static double kTrackWidth = 0.759;
 
-    // Feedforward
-    public static double kLeftKs = 0.15323;
-    public static double kLeftKv = 1.9181;
-    public static double kLeftKa = 0.11118;
-    public static double kRightKs = 0.17425;
-    public static double kRightKv = 1.9669;
-    public static double kRightKa = 0.12036;
-
-    // Feedback
-    public static double kLeftKp = 0.000;
-    public static double kRightKp = 0.00;
+    // Control
+    public static double kLeftKs = 0;
+    public static double kLeftKv = 0;
+    public static double kLeftKa = 0;
+    public static double kLeftKp = 0;
+    public static double kRightKs = 0;
+    public static double kRightKv = 0;
+    public static double kRightKa = 0;
+    public static double kRightKp = 0;
   }
 }
