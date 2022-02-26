@@ -1,16 +1,34 @@
 package org.ghrobotics.frc2022.subsystems;
 
-import com.ctre.phoenix.motorcontrol.can.TalonFX;
+import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.DemandType;
+import com.ctre.phoenix.motorcontrol.NeutralMode;
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.ctre.phoenix.music.Orchestra;
+import edu.wpi.first.math.controller.SimpleMotorFeedforward;
+import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.PneumaticsModuleType;
+import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.List;
 
 public class Climber extends SubsystemBase {
   // Motor Controllers
-  private final TalonFX left_leader_;
-  private final TalonFX right_leader_;
+  private final WPI_TalonFX left_leader_;
+  private final WPI_TalonFX right_leader_;
 
-  // TODO: create pneumatics, control, feedforward, etc.
+  // Pneumatics
+  private final Solenoid brake_;
+  private final Solenoid left_pivot_;
+  private final Solenoid right_pivot_;
+
+  // Sensors
+  private final DigitalInput left_rev_limit_switch_;
+  private final DigitalInput right_rev_limit_switch_;
+
+  // Control
+  private final SimpleMotorFeedforward left_feedforward_;
+  private final SimpleMotorFeedforward right_feedforward_;
 
   // Orchestra
   private final Orchestra orchestra_;
@@ -26,10 +44,34 @@ public class Climber extends SubsystemBase {
    */
   public Climber() {
     // Initialize motor controllers.
-    left_leader_ = new TalonFX(Constants.kLeftLeaderId);
-    right_leader_ = new TalonFX(Constants.kRightLeaderId);
+    left_leader_ = new WPI_TalonFX(Constants.kLeftLeaderId);
+    left_leader_.configFactoryDefault();
+    left_leader_.setNeutralMode(NeutralMode.Brake);
+    left_leader_.configVoltageCompSaturation(12);
+    left_leader_.enableVoltageCompensation(true);
+    left_leader_.setInverted(true);
 
-    // TODO: initialize pneumatics, control, feedforward, etc.
+    right_leader_ = new WPI_TalonFX(Constants.kRightLeaderId);
+    right_leader_.configFactoryDefault();
+    right_leader_.setNeutralMode(NeutralMode.Brake);
+    right_leader_.configVoltageCompSaturation(12);
+    right_leader_.enableVoltageCompensation(true);
+    right_leader_.setInverted(false);
+
+    // Initialize pneumatics.
+    brake_ = new Solenoid(PneumaticsModuleType.REVPH, Constants.kBrakeId);
+    left_pivot_ = new Solenoid(PneumaticsModuleType.REVPH, Constants.kLeftPivotId);
+    right_pivot_ = new Solenoid(PneumaticsModuleType.REVPH, Constants.kRightPivotId);
+
+    // Initialize limit switches.
+    left_rev_limit_switch_ = new DigitalInput(Constants.kLeftRevLimitSwitchId);
+    right_rev_limit_switch_ = new DigitalInput(Constants.kRightRevLimitSwitchId);
+
+    // Initialize feedforward.
+    left_feedforward_ = new SimpleMotorFeedforward(Constants.kLeftKs, Constants.kLeftKv,
+        Constants.kLeftKa);
+    right_feedforward_ = new SimpleMotorFeedforward(Constants.kRightKs, Constants.kRightKv,
+        Constants.kRightKa);
 
     // Initialize orchestra to play music.
     orchestra_ = new Orchestra(List.of(left_leader_, right_leader_));
@@ -42,28 +84,55 @@ public class Climber extends SubsystemBase {
    */
   @Override
   public void periodic() {
-    // TODO: read inputs.
+    // Read inputs.
+    io_.l_position = left_leader_.getSelectedSensorPosition();
+    io_.r_position = right_leader_.getSelectedSensorPosition();
+    io_.l_supply_current = left_leader_.getSupplyCurrent();
+    io_.r_supply_current = right_leader_.getSupplyCurrent();
+    io_.l_rev_limit_switch = left_rev_limit_switch_.get();
+    io_.r_rev_limit_switch = right_rev_limit_switch_.get();
 
     // Write outputs.
+    // Update pneumatics if a change is required.
     if (io_.wants_pneumatics_update) {
       io_.wants_pneumatics_update = false;
-      // TODO: set solenoids.
+      brake_.set(io_.brake_value);
+      left_pivot_.set(io_.l_pivot_value);
+      right_pivot_.set(io_.r_pivot_value);
     }
 
+    // Reset encoder to zero if limit switches are active.
+    if (io_.l_rev_limit_switch)
+      left_leader_.setSelectedSensorPosition(0);
+
+    if (io_.r_rev_limit_switch)
+      right_leader_.setSelectedSensorPosition(0);
+
+    // Set motor outputs.
     switch (output_type_) {
       case PERCENT:
         // Stop the orchestra if it is playing.
         if (orchestra_.isPlaying())
           orchestra_.stop();
 
-        // TODO: set percent output
+        // Send the percent output values directly to the motor controllers. If limit switches
+        // are active, clamp output to 0.
+        left_leader_.set(Math.max(io_.l_rev_limit_switch ? 0 : -1, io_.l_demand));
+        right_leader_.set(Math.max(io_.r_rev_limit_switch ? 0 : -1, io_.r_demand));
         break;
       case POSITION:
         // Stop the orchestra if it is playing.
         if (orchestra_.isPlaying())
           orchestra_.stop();
 
-        // TODO: set position output
+        // Compute feedforward values and add to built-in motor controller PID.
+        left_leader_.set(ControlMode.MotionMagic, Math.max(0, io_.l_demand),
+            DemandType.ArbitraryFeedForward,
+            left_feedforward_.calculate(left_leader_.getActiveTrajectoryVelocity()));
+        right_leader_.set(ControlMode.MotionMagic, Math.max(0, io_.r_demand),
+            DemandType.ArbitraryFeedForward,
+            right_feedforward_.calculate(right_leader_.getActiveTrajectoryVelocity()));
+
         break;
       case ORCHESTRA:
         // Play the orchestra.
@@ -78,7 +147,9 @@ public class Climber extends SubsystemBase {
    * @param r The right % output in [-1. 1].
    */
   public void setPercent(double l, double r) {
-    // TODO
+    output_type_ = OutputType.PERCENT;
+    io_.l_demand = l;
+    io_.r_demand = r;
   }
 
   /**
@@ -88,7 +159,9 @@ public class Climber extends SubsystemBase {
    * @param r The position of the right arm in meters.
    */
   public void setPosition(double l, double r) {
-    // TODO
+    output_type_ = OutputType.POSITION;
+    io_.l_position = l;
+    io_.r_position = r;
   }
 
   /**
@@ -127,8 +200,7 @@ public class Climber extends SubsystemBase {
    * @return The left position of the climber in meters.
    */
   public double getLeftPosition() {
-    // TODO
-    return 0;
+    return io_.l_position;
   }
 
   /**
@@ -137,8 +209,7 @@ public class Climber extends SubsystemBase {
    * @return The right position of the climber in meters.
    */
   public double getRightPosition() {
-    // TODO
-    return 0;
+    return io_.r_position;
   }
 
   /**
@@ -147,8 +218,7 @@ public class Climber extends SubsystemBase {
    * @return The left supply current.
    */
   public double getLeftSupplyCurrent() {
-    // TODO
-    return 0;
+    return io_.l_supply_current;
   }
 
   /**
@@ -157,8 +227,7 @@ public class Climber extends SubsystemBase {
    * @return The right supply current.
    */
   public double getRightSupplyCurrent() {
-    // TODO
-    return 0;
+    return io_.r_supply_current;
   }
 
   /**
@@ -167,8 +236,7 @@ public class Climber extends SubsystemBase {
    * @return Whether the left reverse limit switch is closed.
    */
   public boolean getLeftReverseLimitSwitchClosed() {
-    // TODO
-    return false;
+    return io_.l_rev_limit_switch;
   }
 
   /**
@@ -177,8 +245,7 @@ public class Climber extends SubsystemBase {
    * @return Whether the right reverse limit switch is closed.
    */
   public boolean getRightReverseLimitSwitchClosed() {
-    // TODO
-    return false;
+    return io_.r_rev_limit_switch;
   }
 
   public enum OutputType {
@@ -210,8 +277,20 @@ public class Climber extends SubsystemBase {
     public static final int kRightLeaderId = 15;
 
     // Pneumatics
-    public static final int kBrakeId = 0;
-    public static final int kLeftPivotId = 1;
+    public static final int kBrakeId = 1;
+    public static final int kLeftPivotId = 3;
     public static final int kRightPivotId = 2;
+
+    // Sensors
+    public static final int kLeftRevLimitSwitchId = 0;
+    public static final int kRightRevLimitSwitchId = 1;
+
+    // Control
+    public static final int kRightKs = 0;
+    public static final int kLeftKs = 0;
+    public static final int kRightKv = 0;
+    public static final int kLeftKv = 0;
+    public static final int kRightKa = 0;
+    public static final int kLeftKa = 0;
   }
 }

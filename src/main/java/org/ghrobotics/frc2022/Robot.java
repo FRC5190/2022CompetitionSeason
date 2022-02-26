@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import org.ghrobotics.frc2022.commands.DrivetrainTeleopCommand;
+import org.ghrobotics.frc2022.subsystems.Climber;
 import org.ghrobotics.frc2022.subsystems.Drivetrain;
 
 /**
@@ -23,6 +24,7 @@ public class Robot extends TimedRobot {
 
   // Create subsystems.
   private final Drivetrain drivetrain_ = new Drivetrain(robot_state);
+  private final Climber climber_ = new Climber();
 
   // Create Xbox controller for driver.
   private final XboxController controller_ = new XboxController(0);
