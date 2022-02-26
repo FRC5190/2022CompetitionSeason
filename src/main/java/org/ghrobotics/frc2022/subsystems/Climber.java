@@ -1,6 +1,7 @@
 package org.ghrobotics.frc2022.subsystems;
 
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
+import edu.wpi.first.wpilibj.Solenoid;
 import com.ctre.phoenix.music.Orchestra;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.List;
@@ -11,6 +12,14 @@ public class Climber extends SubsystemBase {
   private final TalonFX right_leader_;
 
   // TODO: create pneumatics, control, feedforward, etc.
+  
+
+  //Pneumatics
+  Solenoid solenoid = new Solenoid(PneumaticsModuleType.REVPH,1);
+
+  //Feedforward
+    private final SimpleMotorFeedforward left_ff;
+    private final SimpleMotorFeedforward right_ff;
 
   // Orchestra
   private final Orchestra orchestra_;
@@ -31,6 +40,13 @@ public class Climber extends SubsystemBase {
 
     // TODO: initialize pneumatics, control, feedforward, etc.
 
+    //Pneumatics
+    solenoid = new Solenoid(kBrakeId,kLeftPivotId,kRightPivotId);
+
+    //Feedforward
+    left_ff = new SimpleMotorFeedforward(kLeftKs, kLeftKv, kLeftKa);
+    right_ff = new SimpleMotorFeedforward(kRightKs, kRightKv, kRightKa);
+
     // Initialize orchestra to play music.
     orchestra_ = new Orchestra(List.of(left_leader_, right_leader_));
     orchestra_.loadMusic("imperial_march.chrp");
@@ -43,11 +59,16 @@ public class Climber extends SubsystemBase {
   @Override
   public void periodic() {
     // TODO: read inputs.
+    io_.l_position = left_leader_.getSelectedSensorPosition();
+    io_.r_position = right_leader_.getSelectedSensorPosition();
+    io_.l_velocity = left_leader_.getSelectedSensorVelocity();
+    io_.r_velocity = left_leader_.getSelectedSensorVelocity();
 
     // Write outputs.
     if (io_.wants_pneumatics_update) {
       io_.wants_pneumatics_update = false;
       // TODO: set solenoids.
+      solenoid.set();
     }
 
     switch (output_type_) {
@@ -79,6 +100,7 @@ public class Climber extends SubsystemBase {
    */
   public void setPercent(double l, double r) {
     // TODO
+    setVoltages(l * io_.robot_controller_voltage, r * io_.robot_controller_voltage);
   }
 
   /**
@@ -89,6 +111,8 @@ public class Climber extends SubsystemBase {
    */
   public void setPosition(double l, double r) {
     // TODO
+    io_.l_position = l;
+    io_.r_position = r;
   }
 
   /**
@@ -210,8 +234,17 @@ public class Climber extends SubsystemBase {
     public static final int kRightLeaderId = 15;
 
     // Pneumatics
-    public static final int kBrakeId = 0;
-    public static final int kLeftPivotId = 1;
-    public static final int kRightPivotId = 2;
+    public static final int kBrakeId = 1;
+    public static final int kLeftPivotId = 2;
+    public static final int kRightPivotId = 3;
+
+    //Feedforward
+    public static final int kRightKs = 0;
+    public static final int kLeftKs = 0;
+    public static final int kRightKv = 0;
+    public static final int kLeftKv = 0;
+    public static final int kRightKa = 0;
+    public static final int kLeftKa = 0;
+
   }
 }
