@@ -7,7 +7,7 @@ import java.util.function.BooleanSupplier;
 import org.ghrobotics.frc2022.subsystems.Climber;
 
 public class ClimbCommand extends CommandBase {
-  // References to subsystem, Xbox controller, and climb mdoe..
+  // References to subsystem, Xbox controller, and climb mode.
   private final Climber climber_;
   private final XboxController controller_;
   private final BooleanSupplier climb_mode_;
@@ -16,11 +16,18 @@ public class ClimbCommand extends CommandBase {
   private State state_;
 
   // The getter for advancing the state of the climber.
-  private BooleanSupplier advance_state_;
+  private final BooleanSupplier advance_state_;
 
   // Whether we are currently waiting to advance the state.
   private boolean waiting_for_advance_state_;
 
+  /**
+   * Responsible for manual and teleoperated control of the climber.
+   *
+   * @param climber    A reference to the Climber subsystem.
+   * @param controller A reference to the Xbox controller used for climbing.
+   * @param climb_mode Lambda that provides whether we are currently in climb mode or not.
+   */
   public ClimbCommand(Climber climber, XboxController controller, BooleanSupplier climb_mode) {
     // Assign member variables.
     climber_ = climber;
@@ -47,15 +54,14 @@ public class ClimbCommand extends CommandBase {
     switch (state_) {
       // Climber is stowed and out of the way.
       case STOW:
-        // Set both positions to zero and pivot out.
-        climber_.setLeftPosition(0);
-        climber_.setRightPosition(0);
+        // We don't know whether the climber is zeroed yet. So run the climber backward until we
+        // hit the limits. Pivot both climber arms out.
         climber_.setPivot(true, true);
+        climber_.setLeftPercent(climber_.getLeftReverseLimitSwitchClosed() ? 0 : -0.1);
+        climber_.setRightPercent(climber_.getRightReverseLimitSwitchClosed() ? 0 : -0.1);
 
-        // Set brake if the right climber is all the way down.
-        if (climber_.getRightReverseLimitSwitchClosed()) {
-          climber_.setBrake(true);
-        }
+        // If the limit switch is triggered, set the brake. If not, release it.
+        climber_.setBrake(climber_.getRightReverseLimitSwitchClosed());
 
         waiting_for_advance_state_ = true;
 
@@ -161,11 +167,7 @@ public class ClimbCommand extends CommandBase {
               waiting_for_advance_state_ = false;
             }
           }
-          if (right_arm_ready_for_l4 && advance_state_.getAsBoolean()) {
-            state_ = State.CLIMB_L4;
-          }
         }
-
         break;
 
       // Climber is actively climbing L4.
@@ -210,7 +212,8 @@ public class ClimbCommand extends CommandBase {
   }
 
   public static class Constants {
-    // Buttons
+    // Controls:
+    // Start for advancing through automated states.
     public static final int kAdvanceButton = XboxController.Button.kStart.value;
   }
 }

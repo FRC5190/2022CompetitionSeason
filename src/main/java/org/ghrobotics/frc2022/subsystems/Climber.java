@@ -97,14 +97,18 @@ public class Climber extends SubsystemBase {
     // Write outputs.
     // Update pneumatics if a change is required.
     if (io_.wants_pneumatics_update) {
+      // Change is no longer required.
       io_.wants_pneumatics_update = false;
+
+      // Set solenoid values.
       brake_.set(io_.brake_value);
       left_pivot_.set(io_.l_pivot_value);
       right_pivot_.set(io_.r_pivot_value);
     }
 
-    // Reset encoder to zero if limit switches are active. Also clamp outputs.
+    // Check the limit switches.
     if (io_.l_rev_limit_switch) {
+      // Reset encoder position to zero and clamp reverse output to 0.
       left_leader_.setSelectedSensorPosition(0);
       left_leader_.configPeakOutputReverse(0);
     } else {
@@ -113,6 +117,7 @@ public class Climber extends SubsystemBase {
     }
 
     if (io_.r_rev_limit_switch) {
+      // Reset encoder position to zero and clamp reverse output to 0.
       right_leader_.setSelectedSensorPosition(0);
       right_leader_.configPeakOutputReverse(0);
     } else {
@@ -151,21 +156,41 @@ public class Climber extends SubsystemBase {
     }
   }
 
+  /**
+   * Sets the left arm % output.
+   *
+   * @param value The left arm % output in [-1, 1].
+   */
   public void setLeftPercent(double value) {
     left_output_type_ = OutputType.PERCENT;
     io_.l_demand = value;
   }
 
+  /**
+   * Sets the right arm % output.
+   *
+   * @param value The right arm % output in [-1, 1].
+   */
   public void setRightPercent(double value) {
     right_output_type_ = OutputType.PERCENT;
     io_.r_demand = value;
   }
 
+  /**
+   * Sets the left arm position.
+   *
+   * @param value The left arm position in meters.
+   */
   public void setLeftPosition(double value) {
     left_output_type_ = OutputType.POSITION;
     io_.l_demand = value;
   }
 
+  /**
+   * Sets the right arm position.
+   *
+   * @param value The right arm position in meters.
+   */
   public void setRightPosition(double value) {
     right_output_type_ = OutputType.POSITION;
     io_.r_demand = value;
