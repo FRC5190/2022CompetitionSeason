@@ -8,6 +8,8 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import org.ghrobotics.frc2022.commands.ClimbCommand;
 import org.ghrobotics.frc2022.commands.DrivetrainTeleopCommand;
 import org.ghrobotics.frc2022.subsystems.Climber;
 import org.ghrobotics.frc2022.subsystems.Drivetrain;
@@ -29,6 +31,13 @@ public class Robot extends TimedRobot {
   // Create Xbox controller for driver.
   private final XboxController controller_ = new XboxController(0);
 
+  // Keeps track of whether we are in climb mode.
+  private boolean climb_mode_ = false;
+
+  // The global climber command that is always used when climbing.
+  private final ClimbCommand climb_cmd_ = new ClimbCommand(climber_, controller_,
+      () -> climb_mode_);
+
   @Override
   public void robotInit() {
     // Disable LiveWindow telemetry.
@@ -39,6 +48,7 @@ public class Robot extends TimedRobot {
 
     // Set default commands for subsystems.
     drivetrain_.setDefaultCommand(new DrivetrainTeleopCommand(drivetrain_, controller_));
+    climber_.setDefaultCommand(climb_cmd_);
   }
 
   @Override
@@ -70,4 +80,16 @@ public class Robot extends TimedRobot {
 
   @Override
   public void testPeriodic() {}
+
+  /**
+   * Configures the button / joystick bindings for teleoperated control.
+   */
+  private void setControls() {
+    // Toggle climb mode with B button. Whenever this is pressed, the state of the climber is reset.
+    new JoystickButton(controller_, XboxController.Button.kB.value)
+        .whenPressed(() -> {
+          climb_mode_ = !climb_mode_;
+          climb_cmd_.resetClimbState();
+        });
+  }
 }

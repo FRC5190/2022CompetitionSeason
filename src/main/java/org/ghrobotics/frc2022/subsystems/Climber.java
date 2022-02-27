@@ -6,6 +6,7 @@ import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.ctre.phoenix.music.Orchestra;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.Solenoid;
@@ -35,7 +36,8 @@ public class Climber extends SubsystemBase {
 
   // IO
   private final PeriodicIO io_ = new PeriodicIO();
-  private OutputType output_type_ = OutputType.PERCENT;
+  private OutputType left_output_type_ = OutputType.PERCENT;
+  private OutputType right_output_type_ = OutputType.PERCENT;
 
   /**
    * Constructs an instance of the Climber subsystem. Only one instance of this subsystem should
@@ -101,67 +103,72 @@ public class Climber extends SubsystemBase {
       right_pivot_.set(io_.r_pivot_value);
     }
 
-    // Reset encoder to zero if limit switches are active.
-    if (io_.l_rev_limit_switch)
+    // Reset encoder to zero if limit switches are active. Also clamp outputs.
+    if (io_.l_rev_limit_switch) {
       left_leader_.setSelectedSensorPosition(0);
+      left_leader_.configPeakOutputReverse(0);
+    } else {
+      // Revert back to normal values.
+      left_leader_.configPeakOutputReverse(-1);
+    }
 
-    if (io_.r_rev_limit_switch)
+    if (io_.r_rev_limit_switch) {
       right_leader_.setSelectedSensorPosition(0);
+      right_leader_.configPeakOutputReverse(0);
+    } else {
+      // Revert back to normal values.
+      right_leader_.configPeakOutputReverse(-1);
+    }
 
     // Set motor outputs.
-    switch (output_type_) {
+    switch (left_output_type_) {
       case PERCENT:
-        // Stop the orchestra if it is playing.
-        if (orchestra_.isPlaying())
-          orchestra_.stop();
-
-        // Send the percent output values directly to the motor controllers. If limit switches
-        // are active, clamp output to 0.
-        left_leader_.set(Math.max(io_.l_rev_limit_switch ? 0 : -1, io_.l_demand));
-        right_leader_.set(Math.max(io_.r_rev_limit_switch ? 0 : -1, io_.r_demand));
+        // Send the percent output values directly to the motor controller.
+        left_leader_.set(io_.l_demand);
         break;
       case POSITION:
-        // Stop the orchestra if it is playing.
-        if (orchestra_.isPlaying())
-          orchestra_.stop();
-
-        // Compute feedforward values and add to built-in motor controller PID.
-        left_leader_.set(ControlMode.MotionMagic, Math.max(0, io_.l_demand),
-            DemandType.ArbitraryFeedForward,
+        // Calculate feedforward value and add to built-in motor controller PID.
+        left_leader_.set(ControlMode.MotionMagic, io_.l_demand, DemandType.ArbitraryFeedForward,
             left_feedforward_.calculate(left_leader_.getActiveTrajectoryVelocity()));
-        right_leader_.set(ControlMode.MotionMagic, Math.max(0, io_.r_demand),
-            DemandType.ArbitraryFeedForward,
-            right_feedforward_.calculate(right_leader_.getActiveTrajectoryVelocity()));
+    }
 
+    // If brake is engaged, don't do anything to prevent damage.
+    if (io_.brake_value) {
+      // Set output to zero and exit out of here.
+      right_leader_.set(0);
+      return;
+    }
+
+    switch (right_output_type_) {
+      case PERCENT:
+        // Send the percent output values directly to the motor controller.
+        right_leader_.set(io_.l_demand);
         break;
-      case ORCHESTRA:
-        // Play the orchestra.
-        orchestra_.play();
+      case POSITION:
+        // Calculate feedforward value and add to built-in motor controller PID.
+        right_leader_.set(ControlMode.MotionMagic, io_.r_demand, DemandType.ArbitraryFeedForward,
+            right_feedforward_.calculate(right_leader_.getActiveTrajectoryVelocity()));
     }
   }
 
-  /**
-   * Sets the % output on the climber.
-   *
-   * @param l The left % output in [-1, 1].
-   * @param r The right % output in [-1. 1].
-   */
-  public void setPercent(double l, double r) {
-    output_type_ = OutputType.PERCENT;
-    io_.l_demand = l;
-    io_.r_demand = r;
+  public void setLeftPercent(double value) {
+    left_output_type_ = OutputType.PERCENT;
+    io_.l_demand = value;
   }
 
-  /**
-   * Sets the position of the climber.
-   *
-   * @param l The position of the left arm in meters.
-   * @param r The position of the right arm in meters.
-   */
-  public void setPosition(double l, double r) {
-    output_type_ = OutputType.POSITION;
-    io_.l_position = l;
-    io_.r_position = r;
+  public void setRightPercent(double value) {
+    right_output_type_ = OutputType.PERCENT;
+    io_.r_demand = value;
+  }
+
+  public void setLeftPosition(double value) {
+    left_output_type_ = OutputType.POSITION;
+    io_.l_demand = value;
+  }
+
+  public void setRightPosition(double value) {
+    right_output_type_ = OutputType.POSITION;
+    io_.r_demand = value;
   }
 
   /**
@@ -171,7 +178,7 @@ public class Climber extends SubsystemBase {
    * @param r The right pivot value; true when arm should be pivoted back.
    */
   public void setPivot(boolean l, boolean r) {
-    io_.wants_pneumatics_update = true;
+    io_.wants_pneumatics_update = l != io_.l_pivot_value || r != io_.r_pivot_value;
     io_.l_pivot_value = l;
     io_.r_pivot_value = r;
   }
@@ -182,7 +189,7 @@ public class Climber extends SubsystemBase {
    * @param value The brake value; true if brake should be engaged.
    */
   public void setBrake(boolean value) {
-    io_.wants_pneumatics_update = true;
+    io_.wants_pneumatics_update = value != io_.brake_value;
     io_.brake_value = value;
   }
 
@@ -191,7 +198,8 @@ public class Climber extends SubsystemBase {
    * "Imperial March" by John Williams.
    */
   public void setOrchestra() {
-    output_type_ = OutputType.ORCHESTRA;
+    left_output_type_ = OutputType.ORCHESTRA;
+    right_output_type_ = OutputType.ORCHESTRA;
   }
 
   /**
@@ -285,12 +293,16 @@ public class Climber extends SubsystemBase {
     public static final int kLeftRevLimitSwitchId = 0;
     public static final int kRightRevLimitSwitchId = 1;
 
+    // Hardware
+    public static final double kMaxHeight = Units.inchesToMeters(34); // TODO: find real value?
+
     // Control
-    public static final int kRightKs = 0;
     public static final int kLeftKs = 0;
-    public static final int kRightKv = 0;
     public static final int kLeftKv = 0;
-    public static final int kRightKa = 0;
     public static final int kLeftKa = 0;
+    public static final int kRightKs = 0;
+    public static final int kRightKv = 0;
+    public static final int kRightKa = 0;
+    public static final double kErrorTolerance = Units.inchesToMeters(1.5);
   }
 }
