@@ -49,6 +49,9 @@ public class Robot extends TimedRobot {
     // Set default commands for subsystems.
     drivetrain_.setDefaultCommand(new DrivetrainTeleopCommand(drivetrain_, controller_));
     climber_.setDefaultCommand(climb_cmd_);
+
+    // Setup controls.
+    setControls();
   }
 
   @Override
