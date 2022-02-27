@@ -28,8 +28,8 @@ public class ClimbCommand extends CommandBase {
     climb_mode_ = climb_mode;
 
     // Set advance state supplier.
-    advance_state_ = () -> controller.getRawButton(
-        Constants.kAdvanceButton) && climb_mode.getAsBoolean();
+    advance_state_ = () -> controller_.getRawButton(
+        Constants.kAdvanceButton) && climb_mode_.getAsBoolean();
 
     // Set mutable variable default values.
     resetClimbState();
@@ -98,8 +98,8 @@ public class ClimbCommand extends CommandBase {
             Math.abs(climber_.getLeftPosition() - Climber.Constants.kMaxHeight) <
                 Climber.Constants.kErrorTolerance;
 
-        // If the left arm is at the setpoint, pivot it back in.
-        if (left_arm_ready_for_l3) {
+        // If the left arm is at the setpoint and right arm is retracted, pivot it back in.
+        if (left_arm_ready_for_l3 && climber_.getRightReverseLimitSwitchClosed()) {
           climber_.setPivot(false, false);
         }
 
@@ -139,8 +139,8 @@ public class ClimbCommand extends CommandBase {
             Math.abs(climber_.getRightPosition() - Climber.Constants.kMaxHeight) <
                 Climber.Constants.kErrorTolerance;
 
-        // If the right arm is at the setpoint, pivot it back in.
-        if (right_arm_ready_for_l4) {
+        // If the right arm is at the setpoint and left arm is retracted, pivot it back in.
+        if (right_arm_ready_for_l4 && climber_.getLeftReverseLimitSwitchClosed()) {
           climber_.setPivot(false, false);
         }
 
