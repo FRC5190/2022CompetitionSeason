@@ -124,7 +124,7 @@ public class Hood extends SubsystemBase {
   /**
    * Returns the current hood velocity in radians / sec.
    *
-   * @return The current hood position in radians / sec.
+   * @return The current hood velocity in radians / sec.
    */
   public double getVelocity() {
     return io_.velocity;
