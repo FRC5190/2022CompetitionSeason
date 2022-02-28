@@ -152,8 +152,8 @@ public class Hood extends SubsystemBase {
 
     // Hardware
     public static final double kGearRatio = 980.0 / 9.0;
-    public static final double kMaxAngle = Units.degreesToRadians(15);
-    public static final double kMinAngle = Units.degreesToRadians(55);
+    public static final double kMaxAngle = Units.degreesToRadians(55);
+    public static final double kMinAngle = Units.degreesToRadians(15);
 
     // Control
     public static final double kS = 0.0;
