@@ -3,6 +3,7 @@ package org.ghrobotics.frc2022.commands;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import java.util.function.BooleanSupplier;
 import org.ghrobotics.frc2022.subsystems.Climber;
@@ -45,7 +46,8 @@ public class ClimbAutomatic extends SequentialCommandGroup {
         new InstantCommand(() -> climber.setPivot(true, false)),
 
         // Celebrate.
-        new InstantCommand(climber::setOrchestra)
+        new InstantCommand(climber::setOrchestra),
+        new WaitCommand(Constants.kOrchestraWaitTime)
     );
 
     // Set subsystem requirements.
@@ -59,5 +61,8 @@ public class ClimbAutomatic extends SequentialCommandGroup {
     public static final double kReadyForL2Height = Units.inchesToMeters(7.0);
     public static final double kSafeL2PivotHeight = Units.inchesToMeters(2.0);
     public static final double kSafeL3PivotHeight = kMaxHeight - Units.inchesToMeters(4.0);
+
+    // Celebration
+    public static final double kOrchestraWaitTime = 15;
   }
 }

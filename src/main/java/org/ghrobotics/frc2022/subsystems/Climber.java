@@ -88,13 +88,13 @@ public class Climber extends SubsystemBase {
     // Configure soft limits.
     left_leader_.configReverseSoftLimitThreshold(0);
     left_leader_.configForwardSoftLimitThreshold(Constants.kMaxHeightNativeUnits);
-    left_leader_.configForwardSoftLimitEnable(true);
-    left_leader_.configReverseSoftLimitEnable(true);
+    left_leader_.configForwardSoftLimitEnable(false);
+    left_leader_.configReverseSoftLimitEnable(false);
 
     right_leader_.configReverseSoftLimitThreshold(0);
     right_leader_.configForwardSoftLimitThreshold(Constants.kMaxHeightNativeUnits);
-    right_leader_.configForwardSoftLimitEnable(true);
-    right_leader_.configReverseSoftLimitEnable(true);
+    right_leader_.configForwardSoftLimitEnable(false);
+    right_leader_.configReverseSoftLimitEnable(false);
 
     // Initialize orchestra to play music.
     orchestra_ = new Orchestra(List.of(left_leader_, right_leader_));
@@ -175,6 +175,19 @@ public class Climber extends SubsystemBase {
     // If we want orchestra, play that.
     if (left_output_type_ == OutputType.ORCHESTRA && right_output_type_ == OutputType.ORCHESTRA)
       orchestra_.play();
+  }
+
+  /**
+   * Enables or disables soft limits for each motor controller. This needs to be done to zero the
+   * climber at the start of the match.
+   *
+   * @param value Whether the soft limits should be enforced.
+   */
+  public void enableSoftLimits(boolean value) {
+    left_leader_.configForwardSoftLimitEnable(value);
+    left_leader_.configReverseSoftLimitEnable(value);
+    right_leader_.configForwardSoftLimitEnable(value);
+    right_leader_.configReverseSoftLimitEnable(value);
   }
 
   /**

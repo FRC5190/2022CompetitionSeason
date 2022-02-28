@@ -4,12 +4,17 @@
 
 package org.ghrobotics.frc2022;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import org.ghrobotics.frc2022.commands.ClimbAutomatic;
+import org.ghrobotics.frc2022.commands.ClimbReset;
+import org.ghrobotics.frc2022.commands.ClimbTeleop;
 import org.ghrobotics.frc2022.commands.DriveTeleop;
+import org.ghrobotics.frc2022.subsystems.Climber;
 import org.ghrobotics.frc2022.subsystems.Drivetrain;
 
 /**
@@ -20,21 +25,17 @@ import org.ghrobotics.frc2022.subsystems.Drivetrain;
  */
 public class Robot extends TimedRobot {
   // Initialize robot state.
-  RobotState robot_state = new RobotState();
+  RobotState robot_state_ = new RobotState();
 
   // Create subsystems.
-  private final Drivetrain drivetrain_ = new Drivetrain(robot_state);
-//  private final Climber climber_ = new Climber();
+  private final Drivetrain drivetrain_ = new Drivetrain(robot_state_);
+  private final Climber climber_ = new Climber();
 
   // Create Xbox controller for driver.
-  private final XboxController controller_ = new XboxController(0);
+  private final XboxController driver_controller_ = new XboxController(0);
 
   // Keeps track of whether we are in climb mode.
   private boolean climb_mode_ = false;
-
-  // The global climber command that is always used when climbing.
-//  private final ClimbCommand climb_cmd_ = new ClimbCommand(climber_, controller_,
-//      () -> climb_mode_);
 
   @Override
   public void robotInit() {
@@ -44,22 +45,34 @@ public class Robot extends TimedRobot {
     // Enable NetworkTables flush() at higher rate.
     setNetworkTablesFlushEnabled(true);
 
-    // Set default commands for subsystems.
-    drivetrain_.setDefaultCommand(new DriveTeleop(drivetrain_, controller_));
-//    climber_.setDefaultCommand(climb_cmd_);
+    // Reset robot state.
+    robot_state_.resetPosition(new Pose2d());
 
-    // Setup controls.
-    setControls();
+    // Set default commands for subsystems.
+    drivetrain_.setDefaultCommand(new DriveTeleop(drivetrain_, driver_controller_));
+    climber_.setDefaultCommand(new ClimbTeleop(climber_, driver_controller_, () -> climb_mode_));
+
+    // Setup teleop controls.
+    setupTeleopControls();
   }
 
   @Override
   public void disabledInit() {}
 
   @Override
-  public void autonomousInit() {}
+  public void autonomousInit() {
+    // Reset climber (if not in climb mode).
+    if (!climb_mode_)
+      new ClimbReset(climber_).schedule();
+  }
 
   @Override
-  public void teleopInit() {}
+  public void teleopInit() {
+    // Reset climber (if not in climb mode).
+    if (!climb_mode_)
+      new ClimbReset(climber_).schedule();
+
+  }
 
   @Override
   public void testInit() {}
@@ -83,14 +96,34 @@ public class Robot extends TimedRobot {
   public void testPeriodic() {}
 
   /**
-   * Configures the button / joystick bindings for teleoperated control.
+   * Configures button / joystick bindings for teleop control (non-climb mode) if they are not
+   * already configured in the respective subsystem default commands.
    */
-  private void setControls() {
-    // Toggle climb mode with B button. Whenever this is pressed, the state of the climber is reset.
-    new JoystickButton(controller_, XboxController.Button.kB.value)
+  private void setupTeleopControls() {
+    // Go into climb mode with B button.
+    new JoystickButton(driver_controller_, XboxController.Button.kB.value)
         .whenPressed(() -> {
-          climb_mode_ = !climb_mode_;
-//          climb_cmd_.resetClimbState();
+          climb_mode_ = true;
+          CommandScheduler.getInstance().clearButtons();
+          setupEndgameControls();
         });
+  }
+
+  /**
+   * Configures button / joystick bindings for endgame control (climb mode) if they are not
+   * already configured in the respective subsystem default commands.
+   */
+  private void setupEndgameControls() {
+    // Go out of climb mode with B button.
+    new JoystickButton(driver_controller_, XboxController.Button.kB.value)
+        .whenPressed(() -> {
+          climb_mode_ = false;
+          CommandScheduler.getInstance().clearButtons();
+          setupTeleopControls();
+        });
+
+    // Toggle automatic climb with Start button.
+    new JoystickButton(driver_controller_, XboxController.Button.kStart.value)
+        .toggleWhenPressed(new ClimbAutomatic(climber_, driver_controller_::getAButton));
   }
 }

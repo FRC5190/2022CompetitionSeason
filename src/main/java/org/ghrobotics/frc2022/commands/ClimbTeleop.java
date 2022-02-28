@@ -2,12 +2,14 @@ package org.ghrobotics.frc2022.commands;
 
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.CommandBase;
+import java.util.function.BooleanSupplier;
 import org.ghrobotics.frc2022.subsystems.Climber;
 
 public class ClimbTeleop extends CommandBase {
-  // Reference to subsystem and controller.
+  // Reference to subsystem, controller, and climb mode supplier.
   private final Climber climber_;
   private final XboxController controller_;
+  private final BooleanSupplier climb_mode_;
 
   // Store left arm setpoint for closed loop control.
   private boolean left_arm_setpoint_set_;
@@ -17,11 +19,13 @@ public class ClimbTeleop extends CommandBase {
    *
    * @param climber    Reference to climber subsystem.
    * @param controller Reference to Xbox controller used to control the subsystem.
+   * @param climb_mode Whether we are currently in climb mode or not.
    */
-  public ClimbTeleop(Climber climber, XboxController controller) {
+  public ClimbTeleop(Climber climber, XboxController controller, BooleanSupplier climb_mode) {
     // Assign member variables.
     climber_ = climber;
     controller_ = controller;
+    climb_mode_ = climb_mode;
 
     // Set subsystem requirements.
     addRequirements(climber_);
@@ -29,9 +33,16 @@ public class ClimbTeleop extends CommandBase {
 
   @Override
   public void execute() {
-    // Use left stick y-axis to move the left climb arm up and down.
-    if (Math.abs(controller_.getLeftY()) > 0.1) {
-      climber_.setLeftPercent(-controller_.getLeftY());
+    // Don't do anything when we are not in climb mode.
+    if (!climb_mode_.getAsBoolean())
+      return;
+
+    // Use left trigger to move climber down and left bumper to move climber up.
+    if (Math.abs(controller_.getLeftTriggerAxis()) > 0.1 || controller_.getLeftBumperPressed()) {
+      climber_.setLeftPercent(
+          controller_.getLeftBumperPressed() ? 0.2 : -controller_.getLeftTriggerAxis());
+
+      // In manual control, so we don't have a position setpoint to hold the arm in place.
       if (left_arm_setpoint_set_)
         left_arm_setpoint_set_ = false;
     } else {
@@ -41,20 +52,21 @@ public class ClimbTeleop extends CommandBase {
       }
     }
 
-    // Use right stick y-axis to move the right climb arm up and down.
-    if (Math.abs(controller_.getRightY()) > 0.1) {
+    // Use right trigger to move climber down and right bumper to move climber up.
+    if (Math.abs(controller_.getRightTriggerAxis()) > 0.1 || controller_.getRightBumperPressed()) {
       climber_.setBrake(false);
-      climber_.setRightPercent(-controller_.getRightY());
+      climber_.setRightPercent(
+          controller_.getRightBumperPressed() ? 0.2 : -controller_.getRightTriggerAxis());
     } else {
       // Hold the right arm position with brake.
       climber_.setBrake(true);
       climber_.setRightPercent(0);
     }
 
-    // Use left and right bumpers to toggle pivot.
-    if (controller_.getLeftBumperPressed())
+    // Use Y and A to toggle left and right pivots respectively.
+    if (controller_.getYButtonPressed())
       climber_.setPivot(!climber_.getLeftPivot(), climber_.getRightPivot());
-    if (controller_.getRightBumperPressed())
+    if (controller_.getAButtonPressed())
       climber_.setPivot(climber_.getLeftPivot(), !climber_.getRightPivot());
   }
 }
