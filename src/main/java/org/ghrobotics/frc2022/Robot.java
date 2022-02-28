@@ -9,9 +9,7 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
-import org.ghrobotics.frc2022.commands.ClimbCommand;
-import org.ghrobotics.frc2022.commands.DrivetrainTeleopCommand;
-import org.ghrobotics.frc2022.subsystems.Climber;
+import org.ghrobotics.frc2022.commands.DriveTeleop;
 import org.ghrobotics.frc2022.subsystems.Drivetrain;
 
 /**
@@ -26,7 +24,7 @@ public class Robot extends TimedRobot {
 
   // Create subsystems.
   private final Drivetrain drivetrain_ = new Drivetrain(robot_state);
-  private final Climber climber_ = new Climber();
+//  private final Climber climber_ = new Climber();
 
   // Create Xbox controller for driver.
   private final XboxController controller_ = new XboxController(0);
@@ -35,8 +33,8 @@ public class Robot extends TimedRobot {
   private boolean climb_mode_ = false;
 
   // The global climber command that is always used when climbing.
-  private final ClimbCommand climb_cmd_ = new ClimbCommand(climber_, controller_,
-      () -> climb_mode_);
+//  private final ClimbCommand climb_cmd_ = new ClimbCommand(climber_, controller_,
+//      () -> climb_mode_);
 
   @Override
   public void robotInit() {
@@ -47,8 +45,8 @@ public class Robot extends TimedRobot {
     setNetworkTablesFlushEnabled(true);
 
     // Set default commands for subsystems.
-    drivetrain_.setDefaultCommand(new DrivetrainTeleopCommand(drivetrain_, controller_));
-    climber_.setDefaultCommand(climb_cmd_);
+    drivetrain_.setDefaultCommand(new DriveTeleop(drivetrain_, controller_));
+//    climber_.setDefaultCommand(climb_cmd_);
 
     // Setup controls.
     setControls();
@@ -92,7 +90,7 @@ public class Robot extends TimedRobot {
     new JoystickButton(controller_, XboxController.Button.kB.value)
         .whenPressed(() -> {
           climb_mode_ = !climb_mode_;
-          climb_cmd_.resetClimbState();
+//          climb_cmd_.resetClimbState();
         });
   }
 }

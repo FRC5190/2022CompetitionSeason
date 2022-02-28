@@ -9,7 +9,7 @@ import edu.wpi.first.wpilibj2.command.CommandBase;
 import org.ghrobotics.frc2022.RobotState;
 import org.ghrobotics.frc2022.subsystems.Drivetrain;
 
-public class DrivetrainAutoCommand extends CommandBase {
+public class DriveTrajectory extends CommandBase {
   // Subsystem Reference
   private final Drivetrain drivetrain_;
 
@@ -27,8 +27,8 @@ public class DrivetrainAutoCommand extends CommandBase {
    * @param robot_state A reference to the global robot state.
    * @param trajectory  The trajectory to follow.
    */
-  public DrivetrainAutoCommand(Drivetrain drivetrain, RobotState robot_state,
-                               Trajectory trajectory) {
+  public DriveTrajectory(Drivetrain drivetrain, RobotState robot_state,
+                         Trajectory trajectory) {
     // Assign local variables.
     drivetrain_ = drivetrain;
     robot_state_ = robot_state;

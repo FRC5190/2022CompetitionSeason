@@ -5,13 +5,13 @@ import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import org.ghrobotics.frc2022.subsystems.Drivetrain;
 
-public class DrivetrainTeleopCommand extends CommandBase {
+public class DriveTeleop extends CommandBase {
   // Store references to drivetrain and Xbox controller.
   private final Drivetrain drivetrain_;
   private final XboxController controller_;
 
   // Constructor
-  public DrivetrainTeleopCommand(Drivetrain drivetrain, XboxController controller) {
+  public DriveTeleop(Drivetrain drivetrain, XboxController controller) {
     // Assign member variables.
     drivetrain_ = drivetrain;
     controller_ = controller;

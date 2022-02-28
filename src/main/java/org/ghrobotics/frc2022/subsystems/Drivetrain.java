@@ -28,7 +28,7 @@ public class Drivetrain extends SubsystemBase {
   // Sensors
   private final RelativeEncoder left_encoder_;
   private final RelativeEncoder right_encoder_;
-  private final WPI_PigeonIMU gyro_;
+//  private final WPI_PigeonIMU gyro_;
 
   // Control
   private final SparkMaxPIDController left_pid_controller_;
@@ -94,7 +94,7 @@ public class Drivetrain extends SubsystemBase {
         2 * Math.PI * Constants.kWheelRadius / Constants.kGearRatio / 60);
 
     // Initialize gyro.
-    gyro_ = new WPI_PigeonIMU(Constants.kPigeonIMUId);
+//    gyro_ = new WPI_PigeonIMU(Constants.kPigeonIMUId);
 
     // Initialize PID controllers.
     left_pid_controller_ = left_leader_.getPIDController();
@@ -125,8 +125,8 @@ public class Drivetrain extends SubsystemBase {
     io_.r_position = right_encoder_.getPosition();
     io_.l_velocity = left_encoder_.getVelocity();
     io_.r_velocity = right_encoder_.getVelocity();
-    io_.angle = gyro_.getRotation2d();
-    io_.angular_rate = -Math.toRadians(gyro_.getRate());
+//    io_.angle = gyro_.getRotation2d();
+//    io_.angular_rate = -Math.toRadians(gyro_.getRate());
 
     // Update robot state with measurements.
     robot_state_.updateRobotPose(
@@ -251,7 +251,7 @@ public class Drivetrain extends SubsystemBase {
     double r_position;
     double l_velocity;
     double r_velocity;
-    Rotation2d angle;
+    Rotation2d angle = new Rotation2d();
     double angular_rate;
 
     // Outputs
