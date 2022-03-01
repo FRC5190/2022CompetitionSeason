@@ -85,9 +85,9 @@ public class Shooter extends SubsystemBase {
         double setpoint = bang_bang_controller_.getSetpoint();
         double feedforward = feedforward_.calculate(io_.velocity, (setpoint - io_.velocity) / 0.02);
 
-        // We multiply by 0.9 to avoid overshoot.
+        // We multiply by 0.9 to avoid overshoot. Divide by 12 to change voltage to percent.
         // See: https://docs.wpilib.org/en/stable/docs/software/advanced-controls/controllers/bang-bang.html#combining-bang-bang-control-with-feedforward
-        leader_.setVoltage(feedback + 0.9 * feedforward);
+        leader_.set(feedback + 0.9 / 12 * feedforward);
     }
   }
 
