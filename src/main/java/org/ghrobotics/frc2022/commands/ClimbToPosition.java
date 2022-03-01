@@ -37,13 +37,6 @@ public class ClimbToPosition extends CommandBase {
   }
 
   @Override
-  public void end(boolean interrupted) {
-    // Take advantage of the brake and use that to hold the right arm in place.
-    climber_.setBrake(true);
-    climber_.setRightPercent(0);
-  }
-
-  @Override
   public boolean isFinished() {
     // End the command when both arms are within tolerance of the given setpoint.
     return Math.abs(climber_.getLeftPosition() - l_setpoint_) < Climber.Constants.kErrorTolerance &&

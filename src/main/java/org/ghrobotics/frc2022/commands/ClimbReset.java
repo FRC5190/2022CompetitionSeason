@@ -45,7 +45,6 @@ public class ClimbReset extends CommandBase {
     climber_.enableSoftLimits(true);
     climber_.setLeftPercent(0);
     climber_.setRightPercent(0);
-    climber_.setBrake(true);
   }
 
   @Override

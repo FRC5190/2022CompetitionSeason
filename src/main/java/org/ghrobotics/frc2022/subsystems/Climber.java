@@ -88,13 +88,9 @@ public class Climber extends SubsystemBase {
     // Configure soft limits.
     left_leader_.configReverseSoftLimitThreshold(0);
     left_leader_.configForwardSoftLimitThreshold(Constants.kMaxHeightNativeUnits);
-    left_leader_.configForwardSoftLimitEnable(false);
-    left_leader_.configReverseSoftLimitEnable(false);
-
     right_leader_.configReverseSoftLimitThreshold(0);
     right_leader_.configForwardSoftLimitThreshold(Constants.kMaxHeightNativeUnits);
-    right_leader_.configForwardSoftLimitEnable(false);
-    right_leader_.configReverseSoftLimitEnable(false);
+    enableSoftLimits(true);
 
     // Initialize orchestra to play music.
     orchestra_ = new Orchestra(List.of(left_leader_, right_leader_));
@@ -112,8 +108,8 @@ public class Climber extends SubsystemBase {
     io_.r_position = fromCTREPosition(right_leader_.getSelectedSensorPosition());
     io_.l_supply_current = left_leader_.getSupplyCurrent();
     io_.r_supply_current = right_leader_.getSupplyCurrent();
-    io_.l_rev_limit_switch = left_rev_limit_switch_.get();
-    io_.r_rev_limit_switch = right_rev_limit_switch_.get();
+    io_.l_rev_limit_switch = !left_rev_limit_switch_.get();
+    io_.r_rev_limit_switch = !right_rev_limit_switch_.get();
 
     // Write outputs.
     // Update pneumatics if a change is required.
@@ -122,16 +118,16 @@ public class Climber extends SubsystemBase {
       io_.wants_pneumatics_update = false;
 
       // Set solenoid values.
-      brake_.set(io_.brake_value);
+      brake_.set(!io_.brake_value); // brake is wired backward
       left_pivot_.set(io_.l_pivot_value);
       right_pivot_.set(io_.r_pivot_value);
     }
 
     // Check the limit switches and reset encoder positions to 0 if hit.
-    if (io_.l_rev_limit_switch)
-      left_leader_.setSelectedSensorPosition(0);
-    if (io_.r_rev_limit_switch)
-      right_leader_.setSelectedSensorPosition(0);
+//    if (io_.l_rev_limit_switch)
+//      left_leader_.setSelectedSensorPosition(0);
+//    if (io_.r_rev_limit_switch)
+//      right_leader_.setSelectedSensorPosition(0);
 
     // Telemetry (temporary)
     // TODO: move to dedicated telemetry.
@@ -144,7 +140,7 @@ public class Climber extends SubsystemBase {
     switch (left_output_type_) {
       case PERCENT:
         // Send the percent output values directly to the motor controller.
-        left_leader_.set(io_.l_demand);
+        left_leader_.set(ControlMode.PercentOutput, io_.l_demand);
         break;
       case POSITION:
         // Calculate feedforward value and add to built-in motor controller PID.
@@ -163,7 +159,7 @@ public class Climber extends SubsystemBase {
     switch (right_output_type_) {
       case PERCENT:
         // Send the percent output values directly to the motor controller.
-        right_leader_.set(io_.l_demand);
+        right_leader_.set(io_.r_demand);
         break;
       case POSITION:
         // Calculate feedforward value and add to built-in motor controller PID.
@@ -399,7 +395,7 @@ public class Climber extends SubsystemBase {
     double l_demand;
     double r_demand;
 
-    boolean brake_value;
+    boolean brake_value = true;
     boolean l_pivot_value;
     boolean r_pivot_value;
     boolean wants_pneumatics_update;
@@ -412,8 +408,8 @@ public class Climber extends SubsystemBase {
 
     // Pneumatics
     public static final int kBrakeId = 1;
-    public static final int kLeftPivotId = 3;
-    public static final int kRightPivotId = 2;
+    public static final int kLeftPivotId = 2;
+    public static final int kRightPivotId = 3;
 
     // Sensors
     public static final int kLeftRevLimitSwitchId = 8;

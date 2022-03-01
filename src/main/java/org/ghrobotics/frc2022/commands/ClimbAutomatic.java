@@ -44,6 +44,7 @@ public class ClimbAutomatic extends SequentialCommandGroup {
         // Part 4: climb to traversal rung: pull the right arm all the way down, then unpivot it.
         new ClimbToPosition(climber, 0, Constants.kClimbHeight),
         new InstantCommand(() -> climber.setPivot(true, false)),
+        new InstantCommand(() -> climber.setBrake(true)),
 
         // Celebrate.
         new InstantCommand(climber::setOrchestra),

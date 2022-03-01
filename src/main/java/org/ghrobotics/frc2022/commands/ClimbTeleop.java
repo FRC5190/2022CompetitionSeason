@@ -11,8 +11,9 @@ public class ClimbTeleop extends CommandBase {
   private final XboxController controller_;
   private final BooleanSupplier climb_mode_;
 
-  // Store left arm setpoint for closed loop control.
+  // Store arm setpoint for closed loop control.
   private boolean left_arm_setpoint_set_;
+  private boolean right_arm_setpoint_set_;
 
   /**
    * Controls the climber with manual inputs from the Xbox controller.
@@ -32,15 +33,21 @@ public class ClimbTeleop extends CommandBase {
   }
 
   @Override
+  public void initialize() {
+    // Undo brake.
+    climber_.setBrake(false);
+  }
+
+  @Override
   public void execute() {
-    // Don't do anything when we are not in climb mode.
+    // If we are not in climb mode, don't do anything.
     if (!climb_mode_.getAsBoolean())
       return;
 
     // Use left trigger to move climber down and left bumper to move climber up.
-    if (Math.abs(controller_.getLeftTriggerAxis()) > 0.1 || controller_.getLeftBumperPressed()) {
+    if (Math.abs(controller_.getLeftTriggerAxis()) > 0.1 || controller_.getLeftBumper()) {
       climber_.setLeftPercent(
-          controller_.getLeftBumperPressed() ? 0.2 : -controller_.getLeftTriggerAxis());
+          controller_.getLeftBumper() ? 0.2 : -controller_.getLeftTriggerAxis() * 0.4);
 
       // In manual control, so we don't have a position setpoint to hold the arm in place.
       if (left_arm_setpoint_set_)
@@ -49,18 +56,24 @@ public class ClimbTeleop extends CommandBase {
       // Hold the left arm position with closed loop control.
       if (!left_arm_setpoint_set_) {
         climber_.setLeftPosition(climber_.getLeftPosition());
+        left_arm_setpoint_set_ = true;
       }
     }
 
     // Use right trigger to move climber down and right bumper to move climber up.
-    if (Math.abs(controller_.getRightTriggerAxis()) > 0.1 || controller_.getRightBumperPressed()) {
-      climber_.setBrake(false);
+    if (Math.abs(controller_.getRightTriggerAxis()) > 0.1 || controller_.getRightBumper()) {
       climber_.setRightPercent(
-          controller_.getRightBumperPressed() ? 0.2 : -controller_.getRightTriggerAxis());
+          controller_.getRightBumper() ? 0.2 : -controller_.getRightTriggerAxis() * 0.4);
+
+      // In manual control, so we don't have a position setpoint to hold the arm in place.
+      if (right_arm_setpoint_set_)
+        right_arm_setpoint_set_ = false;
     } else {
-      // Hold the right arm position with brake.
-      climber_.setBrake(true);
-      climber_.setRightPercent(0);
+      // Hold the right arm position with closed loop control.
+      if (!right_arm_setpoint_set_) {
+        climber_.setRightPosition(climber_.getRightPosition());
+        right_arm_setpoint_set_ = true;
+      }
     }
 
     // Use Y and A to toggle left and right pivots respectively.
