@@ -16,7 +16,7 @@ public class RobotState {
   private final DifferentialDrivePoseEstimator pose_estimator_;
 
   // Robot Speeds
-  private ChassisSpeeds robot_speeds = new ChassisSpeeds(0, 0, 0);
+  private ChassisSpeeds robot_speeds_ = new ChassisSpeeds(0, 0, 0);
 
   // Sensor Offsets
   private double l_encoder_offset_ = 0.0;
@@ -25,7 +25,7 @@ public class RobotState {
 
   private double l_encoder_ = 0.0;
   private double r_encoder_ = 0.0;
-  private Rotation2d gyro = new Rotation2d();
+  private Rotation2d gyro_ = new Rotation2d();
 
   /**
    * Constructs a "robot state" instance. This keeps track of various states on the robot,
@@ -56,7 +56,7 @@ public class RobotState {
     // Store encoder and gyro values.
     l_encoder_ = l_position;
     r_encoder_ = r_position;
-    gyro = angle;
+    gyro_ = angle;
 
     // Update the pose estimator with local measurements.
     pose_estimator_.update(angle.minus(gyro_offset_), wheel_speeds,
@@ -70,7 +70,7 @@ public class RobotState {
    */
   public void updateRobotSpeeds(ChassisSpeeds speeds) {
     // Update local variable.
-    robot_speeds = speeds;
+    robot_speeds_ = speeds;
   }
 
   /**
@@ -82,7 +82,7 @@ public class RobotState {
     // Store offsets.
     l_encoder_offset_ = l_encoder_;
     r_encoder_offset_ = r_encoder_;
-    gyro_offset_ = gyro;
+    gyro_offset_ = gyro_;
 
     // Reset pose estimator.
     pose_estimator_.resetPosition(pose, new Rotation2d());
