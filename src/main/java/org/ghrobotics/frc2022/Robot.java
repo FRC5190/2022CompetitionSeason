@@ -8,7 +8,9 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import org.ghrobotics.frc2022.commands.ClimbAutomatic;
@@ -16,7 +18,11 @@ import org.ghrobotics.frc2022.commands.ClimbTeleop;
 import org.ghrobotics.frc2022.commands.DriveTeleop;
 import org.ghrobotics.frc2022.subsystems.Climber;
 import org.ghrobotics.frc2022.subsystems.Drivetrain;
+import org.ghrobotics.frc2022.subsystems.Hood;
+import org.ghrobotics.frc2022.subsystems.Intake;
 import org.ghrobotics.frc2022.subsystems.LED;
+import org.ghrobotics.frc2022.subsystems.Shooter;
+import org.ghrobotics.frc2022.subsystems.Turret;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -30,8 +36,19 @@ public class Robot extends TimedRobot {
 
   // Create subsystems.
   private final Drivetrain drivetrain_ = new Drivetrain(robot_state_);
+  private final Turret turret_ = new Turret();
+  private final Shooter shooter_ = new Shooter();
+  private final Hood hood_ = new Hood();
+  private final Intake intake_ = new Intake();
   private final Climber climber_ = new Climber();
   private final LED led_ = new LED();
+
+  // Create autonomous mode selector.
+  private SendableChooser<Command> auto_selector_ = new SendableChooser<>();
+
+  // Create telemetry.
+  private final Telemetry telemetry_ = new Telemetry(
+      robot_state_, drivetrain_, turret_, shooter_, hood_, intake_, climber_, auto_selector_);
 
   // Create Xbox controller for driver.
   private final XboxController driver_controller_ = new XboxController(0);
@@ -89,6 +106,7 @@ public class Robot extends TimedRobot {
     CommandScheduler.getInstance().run();
 
     // Send climb status to SmartDashboard.
+    // TODO: remove after LEDs are functional
     SmartDashboard.putBoolean("Climb Mode", climb_mode_);
 
     // Check if we need to clear buttons.
@@ -159,17 +177,17 @@ public class Robot extends TimedRobot {
     if (climb_mode_)
       led_.setOutput(LED.StandardLEDOutput.CLIMBING);
 
-    // No Limelight (TODO)
+      // No Limelight (TODO)
 
-    // Robot Disabled
+      // Robot Disabled
     else if (isDisabled())
       led_.setOutput(LED.OutputType.RAINBOW);
 
-    // Manual Scoring (TODO)
+      // Manual Scoring (TODO)
 
-    // Automatic Scoring (TODO)
+      // Automatic Scoring (TODO)
 
-    // Other Cases
+      // Other Cases
     else
       led_.setOutput(LED.StandardLEDOutput.BLANK);
   }
