@@ -16,6 +16,7 @@ import org.ghrobotics.frc2022.commands.ClimbTeleop;
 import org.ghrobotics.frc2022.commands.DriveTeleop;
 import org.ghrobotics.frc2022.subsystems.Climber;
 import org.ghrobotics.frc2022.subsystems.Drivetrain;
+import org.ghrobotics.frc2022.subsystems.LED;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -30,6 +31,7 @@ public class Robot extends TimedRobot {
   // Create subsystems.
   private final Drivetrain drivetrain_ = new Drivetrain(robot_state_);
   private final Climber climber_ = new Climber();
+  private final LED led_ = new LED();
 
   // Create Xbox controller for driver.
   private final XboxController driver_controller_ = new XboxController(0);
@@ -101,6 +103,9 @@ public class Robot extends TimedRobot {
       // Set flag to false.
       clear_buttons_ = false;
     }
+
+    // Update LEDs.
+    updateLEDs();
   }
 
   @Override
@@ -143,5 +148,29 @@ public class Robot extends TimedRobot {
     // Toggle automatic climb with Start button.
     new JoystickButton(driver_controller_, XboxController.Button.kStart.value)
         .toggleWhenPressed(new ClimbAutomatic(climber_, driver_controller_::getAButton));
+  }
+
+  /**
+   * Updates the status of the LEDs periodically based on the various states of the robot (e.g.
+   * climb mode, scoring, ball in intake).
+   */
+  private void updateLEDs() {
+    // Climb Mode
+    if (climb_mode_)
+      led_.setOutput(LED.StandardLEDOutput.CLIMBING);
+
+    // No Limelight (TODO)
+
+    // Robot Disabled
+    else if (isDisabled())
+      led_.setOutput(LED.OutputType.RAINBOW);
+
+    // Manual Scoring (TODO)
+
+    // Automatic Scoring (TODO)
+
+    // Other Cases
+    else
+      led_.setOutput(LED.StandardLEDOutput.BLANK);
   }
 }
