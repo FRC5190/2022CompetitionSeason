@@ -66,6 +66,7 @@ public class Drivetrain extends SubsystemBase {
     right_leader_ = new CANSparkMax(Constants.kRightLeaderId, MotorType.kBrushless);
     right_leader_.restoreFactoryDefaults();
     right_leader_.setIdleMode(IdleMode.kBrake);
+    right_leader_.enableVoltageCompensation(12);
     right_leader_.setInverted(true);
 
     left_follower_ = new CANSparkMax(Constants.kLeftFollowerId, MotorType.kBrushless);
