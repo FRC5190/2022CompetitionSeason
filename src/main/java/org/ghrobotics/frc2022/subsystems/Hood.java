@@ -22,6 +22,7 @@ public class Hood extends SubsystemBase {
   // Control
   private final ProfiledPIDController pid_controller_;
   private final ArmFeedforward feedforward_;
+  private double last_velocity_setpoint_ = 0;
 
   // IO
   private OutputType output_type_ = OutputType.PERCENT;
@@ -84,7 +85,10 @@ public class Hood extends SubsystemBase {
         double feedback = pid_controller_.calculate(io_.position);
         TrapezoidProfile.State setpoint = pid_controller_.getSetpoint();
         double feedforward = feedforward_.calculate(setpoint.position, setpoint.velocity,
-            (setpoint.velocity - io_.velocity) / 0.02);
+            (setpoint.velocity - last_velocity_setpoint_) / 0.02);
+
+        // Store last velocity setpoint.
+        last_velocity_setpoint_ = setpoint.velocity;
 
         // Set combined voltage.
         leader_.setVoltage(feedback + feedforward);
@@ -98,6 +102,7 @@ public class Hood extends SubsystemBase {
    * @param value The % output in [-1, 1].
    */
   public void setPercent(double value) {
+    last_velocity_setpoint_ = 0;
     output_type_ = OutputType.PERCENT;
     io_.demand = value;
   }

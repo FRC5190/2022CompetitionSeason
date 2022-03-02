@@ -22,6 +22,7 @@ public class Shooter extends SubsystemBase {
   // Control
   private final BangBangController bang_bang_controller_;
   private final SimpleMotorFeedforward feedforward_;
+  private double last_velocity_setpoint_ = 0;
 
   // IO
   private OutputType output_type_ = OutputType.PERCENT;
@@ -83,7 +84,11 @@ public class Shooter extends SubsystemBase {
         // Calculate motor controller voltage from feedback and feedforward.
         double feedback = bang_bang_controller_.calculate(io_.velocity);
         double setpoint = bang_bang_controller_.getSetpoint();
-        double feedforward = feedforward_.calculate(io_.velocity, (setpoint - io_.velocity) / 0.02);
+        double feedforward = feedforward_.calculate(io_.velocity,
+            (setpoint - last_velocity_setpoint_) / 0.02);
+
+        // Store last velocity setpoint.
+        last_velocity_setpoint_ = setpoint;
 
         // We multiply by 0.9 to avoid overshoot. Divide by 12 to change voltage to percent.
         // See: https://docs.wpilib.org/en/stable/docs/software/advanced-controls/controllers/bang-bang.html#combining-bang-bang-control-with-feedforward
@@ -98,6 +103,7 @@ public class Shooter extends SubsystemBase {
    * @param value The % output in [-1, 1].
    */
   public void setPercent(double value) {
+    last_velocity_setpoint_ = 0;
     output_type_ = OutputType.PERCENT;
     io_.demand = value;
   }

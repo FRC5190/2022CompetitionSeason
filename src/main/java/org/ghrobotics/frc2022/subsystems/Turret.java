@@ -23,6 +23,7 @@ public class Turret extends SubsystemBase {
   // Control
   private final ProfiledPIDController pid_controller_;
   private final SimpleMotorFeedforward feedforward_;
+  private double last_velocity_setpoint_ = 0;
 
   // IO
   private OutputType output_type_ = OutputType.PERCENT;
@@ -48,6 +49,7 @@ public class Turret extends SubsystemBase {
     encoder_.configFeedbackCoefficient(
         2 * Math.PI / Constants.kGearRatio / Constants.kEncoderResolution, "rad",
         SensorTimeBase.PerSecond);
+    encoder_.configSensorDirection(true);
     encoder_.configVelocityMeasurementPeriod(SensorVelocityMeasPeriod.Period_10Ms);
     encoder_.configVelocityMeasurementWindow(8);
     encoder_.configMagnetOffset(Constants.kEncoderMagnetOffset);
@@ -84,8 +86,12 @@ public class Turret extends SubsystemBase {
         double feedback = pid_controller_.calculate(io_.position);
         TrapezoidProfile.State setpoint = pid_controller_.getSetpoint();
         double feedforward = feedforward_.calculate(setpoint.velocity,
-            (setpoint.velocity - io_.velocity) / 0.02);
+            (setpoint.velocity - last_velocity_setpoint_) / 0.02);
 
+        // Store last velocity setpoint.
+        last_velocity_setpoint_ = setpoint.velocity;
+
+        // Set voltage.
         leader_.setVoltage(feedback + feedforward);
         break;
     }
@@ -97,6 +103,7 @@ public class Turret extends SubsystemBase {
    * @param value The % output in [-1, 1].
    */
   public void setPercent(double value) {
+    last_velocity_setpoint_ = 0;
     output_type_ = OutputType.PERCENT;
     io_.demand = value;
   }
