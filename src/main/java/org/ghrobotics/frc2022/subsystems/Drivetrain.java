@@ -1,6 +1,5 @@
 package org.ghrobotics.frc2022.subsystems;
 
-import com.ctre.phoenix.sensors.WPI_PigeonIMU;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxPIDController;
@@ -35,6 +34,8 @@ public class Drivetrain extends SubsystemBase {
   private final SparkMaxPIDController right_pid_controller_;
   private final SimpleMotorFeedforward left_feedforward_;
   private final SimpleMotorFeedforward right_feedforward_;
+  private double last_l_velocity_setpoint_ = 0;
+  private double last_r_velocity_setpoint_ = 0;
 
   // Trajectory Tracking
   private final DifferentialDriveKinematics kinematics_;
@@ -145,9 +146,15 @@ public class Drivetrain extends SubsystemBase {
       case VELOCITY:
         // Calculate feedforward value and add to built-in motor controller PID.
         left_pid_controller_.setReference(io_.l_demand, ControlType.kVelocity, 0,
-            left_feedforward_.calculate(io_.l_demand, (io_.l_demand - io_.l_velocity) / 0.02));
+            left_feedforward_.calculate(io_.l_demand,
+                (io_.l_demand - last_l_velocity_setpoint_) / 0.02));
         right_pid_controller_.setReference(io_.r_demand, ControlType.kVelocity, 0,
-            right_feedforward_.calculate(io_.r_demand, (io_.r_demand - io_.r_velocity) / 0.02));
+            right_feedforward_.calculate(io_.r_demand,
+                (io_.r_demand - last_r_velocity_setpoint_) / 0.02));
+
+        // Store last velocity setpoints.
+        last_l_velocity_setpoint_ = io_.l_demand;
+        last_r_velocity_setpoint_ = io_.r_demand;
         break;
     }
   }
@@ -171,6 +178,8 @@ public class Drivetrain extends SubsystemBase {
    * @param r The right % output in [-1, 1].
    */
   public void setPercent(double l, double r) {
+    last_l_velocity_setpoint_ = 0;
+    last_r_velocity_setpoint_ = 0;
     output_type_ = OutputType.PERCENT;
     io_.l_demand = l;
     io_.r_demand = r;
