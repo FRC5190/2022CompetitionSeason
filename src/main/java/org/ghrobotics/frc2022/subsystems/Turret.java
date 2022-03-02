@@ -48,6 +48,7 @@ public class Turret extends SubsystemBase {
     encoder_.configFeedbackCoefficient(
         2 * Math.PI / Constants.kGearRatio / Constants.kEncoderResolution, "rad",
         SensorTimeBase.PerSecond);
+    encoder_.configSensorDirection(true);
     encoder_.configVelocityMeasurementPeriod(SensorVelocityMeasPeriod.Period_10Ms);
     encoder_.configVelocityMeasurementWindow(8);
     encoder_.configMagnetOffset(Constants.kEncoderMagnetOffset);
