@@ -89,7 +89,7 @@ public class Feeder extends SubsystemBase {
 
     // Sensors
     public static final int kIntakeSensorId = 0;
-    public static final int kExitSensorId = 0;
+    public static final int kExitSensorId = 1;
 
     // Current Limits
     public static final int kCurrentLimit = 25;
