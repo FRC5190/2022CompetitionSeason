@@ -9,7 +9,6 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
@@ -46,10 +45,6 @@ public class Robot extends TimedRobot {
   // Create autonomous mode selector.
   private SendableChooser<Command> auto_selector_ = new SendableChooser<>();
 
-  // Create telemetry.
-  private final Telemetry telemetry_ = new Telemetry(
-      robot_state_, drivetrain_, turret_, shooter_, hood_, intake_, climber_, auto_selector_);
-
   // Create Xbox controller for driver.
   private final XboxController driver_controller_ = new XboxController(0);
 
@@ -58,6 +53,11 @@ public class Robot extends TimedRobot {
 
   // Keeps track of whether we need to clear buttons.
   private boolean clear_buttons_ = false;
+
+  // Create telemetry.
+  private final Telemetry telemetry_ = new Telemetry(
+      robot_state_, drivetrain_, turret_, shooter_, hood_, intake_, climber_, auto_selector_,
+      () -> climb_mode_);
 
   @Override
   public void robotInit() {
@@ -104,10 +104,6 @@ public class Robot extends TimedRobot {
   public void robotPeriodic() {
     // Run command scheduler.
     CommandScheduler.getInstance().run();
-
-    // Send climb status to SmartDashboard.
-    // TODO: remove after LEDs are functional
-    SmartDashboard.putBoolean("Climb Mode", climb_mode_);
 
     // Check if we need to clear buttons.
     if (clear_buttons_) {
