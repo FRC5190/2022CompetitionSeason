@@ -8,8 +8,8 @@ import static com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 public class Feeder extends SubsystemBase {
   // Motor Controllers
-  private final CANSparkMax conveyor_leader_;
-  private final CANSparkMax bridge_leader_;
+  private final CANSparkMax feeder_floor_;
+  private final CANSparkMax feeder_wall_;
 
   // Sensors
   private final AnalogInput intake_sensor_;
@@ -25,50 +25,77 @@ public class Feeder extends SubsystemBase {
    */
   public Feeder() {
     // Initialize motor controllers.
-    conveyor_leader_ = new CANSparkMax(Constants.kFeederId, MotorType.kBrushless);
-    conveyor_leader_.restoreFactoryDefaults();
-    conveyor_leader_.setIdleMode(IdleMode.kBrake);
-    conveyor_leader_.enableVoltageCompensation(12);
-    conveyor_leader_.setInverted(false);
+    feeder_floor_ = new CANSparkMax(Constants.kFeederFloorId, MotorType.kBrushless);
+    feeder_floor_.restoreFactoryDefaults();
+    feeder_floor_.setIdleMode(IdleMode.kBrake);
+    feeder_floor_.enableVoltageCompensation(12);
+    feeder_floor_.setSmartCurrentLimit(Constants.kCurrentLimit);
+    feeder_floor_.setInverted(false);
 
-    bridge_leader_ = new CANSparkMax(Constants.kBridgeId, MotorType.kBrushless);
-    bridge_leader_.restoreFactoryDefaults();
-    bridge_leader_.setIdleMode(IdleMode.kBrake);
-    bridge_leader_.enableVoltageCompensation(12);
-    bridge_leader_.setInverted(false);
+    feeder_wall_ = new CANSparkMax(Constants.kFeederWallId, MotorType.kBrushless);
+    feeder_wall_.restoreFactoryDefaults();
+    feeder_wall_.setIdleMode(IdleMode.kBrake);
+    feeder_wall_.enableVoltageCompensation(12);
+    feeder_wall_.setSmartCurrentLimit(Constants.kCurrentLimit);
+    feeder_wall_.setInverted(false);
 
-    //Initialize sensors
+    // Initialize sensors.
     intake_sensor_ = new AnalogInput(Constants.kIntakeSensorId);
     exit_sensor_ = new AnalogInput(Constants.kExitSensorId);
   }
 
   public void periodic() {
+    // Read inputs.
+    io_.intake_sensor = intake_sensor_.getAverageVoltage() > Constants.kIntakeSensorVThreshold;
+    io_.exit_sensor = exit_sensor_.getAverageVoltage() > Constants.kExitSensorVThreshold;
+
     // Write outputs.
-    conveyor_leader_.set(io_.demand);
-    bridge_leader_.set(io_.demand);
+    feeder_floor_.set(io_.floor_demand);
+    feeder_wall_.set(io_.wall_demand);
   }
 
   /**
-   * Sets the % output on the feeder.
+   * Sets the % output on the feeder floor.
    *
    * @param value The % output in [-1, 1].
    */
-  public void setPercent(double value) {
-    io_.demand = value;
+  public void setFloorPercent(double value) {
+    io_.floor_demand = value;
+  }
+
+  /**
+   * Sets the % output on the feeder wall.
+   *
+   * @param value The % output in [-1, 1].
+   */
+  public void setWallPercent(double value) {
+    io_.wall_demand = value;
   }
 
   public static class PeriodicIO {
+    // Inputs
+    boolean intake_sensor;
+    boolean exit_sensor;
+
     // Outputs
-    double demand;
+    double floor_demand;
+    double wall_demand;
   }
 
   public static class Constants {
-    //Motor Controllers
-    public static final int kFeederId = 12;
-    public static final int kBridgeId = 10;
+    // Motor Controllers
+    public static final int kFeederFloorId = 12;
+    public static final int kFeederWallId = 13;
 
-    //Sensors
+    // Sensors
     public static final int kIntakeSensorId = 0;
     public static final int kExitSensorId = 0;
+
+    // Current Limits
+    public static final int kCurrentLimit = 25;
+
+    // Thresholds
+    public static final double kIntakeSensorVThreshold = 1.25;
+    public static final double kExitSensorVThreshold = 1.25;
   }
 }
