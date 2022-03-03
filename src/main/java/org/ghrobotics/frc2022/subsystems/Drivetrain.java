@@ -1,5 +1,6 @@
 package org.ghrobotics.frc2022.subsystems;
 
+import com.ctre.phoenix.sensors.WPI_PigeonIMU;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxPIDController;
@@ -27,7 +28,7 @@ public class Drivetrain extends SubsystemBase {
   // Sensors
   private final RelativeEncoder left_encoder_;
   private final RelativeEncoder right_encoder_;
-//  private final WPI_PigeonIMU gyro_;
+  private final WPI_PigeonIMU gyro_;
 
   // Control
   private final SparkMaxPIDController left_pid_controller_;
@@ -96,7 +97,7 @@ public class Drivetrain extends SubsystemBase {
         2 * Math.PI * Constants.kWheelRadius / Constants.kGearRatio / 60);
 
     // Initialize gyro.
-//    gyro_ = new WPI_PigeonIMU(Constants.kPigeonIMUId);
+    gyro_ = new WPI_PigeonIMU(Constants.kPigeonIMUId);
 
     // Initialize PID controllers.
     left_pid_controller_ = left_leader_.getPIDController();
@@ -127,14 +128,14 @@ public class Drivetrain extends SubsystemBase {
     io_.r_position = right_encoder_.getPosition();
     io_.l_velocity = left_encoder_.getVelocity();
     io_.r_velocity = right_encoder_.getVelocity();
-//    io_.angle = gyro_.getRotation2d();
-//    io_.angular_rate = -Math.toRadians(gyro_.getRate());
+    io_.angle = gyro_.getRotation2d();
+    io_.angular_rate = -Math.toRadians(gyro_.getRate());
 
     // Update robot state with measurements.
+    double avg_velocity = (io_.l_velocity + io_.r_velocity) / 2;
     robot_state_.updateRobotPose(
-        io_.l_position, io_.r_position, io_.l_velocity, io_.r_velocity, io_.angle);
-    robot_state_.updateRobotSpeeds(
-        new ChassisSpeeds((io_.l_velocity + io_.r_velocity) / 2, 0, io_.angular_rate));
+        io_.l_position, io_.r_position, avg_velocity, io_.angle);
+    robot_state_.updateRobotSpeeds(new ChassisSpeeds(avg_velocity, 0, io_.angular_rate));
 
     // Write outputs.
     switch (output_type_) {

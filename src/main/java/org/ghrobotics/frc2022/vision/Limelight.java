@@ -1,6 +1,5 @@
 package org.ghrobotics.frc2022.vision;
 
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import java.util.Arrays;
@@ -24,15 +23,13 @@ public class Limelight {
   }
 
   // Horizontal offset to target.
-  public Rotation2d getTx() {
-    // We negate the angle because Limelight returns values that become more positive as we turn
-    // clockwise, which is contrary to math conventions.
-    return Rotation2d.fromDegrees(-io_.tx);
+  public double getTx() {
+    return io_.tx;
   }
 
   // Vertical offset to target.
-  public Rotation2d getTy() {
-    return Rotation2d.fromDegrees(io_.ty);
+  public double getTy() {
+    return io_.ty;
   }
 
   // Area of target.

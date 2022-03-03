@@ -5,14 +5,19 @@ import com.revrobotics.RelativeEncoder;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import org.ghrobotics.frc2022.RobotState;
 import static com.revrobotics.CANSparkMax.IdleMode;
 import static com.revrobotics.CANSparkMax.SoftLimitDirection;
 import static com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 public class Hood extends SubsystemBase {
+  // Robot State
+  private final RobotState robot_state_;
+
   // Motor Controllers
   private final CANSparkMax leader_;
 
@@ -32,8 +37,13 @@ public class Hood extends SubsystemBase {
    * Constructs an instance of the Hood subsystem. Only one instance of this subsystem should
    * be created in the main Robot class and references to this instance should be passed around
    * the robot code.
+   *
+   * @param robot_state Reference to the global robot state instance.
    */
-  public Hood() {
+  public Hood(RobotState robot_state) {
+    // Store reference to robot state.
+    robot_state_ = robot_state;
+
     // Initialize motor controller.
     leader_ = new CANSparkMax(Constants.kLeaderId, MotorType.kBrushless);
     leader_.restoreFactoryDefaults();
@@ -73,6 +83,9 @@ public class Hood extends SubsystemBase {
     // Read inputs.
     io_.position = encoder_.getPosition();
     io_.velocity = encoder_.getVelocity();
+
+    // Update robot state.
+    robot_state_.updateHoodAngle(new Rotation2d(io_.position));
 
     // Write outputs.
     switch (output_type_) {

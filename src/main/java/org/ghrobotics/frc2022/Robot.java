@@ -36,9 +36,9 @@ public class Robot extends TimedRobot {
 
   // Create subsystems.
   private final Drivetrain drivetrain_ = new Drivetrain(robot_state_);
-  private final Turret turret_ = new Turret();
+  private final Turret turret_ = new Turret(robot_state_);
   private final Shooter shooter_ = new Shooter();
-  private final Hood hood_ = new Hood();
+  private final Hood hood_ = new Hood(robot_state_);
   private final Intake intake_ = new Intake();
   private final Feeder feeder_ = new Feeder();
   private final Climber climber_ = new Climber();
