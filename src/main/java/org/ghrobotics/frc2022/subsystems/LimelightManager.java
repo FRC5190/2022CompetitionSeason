@@ -17,6 +17,11 @@ public class LimelightManager extends SubsystemBase {
   private final LinearFilter alive_filter_;
   private boolean is_alive_ = false;
 
+  /**
+   * Constructs an instance of the Limelight Manager subsystem. Only one instance of this
+   * subsystem should be created in the main Robot class and references to this instance should
+   * be passed around the robot code.
+   */
   public LimelightManager(RobotState robot_state) {
     // Store reference to robot state.
     robot_state_ = robot_state;
@@ -28,6 +33,10 @@ public class LimelightManager extends SubsystemBase {
     alive_filter_ = LinearFilter.movingAverage(Constants.kAliveFilterTaps);
   }
 
+  /**
+   * This method runs periodically every 20 ms. Here, Limelight values are read and vision data
+   * is sent to the robot state instance to be incorporated into the pose estimator.
+   */
   @Override
   public void periodic() {
     // Update Limelight values.
@@ -46,6 +55,15 @@ public class LimelightManager extends SubsystemBase {
       robot_state_.addVisionMeasurement(Timer.getFPGATimestamp() - limelight_.getLatency() / 1000.0,
           tx, ty);
     }
+  }
+
+  /**
+   * Returns whether the Limelight is alive.
+   *
+   * @return Whether the Limelight is alive.
+   */
+  public boolean isLimelightAlive() {
+    return is_alive_;
   }
 
   public static class Constants {

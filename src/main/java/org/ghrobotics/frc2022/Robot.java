@@ -21,6 +21,7 @@ import org.ghrobotics.frc2022.subsystems.Feeder;
 import org.ghrobotics.frc2022.subsystems.Hood;
 import org.ghrobotics.frc2022.subsystems.Intake;
 import org.ghrobotics.frc2022.subsystems.LED;
+import org.ghrobotics.frc2022.subsystems.LimelightManager;
 import org.ghrobotics.frc2022.subsystems.Shooter;
 import org.ghrobotics.frc2022.subsystems.Turret;
 
@@ -42,6 +43,7 @@ public class Robot extends TimedRobot {
   private final Intake intake_ = new Intake();
   private final Feeder feeder_ = new Feeder();
   private final Climber climber_ = new Climber();
+  private final LimelightManager limelight_manager_ = new LimelightManager(robot_state_);
   private final LED led_ = new LED();
 
   // Create autonomous mode selector.
@@ -175,7 +177,9 @@ public class Robot extends TimedRobot {
     if (climb_mode_)
       led_.setOutput(LED.StandardLEDOutput.CLIMBING);
 
-      // No Limelight (TODO)
+    // No Limelight
+    else if (!limelight_manager_.isLimelightAlive())
+      led_.setOutput(LED.StandardLEDOutput.NO_LIMELIGHT);
 
       // Robot Disabled
     else if (isDisabled())
