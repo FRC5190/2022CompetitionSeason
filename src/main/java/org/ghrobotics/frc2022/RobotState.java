@@ -146,7 +146,7 @@ public class RobotState {
 
     // Calculate turret to camera transform.
     Transform2d turret_to_camera = new Transform2d(
-        new Translation2d(turret_to_camera_x, 0), new Rotation2d());
+        new Translation2d(-turret_to_camera_x, 0), new Rotation2d());
 
     // Calculate robot to turret transform.
     Transform2d robot_to_turret = new Transform2d(
