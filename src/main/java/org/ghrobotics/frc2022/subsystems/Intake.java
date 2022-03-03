@@ -9,7 +9,9 @@ import static com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 public class Intake extends SubsystemBase {
   // Motor Controllers
-  private final CANSparkMax leader_;
+  private final CANSparkMax intake_leader_;
+  private final CANSparkMax bridge_leader_;
+  private final CANSparkMax bridge_follower_;
 
   // Pneumatics
   private final Solenoid pivot_;
@@ -23,12 +25,27 @@ public class Intake extends SubsystemBase {
    * the robot code.
    */
   public Intake() {
-    // Initialize motor controller.
-    leader_ = new CANSparkMax(Constants.kLeaderId, MotorType.kBrushless);
-    leader_.restoreFactoryDefaults();
-    leader_.setIdleMode(IdleMode.kBrake);
-    leader_.enableVoltageCompensation(12);
-    leader_.setInverted(false);
+    // Initialize motor controllers.
+    intake_leader_ = new CANSparkMax(Constants.kIntakeLeaderId, MotorType.kBrushless);
+    intake_leader_.restoreFactoryDefaults();
+    intake_leader_.setIdleMode(IdleMode.kBrake);
+    intake_leader_.enableVoltageCompensation(12);
+    intake_leader_.setSmartCurrentLimit(Constants.kIntakeCurrentLimit);
+    intake_leader_.setInverted(false);
+
+    bridge_leader_ = new CANSparkMax(Constants.kBridgeLeaderId, MotorType.kBrushless);
+    bridge_leader_.restoreFactoryDefaults();
+    bridge_leader_.setIdleMode(IdleMode.kBrake);
+    bridge_leader_.enableVoltageCompensation(12);
+    bridge_leader_.setSmartCurrentLimit(Constants.kBridgeCurrentLimit);
+    bridge_leader_.setInverted(false);
+
+    bridge_follower_ = new CANSparkMax(Constants.kBridgeFollowerId, MotorType.kBrushless);
+    bridge_follower_.restoreFactoryDefaults();
+    bridge_follower_.setIdleMode(IdleMode.kBrake);
+    bridge_follower_.enableVoltageCompensation(12);
+    bridge_follower_.setSmartCurrentLimit(Constants.kBridgeCurrentLimit);
+    bridge_follower_.follow(bridge_leader_, true);
 
     // Initialize pneumatics.
     pivot_ = new Solenoid(PneumaticsModuleType.REVPH, Constants.kPivotId);
@@ -45,7 +62,8 @@ public class Intake extends SubsystemBase {
       pivot_.set(io_.pivot_value);
     }
 
-    leader_.set(io_.demand);
+    intake_leader_.set(io_.demand);
+    bridge_leader_.set(io_.demand);
   }
 
   /**
@@ -76,9 +94,15 @@ public class Intake extends SubsystemBase {
 
   public static class Constants {
     // Motor Controllers
-    public static final int kLeaderId = 9;
+    public static final int kIntakeLeaderId = 9;
+    public static final int kBridgeLeaderId = 10;
+    public static final int kBridgeFollowerId = 11;
 
     // Pneumatics
     public static final int kPivotId = 0;
+
+    // Current Limits
+    public static final int kIntakeCurrentLimit = 30;
+    public static final int kBridgeCurrentLimit = 20;
   }
 }
