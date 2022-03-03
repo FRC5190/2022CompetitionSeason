@@ -129,13 +129,6 @@ public class Climber extends SubsystemBase {
 //    if (io_.r_rev_limit_switch)
 //      right_leader_.setSelectedSensorPosition(0);
 
-    // Telemetry (temporary)
-    // TODO: move to dedicated telemetry.
-    SmartDashboard.putNumber("L Position", io_.l_position);
-    SmartDashboard.putNumber("R Position", io_.r_position);
-    SmartDashboard.putNumber("L Current Draw", io_.l_supply_current);
-    SmartDashboard.putNumber("R Current Draw", io_.r_supply_current);
-
     // Set motor outputs.
     switch (left_output_type_) {
       case PERCENT:

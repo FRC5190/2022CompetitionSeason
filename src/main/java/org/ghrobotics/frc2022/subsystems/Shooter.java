@@ -53,8 +53,8 @@ public class Shooter extends SubsystemBase {
     encoder_ = new CANCoder(Constants.kEncoderId);
     encoder_.configFactoryDefault();
     encoder_.configFeedbackCoefficient(
-        2 * Math.PI / Constants.kGearRatio / Constants.kEncoderResolution, "rad",
-        SensorTimeBase.PerSecond);
+        2 * Math.PI / Constants.kGearRatio / Constants.kGearRatioAdjustment / Constants.kEncoderResolution,
+        "rad", SensorTimeBase.PerSecond);
     encoder_.configVelocityMeasurementPeriod(SensorVelocityMeasPeriod.Period_2Ms);
     encoder_.configVelocityMeasurementWindow(4);
 
@@ -152,6 +152,7 @@ public class Shooter extends SubsystemBase {
 
     // Hardware
     public static final double kGearRatio = 0.5;
+    public static final double kGearRatioAdjustment = 18.0 / 30.0; // shooter -> encoder gearing
     public static final double kEncoderResolution = 4096;
 
     // Control

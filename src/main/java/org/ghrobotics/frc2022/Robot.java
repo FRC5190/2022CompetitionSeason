@@ -8,7 +8,8 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import org.ghrobotics.frc2022.commands.ClimbAutomatic;
@@ -16,6 +17,11 @@ import org.ghrobotics.frc2022.commands.ClimbTeleop;
 import org.ghrobotics.frc2022.commands.DriveTeleop;
 import org.ghrobotics.frc2022.subsystems.Climber;
 import org.ghrobotics.frc2022.subsystems.Drivetrain;
+import org.ghrobotics.frc2022.subsystems.Hood;
+import org.ghrobotics.frc2022.subsystems.Intake;
+import org.ghrobotics.frc2022.subsystems.LED;
+import org.ghrobotics.frc2022.subsystems.Shooter;
+import org.ghrobotics.frc2022.subsystems.Turret;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -29,7 +35,15 @@ public class Robot extends TimedRobot {
 
   // Create subsystems.
   private final Drivetrain drivetrain_ = new Drivetrain(robot_state_);
+  private final Turret turret_ = new Turret();
+  private final Shooter shooter_ = new Shooter();
+  private final Hood hood_ = new Hood();
+  private final Intake intake_ = new Intake();
   private final Climber climber_ = new Climber();
+  private final LED led_ = new LED();
+
+  // Create autonomous mode selector.
+  private SendableChooser<Command> auto_selector_ = new SendableChooser<>();
 
   // Create Xbox controller for driver.
   private final XboxController driver_controller_ = new XboxController(0);
@@ -39,6 +53,11 @@ public class Robot extends TimedRobot {
 
   // Keeps track of whether we need to clear buttons.
   private boolean clear_buttons_ = false;
+
+  // Create telemetry.
+  private final Telemetry telemetry_ = new Telemetry(
+      robot_state_, drivetrain_, turret_, shooter_, hood_, intake_, climber_, auto_selector_,
+      () -> climb_mode_);
 
   @Override
   public void robotInit() {
@@ -86,9 +105,6 @@ public class Robot extends TimedRobot {
     // Run command scheduler.
     CommandScheduler.getInstance().run();
 
-    // Send climb status to SmartDashboard.
-    SmartDashboard.putBoolean("Climb Mode", climb_mode_);
-
     // Check if we need to clear buttons.
     if (clear_buttons_) {
       CommandScheduler.getInstance().clearButtons();
@@ -101,6 +117,9 @@ public class Robot extends TimedRobot {
       // Set flag to false.
       clear_buttons_ = false;
     }
+
+    // Update LEDs.
+    updateLEDs();
   }
 
   @Override
@@ -143,5 +162,29 @@ public class Robot extends TimedRobot {
     // Toggle automatic climb with Start button.
     new JoystickButton(driver_controller_, XboxController.Button.kStart.value)
         .toggleWhenPressed(new ClimbAutomatic(climber_, driver_controller_::getAButton));
+  }
+
+  /**
+   * Updates the status of the LEDs periodically based on the various states of the robot (e.g.
+   * climb mode, scoring, ball in intake).
+   */
+  private void updateLEDs() {
+    // Climb Mode
+    if (climb_mode_)
+      led_.setOutput(LED.StandardLEDOutput.CLIMBING);
+
+      // No Limelight (TODO)
+
+      // Robot Disabled
+    else if (isDisabled())
+      led_.setOutput(LED.OutputType.RAINBOW);
+
+      // Manual Scoring (TODO)
+
+      // Automatic Scoring (TODO)
+
+      // Other Cases
+    else
+      led_.setOutput(LED.StandardLEDOutput.BLANK);
   }
 }

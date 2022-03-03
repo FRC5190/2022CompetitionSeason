@@ -13,7 +13,7 @@ This document details all of the hardware (motors, motor controllers, sensors, e
 | 5   | Turret        | NEO        | SPARK MAX        | ?        |
 | 6   | Shooter L     | NEO        | SPARK MAX        | ?        |
 | 7   | Shooter F     | NEO        | SPARK MAX        | ?        |
-| 8   | Hood          | NEO 550    | SPARK MAX        | ?        |
+| 8   | Hood          | NEO        | SPARK MAX        | ?        |
 | 9   | Intake        | NEO        | SPARK MAX        | ?        |
 | 10  | Bridge L      | NEO 550    | SPARK MAX        | ?        |
 | 11  | Bridge F      | NEO 550    | SPARK MAX        | ?        |
@@ -26,9 +26,9 @@ This document details all of the hardware (motors, motor controllers, sensors, e
 
 ## Pneumatics
 
-| Solenoid ID(s) |      Mechanism      |
-| -------------- | ------------------- |
-| 0              | Intake Pivot        |
-| 1              | Inner Climber Brake |
-| 2, 3           | Inner Climber Pivot |
-| 4, 5           | Outer Climber Pivot |
+| Solenoid ID(s) |    Mechanism    |
+| -------------- | --------------- |
+| 0              | Intake Pivot    |
+| 1              | Climber Brake   |
+| 2              | L Climber Pivot |
+| 3              | R Climber Pivot |
