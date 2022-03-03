@@ -17,6 +17,7 @@ import org.ghrobotics.frc2022.commands.ClimbTeleop;
 import org.ghrobotics.frc2022.commands.DriveTeleop;
 import org.ghrobotics.frc2022.subsystems.Climber;
 import org.ghrobotics.frc2022.subsystems.Drivetrain;
+import org.ghrobotics.frc2022.subsystems.Feeder;
 import org.ghrobotics.frc2022.subsystems.Hood;
 import org.ghrobotics.frc2022.subsystems.Intake;
 import org.ghrobotics.frc2022.subsystems.LED;
@@ -39,6 +40,7 @@ public class Robot extends TimedRobot {
   private final Shooter shooter_ = new Shooter();
   private final Hood hood_ = new Hood();
   private final Intake intake_ = new Intake();
+  private final Feeder feeder_ = new Feeder();
   private final Climber climber_ = new Climber();
   private final LED led_ = new LED();
 
@@ -56,8 +58,8 @@ public class Robot extends TimedRobot {
 
   // Create telemetry.
   private final Telemetry telemetry_ = new Telemetry(
-      robot_state_, drivetrain_, turret_, shooter_, hood_, intake_, climber_, auto_selector_,
-      () -> climb_mode_);
+      robot_state_, drivetrain_, turret_, shooter_, hood_, intake_, feeder_, climber_,
+      auto_selector_, () -> climb_mode_);
 
   @Override
   public void robotInit() {

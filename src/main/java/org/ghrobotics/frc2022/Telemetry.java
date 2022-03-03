@@ -10,6 +10,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import java.util.function.BooleanSupplier;
 import org.ghrobotics.frc2022.subsystems.Climber;
 import org.ghrobotics.frc2022.subsystems.Drivetrain;
+import org.ghrobotics.frc2022.subsystems.Feeder;
 import org.ghrobotics.frc2022.subsystems.Hood;
 import org.ghrobotics.frc2022.subsystems.Intake;
 import org.ghrobotics.frc2022.subsystems.Shooter;
@@ -28,6 +29,7 @@ public class Telemetry {
   private final Shooter shooter_;
   private final Hood hood_;
   private final Intake intake_;
+  private final Feeder feeder_;
   private final Climber climber_;
 
   // Sendable Chooser
@@ -46,12 +48,13 @@ public class Telemetry {
    * @param shooter       Reference to shooter subsystem.
    * @param hood          Reference to hood subsystem.
    * @param intake        Reference to intake subsystem.
+   * @param feeder        Reference to feeder subsystem.
    * @param climber       Reference to climber subsystem.
    * @param auto_selector Reference to autonomous mode selector.
-   * @param Supplier      for climb mode.
+   * @param climb_mode    Supplier for climb mode.
    */
   public Telemetry(RobotState robot_state, Drivetrain drivetrain, Turret turret, Shooter shooter,
-                   Hood hood, Intake intake, Climber climber,
+                   Hood hood, Intake intake, Feeder feeder, Climber climber,
                    SendableChooser<Command> auto_selector, BooleanSupplier climb_mode) {
     // Create Shuffleboard tab to show all robot information.
     tab_ = Shuffleboard.getTab("Apex");
@@ -65,6 +68,7 @@ public class Telemetry {
     shooter_ = shooter;
     hood_ = hood;
     intake_ = intake;
+    feeder_ = feeder;
     climber_ = climber;
 
     // Assign auto selector.
