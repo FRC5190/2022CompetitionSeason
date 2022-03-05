@@ -178,7 +178,7 @@ public class Robot extends TimedRobot {
         .whenPressed(() -> {
           climb_mode_ = true;
           clear_buttons_ = true;
-          new RunCommand(() -> turret_.setGoal(Math.PI / 2, 0), turret_).schedule();
+          new RunCommand(() -> turret_.setGoal(Math.toRadians(90), 0), turret_).schedule();
         });
 
     // Intake with Left Trigger.

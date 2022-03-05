@@ -127,8 +127,14 @@ public class Superstructure {
               double turret_pos = turret_setpoints[0];
               double turret_vel = turret_setpoints[1];
 
-              // Calculate distance to goal.
-              double distance = robot_pose.getTranslation().getDistance(goal.getTranslation());
+              // Calculate translation to goal.
+              Translation2d robot_to_goal
+                  = goal.getTranslation().minus(robot_pose.getTranslation());
+
+              // Calculate distance and angle to goal.
+              double distance = robot_to_goal.getNorm();
+              double angle = Math.atan2(robot_to_goal.getY(), robot_to_goal.getX()) -
+                  robot_pose.getRotation().getRadians();
 
               // Obtain shooter speed and hood angle setpoints from the lookup table.
               double shooter_speed = high_goal ? HighGoalLUT.getShooterSpeed(distance) :
@@ -144,7 +150,22 @@ public class Superstructure {
               double t = distance / ball_xy;
 
               // Calculate new distance to goal, assuming same time of flight.
-              // TODO: Finish Math
+              double adjusted_distance = Math.sqrt(
+                  Math.pow(distance, 2) + Math.pow(robot_speeds.vxMetersPerSecond, 2) -
+                      2 * distance * robot_speeds.vxMetersPerSecond * t * Math.cos(angle));
+
+              // Calculate turret angle adjustment.
+              turret_pos += Math.asin(robot_speeds.vxMetersPerSecond * t *
+                  Math.sin(angle) / adjusted_distance);
+
+              // Use adjusted distance to calculate new shooter speed.
+              shooter_speed = (adjusted_distance / t) / Math.sin(hood_angle) /
+                  Shooter.Constants.kWheelRadius * 2.0;
+
+              // Send setpoints to subsystems.
+              turret_.setGoal(turret_pos, turret_vel);
+              shooter_.setVelocity(shooter_speed);
+              hood_.setPosition(hood_angle);
             }),
             new FeederScore(feeder_, shooter_::atGoal))
     );
