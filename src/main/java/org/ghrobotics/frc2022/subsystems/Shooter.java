@@ -7,6 +7,7 @@ import com.revrobotics.CANSparkMax;
 import edu.wpi.first.math.controller.BangBangController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import static com.revrobotics.CANSparkMax.IdleMode;
 import static com.revrobotics.CANSparkMax.MotorType;
@@ -40,7 +41,7 @@ public class Shooter extends SubsystemBase {
     leader_.setIdleMode(IdleMode.kCoast);
     leader_.enableVoltageCompensation(12);
     leader_.setSmartCurrentLimit(Constants.kCurrentLimit);
-    leader_.setInverted(false);
+    leader_.setInverted(true);
 
     follower_ = new CANSparkMax(Constants.kFollowerId, MotorType.kBrushless);
     follower_.restoreFactoryDefaults();
@@ -53,8 +54,9 @@ public class Shooter extends SubsystemBase {
     encoder_ = new CANCoder(Constants.kEncoderId);
     encoder_.configFactoryDefault();
     encoder_.configFeedbackCoefficient(
-        2 * Math.PI / Constants.kGearRatio / Constants.kGearRatioAdjustment / Constants.kEncoderResolution,
+        2 * Math.PI / Constants.kGearRatio / Constants.kEncoderResolution,
         "rad", SensorTimeBase.PerSecond);
+    encoder_.configSensorDirection(true);
     encoder_.configVelocityMeasurementPeriod(SensorVelocityMeasPeriod.Period_2Ms);
     encoder_.configVelocityMeasurementWindow(4);
 
@@ -84,15 +86,19 @@ public class Shooter extends SubsystemBase {
         // Calculate motor controller voltage from feedback and feedforward.
         double feedback = bang_bang_controller_.calculate(io_.velocity);
         double setpoint = bang_bang_controller_.getSetpoint();
-        double feedforward = feedforward_.calculate(io_.velocity,
+        double feedforward = feedforward_.calculate(setpoint,
             (setpoint - last_velocity_setpoint_) / 0.02);
 
         // Store last velocity setpoint.
         last_velocity_setpoint_ = setpoint;
 
+        SmartDashboard.putNumber("Applied Output", leader_.getAppliedOutput());
+        SmartDashboard.putNumber("Controller Output", feedback);
+        SmartDashboard.putNumber("Current", follower_.getOutputCurrent());
+
         // We multiply by 0.9 to avoid overshoot. Divide by 12 to change voltage to percent.
         // See: https://docs.wpilib.org/en/stable/docs/software/advanced-controls/controllers/bang-bang.html#combining-bang-bang-control-with-feedforward
-        leader_.setVoltage(feedback * 12 + 0.9 * feedforward);
+        leader_.set(feedback + 0.9 / 12 * feedforward);
         break;
     }
   }
@@ -116,6 +122,15 @@ public class Shooter extends SubsystemBase {
   public void setVelocity(double value) {
     output_type_ = OutputType.VELOCITY;
     bang_bang_controller_.setSetpoint(value);
+  }
+
+  /**
+   * Returns whether the shooter is at the goal (velocity setpoint).
+   *
+   * @return Whether the shooter is at the goal (velocity setpoint).
+   */
+  public boolean atGoal() {
+    return bang_bang_controller_.atSetpoint();
   }
 
   /**
@@ -151,14 +166,14 @@ public class Shooter extends SubsystemBase {
     public static final int kCurrentLimit = 40;
 
     // Hardware
-    public static final double kGearRatio = 0.5;
-    public static final double kGearRatioAdjustment = 18.0 / 30.0; // shooter -> encoder gearing
+    public static final double kGearRatio = 30.0 / 18.0;
     public static final double kEncoderResolution = 4096;
+    public static final double kWheelRadius = 0.0508;
 
     // Control
-    public static final double kS = 0.0;
-    public static final double kV = 0.0;
-    public static final double kA = 0.0;
+    public static final double kS = 0.64101;
+    public static final double kV = 0.013676;
+    public static final double kA = 0.0029748;
     public static final double kErrorTolerance = Units.rotationsPerMinuteToRadiansPerSecond(50);
   }
 }

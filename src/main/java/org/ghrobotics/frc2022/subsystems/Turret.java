@@ -70,6 +70,7 @@ public class Turret extends SubsystemBase {
     // Initialize PID controller.
     pid_controller_ = new ProfiledPIDController(Constants.kP, 0, 0,
         new TrapezoidProfile.Constraints(Constants.kMaxVelocity, Constants.kMaxAcceleration));
+    pid_controller_.reset(encoder_.getAbsolutePosition());
 
     // Initialize feedforward.
     feedforward_ = new SimpleMotorFeedforward(Constants.kS, Constants.kV, Constants.kA);
@@ -82,7 +83,7 @@ public class Turret extends SubsystemBase {
   @Override
   public void periodic() {
     // Read inputs.
-    io_.position = encoder_.getPosition();
+    io_.position = encoder_.getAbsolutePosition();
     io_.velocity = encoder_.getVelocity();
 
     // Update robot state.
@@ -108,6 +109,14 @@ public class Turret extends SubsystemBase {
         leader_.setVoltage(feedback + feedforward);
         break;
     }
+  }
+
+  /**
+   * Sets the idle mode on the turret.
+   * @param mode The desired idle mode.
+   */
+  public void setIdleMode(IdleMode mode) {
+    leader_.setIdleMode(mode);
   }
 
   /**
@@ -191,15 +200,15 @@ public class Turret extends SubsystemBase {
     // Hardware
     public static final double kMinAngle = 0;
     public static final double kMaxAngle = 2 * Math.PI;
-    public static final double kEncoderMagnetOffset = 0;
+    public static final double kEncoderMagnetOffset = 344;
     public static final double kEncoderResolution = 4096;
 
     // Control
-    public static final double kS = 0.0;
-    public static final double kV = 0.0;
-    public static final double kA = 0.0;
-    public static final double kP = 0.0;
-    public static final double kMaxVelocity = 4 * Math.PI;
-    public static final double kMaxAcceleration = 4 * Math.PI;
+    public static final double kS = 0.37308;
+    public static final double kV = 1.2801;
+    public static final double kA = 0.069845;
+    public static final double kP = 2.54;
+    public static final double kMaxVelocity = 2 * Math.PI;
+    public static final double kMaxAcceleration = 3 * Math.PI;
   }
 }

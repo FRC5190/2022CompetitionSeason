@@ -1,8 +1,8 @@
 package org.ghrobotics.frc2022.subsystems;
 
 import com.revrobotics.CANSparkMax;
+import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
-import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import static com.revrobotics.CANSparkMax.IdleMode;
 import static com.revrobotics.CANSparkMaxLowLevel.MotorType;
@@ -14,7 +14,7 @@ public class Intake extends SubsystemBase {
   private final CANSparkMax bridge_follower_;
 
   // Pneumatics
-  private final Solenoid pivot_;
+  private final DoubleSolenoid pivot_;
 
   // IO
   private final PeriodicIO io_ = new PeriodicIO();
@@ -28,38 +28,40 @@ public class Intake extends SubsystemBase {
     // Initialize motor controllers.
     intake_leader_ = new CANSparkMax(Constants.kIntakeLeaderId, MotorType.kBrushless);
     intake_leader_.restoreFactoryDefaults();
-    intake_leader_.setIdleMode(IdleMode.kBrake);
+    intake_leader_.setIdleMode(IdleMode.kCoast);
     intake_leader_.enableVoltageCompensation(12);
     intake_leader_.setSmartCurrentLimit(Constants.kIntakeCurrentLimit);
-    intake_leader_.setInverted(false);
+    intake_leader_.setInverted(true);
 
     bridge_leader_ = new CANSparkMax(Constants.kBridgeLeaderId, MotorType.kBrushless);
     bridge_leader_.restoreFactoryDefaults();
-    bridge_leader_.setIdleMode(IdleMode.kBrake);
+    bridge_leader_.setIdleMode(IdleMode.kCoast);
     bridge_leader_.enableVoltageCompensation(12);
     bridge_leader_.setSmartCurrentLimit(Constants.kBridgeCurrentLimit);
     bridge_leader_.setInverted(false);
 
     bridge_follower_ = new CANSparkMax(Constants.kBridgeFollowerId, MotorType.kBrushless);
     bridge_follower_.restoreFactoryDefaults();
-    bridge_follower_.setIdleMode(IdleMode.kBrake);
+    bridge_follower_.setIdleMode(IdleMode.kCoast);
     bridge_follower_.enableVoltageCompensation(12);
     bridge_follower_.setSmartCurrentLimit(Constants.kBridgeCurrentLimit);
     bridge_follower_.follow(bridge_leader_, true);
 
     // Initialize pneumatics.
-    pivot_ = new Solenoid(PneumaticsModuleType.REVPH, Constants.kPivotId);
+    pivot_ = new DoubleSolenoid(PneumaticsModuleType.REVPH, Constants.kPivotForwardId,
+        Constants.kPivotReverseId);
   }
 
   /**
    * This method runs periodically every 20 ms. Here, all sensor values are read and all motor
    * outputs should be set.
    */
+  @Override
   public void periodic() {
     // Write outputs.
     if (io_.wants_pneumatics_update) {
       io_.wants_pneumatics_update = false;
-      pivot_.set(io_.pivot_value);
+      pivot_.set(io_.pivot_value ? DoubleSolenoid.Value.kForward : DoubleSolenoid.Value.kReverse);
     }
 
     intake_leader_.set(io_.demand);
@@ -88,7 +90,7 @@ public class Intake extends SubsystemBase {
   public static class PeriodicIO {
     // Outputs
     double demand;
-    boolean pivot_value;
+    boolean pivot_value = true;
     boolean wants_pneumatics_update;
   }
 
@@ -99,10 +101,11 @@ public class Intake extends SubsystemBase {
     public static final int kBridgeFollowerId = 11;
 
     // Pneumatics
-    public static final int kPivotId = 0;
+    public static final int kPivotForwardId = 4;
+    public static final int kPivotReverseId = 5;
 
     // Current Limits
-    public static final int kIntakeCurrentLimit = 30;
+    public static final int kIntakeCurrentLimit = 80;
     public static final int kBridgeCurrentLimit = 20;
   }
 }

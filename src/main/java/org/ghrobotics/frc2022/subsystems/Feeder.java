@@ -37,7 +37,7 @@ public class Feeder extends SubsystemBase {
     feeder_wall_.setIdleMode(IdleMode.kBrake);
     feeder_wall_.enableVoltageCompensation(12);
     feeder_wall_.setSmartCurrentLimit(Constants.kCurrentLimit);
-    feeder_wall_.setInverted(false);
+    feeder_wall_.setInverted(true);
 
     // Initialize sensors.
     intake_sensor_ = new AnalogInput(Constants.kIntakeSensorId);
@@ -70,6 +70,24 @@ public class Feeder extends SubsystemBase {
    */
   public void setWallPercent(double value) {
     io_.wall_demand = value;
+  }
+
+  /**
+   * Returns the state of the intake photoelectric sensor.
+   *
+   * @return The state of the intake photoelectric sensor; true if triggered.
+   */
+  public boolean getIntakeSensor() {
+    return io_.intake_sensor;
+  }
+
+  /**
+   * Returns the state of the exit photoelectric sensor.
+   *
+   * @return The state of the exit photoelectric sensor; true if triggered.
+   */
+  public boolean getExitSensor() {
+    return io_.exit_sensor;
   }
 
   public static class PeriodicIO {

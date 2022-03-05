@@ -143,7 +143,7 @@ public class LED extends SubsystemBase {
   }
 
   public static class Constants {
-    public static final int kPortId = 2;
-    public static final int kBufferSize = 60;
+    public static final int kPortId = 0;
+    public static final int kBufferSize = 24;
   }
 }

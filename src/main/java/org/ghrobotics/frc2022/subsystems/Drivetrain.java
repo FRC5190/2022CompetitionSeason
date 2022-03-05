@@ -286,13 +286,13 @@ public class Drivetrain extends SubsystemBase {
     public static double kTrackWidth = 0.759;
 
     // Control
-    public static double kLeftKs = 0;
-    public static double kLeftKv = 0;
-    public static double kLeftKa = 0;
-    public static double kLeftKp = 0;
-    public static double kRightKs = 0;
-    public static double kRightKv = 0;
-    public static double kRightKa = 0;
-    public static double kRightKp = 0;
+    public static double kLeftKs = 0.25438;
+    public static double kLeftKv = 2.404;
+    public static double kLeftKa = 0.17931;
+    public static double kLeftKp = 0.00010892;
+    public static double kRightKs = 0.23742;
+    public static double kRightKv = 2.3732;
+    public static double kRightKa = 0.14528;
+    public static double kRightKp = 0.00010892;
   }
 }
