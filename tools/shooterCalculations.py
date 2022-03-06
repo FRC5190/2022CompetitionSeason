@@ -5,7 +5,6 @@ pulleyRatio = 1.0
 flyWheelDia = 4.0           # in
 launchHeight = 42.0         # in
 goalHeight = 8 * 12 + 9     # in
-linearSpeedConversion = 0.5
 trajectories = []
 
 measuredTerminalVelocity = 66.7  # ft/s
@@ -34,7 +33,7 @@ def distance2(t, d):
 def trajectory(motorSpeed, launchAngle):
     wheelCircumference = math.pi * flyWheelDia
     shooterShaftSpeed = motorSpeed / transmissionRatio / pulleyRatio  # rpm
-    linearLaunchSpeed = shooterShaftSpeed * wheelCircumference / 12 / 60 * linearSpeedConversion  # ft/s
+    linearLaunchSpeed = shooterShaftSpeed * wheelCircumference / 12 / 60  # ft/s
     launchSpeed = linearLaunchSpeed * 12 * 2.54 / 100  # m/s
 
     launchAngleRad = launchAngle * math.pi / 180  # rad
@@ -115,7 +114,6 @@ while d <= 8.0:
         (t['dg'] - 2*(t['dg'] - t['dc']) < d - 0.75) and t['ag'] < -0.5, updatedTrajectories))
     sortedTrajectories = sorted(filteredTrajectories, key = lambda t: t['d1'])
     if len(sortedTrajectories) > 0:
-        print("%.2f,%4d,%.2f,%2d" %(d, sortedTrajectories[0]['motorSpeed'],
-            sortedTrajectories[0]['motorSpeed'] / 60 * 2 * math.pi, sortedTrajectories[0]['launchAngle']))
+        print("%.2f,%4d,%2d" %(d, sortedTrajectories[0]['motorSpeed'], sortedTrajectories[0]['launchAngle']))
 
     d += 0.1
