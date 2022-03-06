@@ -114,6 +114,7 @@ public class LED extends SubsystemBase {
 
     // Climb Indicators:
     CLIMBING(Color.kOrange, 0.75, 0.75),
+    CLIMB_RESETTING(Color.kOrange, 0.25, 0.25),
 
     // Limelight Indicators:
     NO_LIMELIGHT(Color.kRed, 0.5, 0.5),

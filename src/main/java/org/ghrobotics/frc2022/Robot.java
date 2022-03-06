@@ -14,7 +14,9 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.Button;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import org.ghrobotics.frc2022.auto.RTarmacFenderHG5Ball;
 import org.ghrobotics.frc2022.commands.ClimbAutomatic;
+import org.ghrobotics.frc2022.commands.ClimbReset;
 import org.ghrobotics.frc2022.commands.ClimbTeleop;
 import org.ghrobotics.frc2022.commands.DriveTeleop;
 import org.ghrobotics.frc2022.subsystems.Climber;
@@ -67,7 +69,8 @@ public class Robot extends TimedRobot {
   // Create Xbox controller for driver.
   private final XboxController driver_controller_ = new XboxController(0);
 
-  // Keeps track of whether we are in climb mode.
+  // Keeps track of whether we are in climb mode / climb reset.
+  private final Command climb_reset_cmd_ = new ClimbReset(climber_);
   private boolean climb_mode_ = false;
 
   // Keeps track of whether we need to clear buttons.
@@ -88,6 +91,9 @@ public class Robot extends TimedRobot {
 
     // Reset robot state.
     robot_state_.resetPosition(new Pose2d());
+
+    // Setup auto.
+    setupAuto();
 
     // Set default commands for subsystems:
     setDefaultCommands();
@@ -117,6 +123,9 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopInit() {
+    // Temporarily disable soft limits.
+    climber_.enableSoftLimits(false);
+
     // Set brake mode on turret and drivetrain.
     drivetrain_.setIdleMode(IdleMode.kBrake);
     turret_.setIdleMode(IdleMode.kBrake);
@@ -149,6 +158,14 @@ public class Robot extends TimedRobot {
   }
 
   /**
+   * Creates auto modes and adds them to the selector.
+   */
+  private void setupAuto() {
+    auto_selector_.addOption("Right Tarmac Fender High Goal 5 Ball",
+        new RTarmacFenderHG5Ball(robot_state_, drivetrain_, superstructure_));
+  }
+
+  /**
    * Sets default commands for each subsystem.
    */
   private void setDefaultCommands() {
@@ -156,13 +173,13 @@ public class Robot extends TimedRobot {
     drivetrain_.setDefaultCommand(new DriveTeleop(drivetrain_, driver_controller_));
 
     // Turret:
-    turret_.setDefaultCommand(superstructure_.trackGoalWithTurret());
+    turret_.setDefaultCommand(new RunCommand(() -> turret_.setGoal(Math.PI, 0), turret_));
 
     // Shooter:
-    shooter_.setDefaultCommand(new RunCommand(() -> shooter_.setVelocity(0), shooter_));
+    shooter_.setDefaultCommand(new RunCommand(() -> shooter_.setPercent(0), shooter_));
 
     // Hood:
-    hood_.setDefaultCommand(new RunCommand(() -> hood_.setPosition(0), hood_));
+    hood_.setDefaultCommand(new RunCommand(() -> hood_.setPercent(0), hood_));
 
     // Climber:
     climber_.setDefaultCommand(new ClimbTeleop(climber_, driver_controller_, () -> climb_mode_));
@@ -211,6 +228,10 @@ public class Robot extends TimedRobot {
           turret_.getDefaultCommand().schedule();
         });
 
+    // Reset climber when Back is pressed.
+    new JoystickButton(driver_controller_, XboxController.Button.kBack.value)
+        .whenHeld(climb_reset_cmd_);
+
     // Toggle automatic climb with Start button.
     new JoystickButton(driver_controller_, XboxController.Button.kStart.value)
         .toggleWhenPressed(new ClimbAutomatic(climber_, driver_controller_::getAButton));
@@ -222,7 +243,10 @@ public class Robot extends TimedRobot {
    */
   private void updateLEDs() {
     // Climb Mode
-    if (climb_mode_)
+    if (climb_reset_cmd_.isScheduled())
+      led_.setOutput(LED.StandardLEDOutput.CLIMB_RESETTING);
+
+    else if (climb_mode_)
       led_.setOutput(LED.StandardLEDOutput.CLIMBING);
 
       // No Limelight

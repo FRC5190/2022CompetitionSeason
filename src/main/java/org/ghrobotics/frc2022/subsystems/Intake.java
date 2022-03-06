@@ -61,7 +61,7 @@ public class Intake extends SubsystemBase {
     // Write outputs.
     if (io_.wants_pneumatics_update) {
       io_.wants_pneumatics_update = false;
-      pivot_.set(io_.pivot_value ? DoubleSolenoid.Value.kForward : DoubleSolenoid.Value.kReverse);
+      pivot_.set(io_.pivot_value ? DoubleSolenoid.Value.kReverse : DoubleSolenoid.Value.kForward);
     }
 
     intake_leader_.set(io_.demand);

@@ -40,14 +40,18 @@ public class ClimbTeleop extends CommandBase {
 
   @Override
   public void execute() {
-    // If we are not in climb mode, don't do anything.
-    if (!climb_mode_.getAsBoolean())
+    // If we are not in climb mode, just set the pivots and exit.
+    if (!climb_mode_.getAsBoolean()) {
+      climber_.setLeftPercent(0);
+      climber_.setRightPercent(0);
+      climber_.setPivot(true, true);
       return;
+    }
 
     // Use left trigger to move climber down and left bumper to move climber up.
     if (Math.abs(controller_.getLeftTriggerAxis()) > 0.1 || controller_.getLeftBumper()) {
       climber_.setLeftPercent(
-          controller_.getLeftBumper() ? 0.2 : -controller_.getLeftTriggerAxis() * 0.4);
+          controller_.getLeftBumper() ? 0.4 : -controller_.getLeftTriggerAxis());
 
       // In manual control, so we don't have a position setpoint to hold the arm in place.
       if (left_arm_setpoint_set_)
@@ -63,7 +67,7 @@ public class ClimbTeleop extends CommandBase {
     // Use right trigger to move climber down and right bumper to move climber up.
     if (Math.abs(controller_.getRightTriggerAxis()) > 0.1 || controller_.getRightBumper()) {
       climber_.setRightPercent(
-          controller_.getRightBumper() ? 0.2 : -controller_.getRightTriggerAxis() * 0.4);
+          controller_.getRightBumper() ? 0.4 : -controller_.getRightTriggerAxis());
 
       // In manual control, so we don't have a position setpoint to hold the arm in place.
       if (right_arm_setpoint_set_)

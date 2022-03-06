@@ -92,10 +92,6 @@ public class Shooter extends SubsystemBase {
         // Store last velocity setpoint.
         last_velocity_setpoint_ = setpoint;
 
-        SmartDashboard.putNumber("Applied Output", leader_.getAppliedOutput());
-        SmartDashboard.putNumber("Controller Output", feedback);
-        SmartDashboard.putNumber("Current", follower_.getOutputCurrent());
-
         // We multiply by 0.9 to avoid overshoot. Divide by 12 to change voltage to percent.
         // See: https://docs.wpilib.org/en/stable/docs/software/advanced-controls/controllers/bang-bang.html#combining-bang-bang-control-with-feedforward
         leader_.set(feedback + 0.9 / 12 * feedforward);

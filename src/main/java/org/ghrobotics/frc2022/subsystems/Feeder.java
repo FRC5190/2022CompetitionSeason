@@ -2,6 +2,7 @@ package org.ghrobotics.frc2022.subsystems;
 
 import com.revrobotics.CANSparkMax;
 import edu.wpi.first.wpilibj.AnalogInput;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import static com.revrobotics.CANSparkMax.IdleMode;
 import static com.revrobotics.CANSparkMaxLowLevel.MotorType;
@@ -106,14 +107,14 @@ public class Feeder extends SubsystemBase {
     public static final int kFeederWallId = 13;
 
     // Sensors
-    public static final int kIntakeSensorId = 0;
-    public static final int kExitSensorId = 1;
+    public static final int kIntakeSensorId = 2;
+    public static final int kExitSensorId = 3;
 
     // Current Limits
     public static final int kCurrentLimit = 25;
 
     // Thresholds
-    public static final double kIntakeSensorVThreshold = 1.25;
-    public static final double kExitSensorVThreshold = 1.25;
+    public static final double kIntakeSensorVThreshold = 1.0;
+    public static final double kExitSensorVThreshold = 2.7;
   }
 }

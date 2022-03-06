@@ -3,6 +3,13 @@
     "types": {
       "/FMSInfo": "FMSInfo",
       "/Shuffleboard/Apex/Autonomous Mode Selector": "String Chooser"
+    },
+    "windows": {
+      "/Shuffleboard/Apex/Autonomous Mode Selector": {
+        "window": {
+          "visible": true
+        }
+      }
     }
   }
 }

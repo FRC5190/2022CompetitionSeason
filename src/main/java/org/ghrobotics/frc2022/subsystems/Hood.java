@@ -68,7 +68,7 @@ public class Hood extends SubsystemBase {
     leader_.enableSoftLimit(SoftLimitDirection.kReverse, true);
 
     // Assume hood starts at min angle and zero encoder as such.
-    encoder_.setPosition(Constants.kMinAngle);
+    encoder_.setPosition(Constants.kMaxAngle);
   }
 
   /**
@@ -157,8 +157,8 @@ public class Hood extends SubsystemBase {
 
     // Hardware
     public static final double kGearRatio = 35.0 * 40.0 / 18.0;
-    public static final double kMaxAngle = Units.degreesToRadians(55);
-    public static final double kMinAngle = Units.degreesToRadians(15);
+    public static final double kMaxAngle = Units.degreesToRadians(42.4);
+    public static final double kMinAngle = Units.degreesToRadians(2.6);
 
     // Control
     public static final double kP = 0.05;

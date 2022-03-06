@@ -79,13 +79,13 @@ public class Telemetry {
 
     // Put autonomous mode selector on Shuffleboard.
     tab_.add("Autonomous Mode Selector", auto_selector_)
-        .withSize(2, 2)
+        .withSize(3, 2)
         .withPosition(0, 0);
 
     // Add primary robot state information.
     ShuffleboardLayout robot_state_layout = tab_.getLayout("Robot State", BuiltInLayouts.kGrid)
         .withSize(2, 2)
-        .withPosition(2, 0);
+        .withPosition(3, 0);
     robot_state_layout.addNumber("Robot X (ft)",
             () -> Units.metersToFeet(robot_state_.getRobotPose().getX()))
         .withPosition(0, 0);
@@ -99,7 +99,7 @@ public class Telemetry {
     // Add drivetrain information.
     ShuffleboardLayout drivetrain_layout = tab_.getLayout("Drivetrain", BuiltInLayouts.kGrid)
         .withSize(2, 2)
-        .withPosition(4, 0);
+        .withPosition(5, 0);
     drivetrain_layout.addNumber("L Position (m)", drivetrain::getLeftPosition)
         .withPosition(0, 0);
     drivetrain_layout.addNumber("R Position (m)", drivetrain::getRightPosition)
@@ -118,8 +118,10 @@ public class Telemetry {
     scoring_layout.addNumber("Turret Velocity (dps)", () -> Math.toDegrees(turret_.getVelocity()))
         .withPosition(1, 0);
     scoring_layout.addNumber("Shooter Velocity (rpm)",
-        () -> Units.radiansPerSecondToRotationsPerMinute(shooter_.getVelocity()));
-    scoring_layout.addNumber("Hood Position (deg)", () -> Math.toDegrees(hood_.getPosition()));
+            () -> Units.radiansPerSecondToRotationsPerMinute(shooter_.getVelocity()))
+        .withPosition(0, 1);
+    scoring_layout.addNumber("Hood Position (deg)", () -> Math.toDegrees(hood_.getPosition()))
+        .withPosition(1, 1);
 
     // Add climber information.
     ShuffleboardLayout climber_layout = tab_.getLayout("Climber", BuiltInLayouts.kGrid)
@@ -141,5 +143,12 @@ public class Telemetry {
         .withPosition(1, 2);
     climber_layout.addBoolean("Climb Mode", climb_mode_)
         .withPosition(2, 0);
+
+    // Add feeder information.
+    ShuffleboardLayout feeder_layout = tab_.getLayout("Feeder", BuiltInLayouts.kGrid)
+        .withSize(1, 2)
+        .withPosition(6, 2);
+    feeder_layout.addBoolean("Intake Sensor", feeder::getIntakeSensor);
+    feeder_layout.addBoolean("Exit Sensor", feeder::getExitSensor);
   }
 }

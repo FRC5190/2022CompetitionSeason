@@ -7,6 +7,7 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.ghrobotics.frc2022.RobotState;
 import org.ghrobotics.frc2022.vision.GoalTracker;
@@ -78,7 +79,9 @@ public class LimelightManager extends SubsystemBase {
 
       // Calculate camera height and angle from / relative to ground.
       double camera_height = Constants.kTurretHeight + turret_to_camera_z;
-      double camera_angle = Math.PI / 2 - (Constants.kHoodToCameraOffset + hood_angle.getRadians());
+      double camera_angle = Math.PI / 2 - Constants.kHoodToCameraOffset - hood_angle.getRadians();
+      SmartDashboard.putNumber("hood angle", hood_angle.getDegrees());
+      SmartDashboard.putNumber("camera angle", Math.toDegrees(camera_angle));
 
       // NOTE: ALL FURTHER GOAL CALCULATIONS ARE TO THE TAPE. "GOAL" = TAPE.
       // Calculate angle to goal. We negative value because tx is clockwise-positive whereas we
@@ -88,6 +91,8 @@ public class LimelightManager extends SubsystemBase {
       // Calculate distance to goal.
       double distance_to_goal = (Constants.kGoalHeight - camera_height) /
           Math.tan(camera_angle + Math.toRadians(ty)) / Math.cos(angle_to_goal);
+
+      SmartDashboard.putNumber("Camera Dist", Units.metersToInches(distance_to_goal));
 
       // Calculate camera to goal transformation.
       Transform2d camera_to_goal = new Transform2d(
@@ -113,6 +118,9 @@ public class LimelightManager extends SubsystemBase {
 
       // Add to goal tracker.
       goal_tracker_.addSamples(timestamp, global_target_pose);
+
+      double dist = robot_pose.getTranslation().getDistance(global_target_pose.getTranslation());
+      SmartDashboard.putNumber("Distance", Units.metersToInches(dist));
     }
   }
 
@@ -133,14 +141,14 @@ public class LimelightManager extends SubsystemBase {
     public static final int kAliveFilterTaps = 10;
 
     // Goal Measurements
-    public static final double kGoalHeight = Units.inchesToMeters(85); // TODO
+    public static final double kGoalHeight = Units.inchesToMeters(100); // TODO
     public static final Transform2d kGoalToGoalCenter = new Transform2d(
-        new Translation2d(Units.inchesToMeters(24), 0), new Rotation2d());
+        new Translation2d(Units.inchesToMeters(27), 0), new Rotation2d());
 
     // Robot Measurements
     public static final double kHoodToCameraOffset = Math.toRadians(30);
-    public static final double kTurretToCameraDistance = Units.inchesToMeters(9); // TODO
-    public static final double kTurretHeight = Units.inchesToMeters(42); // TODO
-    public static final double kRobotToTurretDistance = Units.inchesToMeters(8.5); // TODO
+    public static final double kTurretToCameraDistance = Units.inchesToMeters(12);
+    public static final double kTurretHeight = Units.inchesToMeters(40);
+    public static final double kRobotToTurretDistance = Units.inchesToMeters(8);
   }
 }

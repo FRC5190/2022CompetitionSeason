@@ -7,10 +7,8 @@ import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.ctre.phoenix.music.Orchestra;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.Solenoid;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.List;
 
@@ -23,10 +21,6 @@ public class Climber extends SubsystemBase {
   private final Solenoid brake_;
   private final Solenoid left_pivot_;
   private final Solenoid right_pivot_;
-
-  // Sensors
-  private final DigitalInput left_rev_limit_switch_;
-  private final DigitalInput right_rev_limit_switch_;
 
   // Control
   private final SimpleMotorFeedforward left_feedforward_;
@@ -66,10 +60,6 @@ public class Climber extends SubsystemBase {
     left_pivot_ = new Solenoid(PneumaticsModuleType.REVPH, Constants.kLeftPivotId);
     right_pivot_ = new Solenoid(PneumaticsModuleType.REVPH, Constants.kRightPivotId);
 
-    // Initialize limit switches.
-    left_rev_limit_switch_ = new DigitalInput(Constants.kLeftRevLimitSwitchId);
-    right_rev_limit_switch_ = new DigitalInput(Constants.kRightRevLimitSwitchId);
-
     // Initialize feedback.
     left_leader_.configMotionCruiseVelocity(toCTREVelocity(Constants.kMaxVelocity));
     left_leader_.configMotionAcceleration(toCTREVelocity(Constants.kMaxAcceleration));
@@ -108,8 +98,13 @@ public class Climber extends SubsystemBase {
     io_.r_position = fromCTREPosition(right_leader_.getSelectedSensorPosition());
     io_.l_supply_current = left_leader_.getSupplyCurrent();
     io_.r_supply_current = right_leader_.getSupplyCurrent();
-    io_.l_rev_limit_switch = !left_rev_limit_switch_.get();
-    io_.r_rev_limit_switch = !right_rev_limit_switch_.get();
+
+    // Zero
+    if (io_.wants_zero) {
+      io_.wants_zero = false;
+      left_leader_.setSelectedSensorPosition(0);
+      right_leader_.setSelectedSensorPosition(0);
+    }
 
     // Write outputs.
     // Update pneumatics if a change is required.
@@ -122,12 +117,6 @@ public class Climber extends SubsystemBase {
       left_pivot_.set(io_.l_pivot_value);
       right_pivot_.set(io_.r_pivot_value);
     }
-
-    // Check the limit switches and reset encoder positions to 0 if hit.
-//    if (io_.l_rev_limit_switch)
-//      left_leader_.setSelectedSensorPosition(0);
-//    if (io_.r_rev_limit_switch)
-//      right_leader_.setSelectedSensorPosition(0);
 
     // Set motor outputs.
     switch (left_output_type_) {
@@ -164,6 +153,10 @@ public class Climber extends SubsystemBase {
     // If we want orchestra, play that.
     if (left_output_type_ == OutputType.ORCHESTRA && right_output_type_ == OutputType.ORCHESTRA)
       orchestra_.play();
+  }
+
+  public void zero() {
+    io_.wants_zero = true;
   }
 
   /**
@@ -388,6 +381,8 @@ public class Climber extends SubsystemBase {
     double l_demand;
     double r_demand;
 
+    boolean wants_zero = false;
+
     boolean brake_value = true;
     boolean l_pivot_value;
     boolean r_pivot_value;
@@ -409,7 +404,7 @@ public class Climber extends SubsystemBase {
     public static final int kRightRevLimitSwitchId = 9;
 
     // Hardware
-    public static final double kMaxHeightNativeUnits = 10000;
+    public static final double kMaxHeightNativeUnits = 10000000;
     public static final double kMaxHeight = Units.inchesToMeters(23);
 
     // Control

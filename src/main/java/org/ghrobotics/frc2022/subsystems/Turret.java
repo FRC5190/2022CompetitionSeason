@@ -89,6 +89,10 @@ public class Turret extends SubsystemBase {
     // Update robot state.
     robot_state_.updateTurretAngle(new Rotation2d(io_.position));
 
+    leader_.set(0);
+    if (true)
+      return;
+
     // Write outputs.
     switch (output_type_) {
       case PERCENT:
@@ -113,6 +117,7 @@ public class Turret extends SubsystemBase {
 
   /**
    * Sets the idle mode on the turret.
+   *
    * @param mode The desired idle mode.
    */
   public void setIdleMode(IdleMode mode) {
