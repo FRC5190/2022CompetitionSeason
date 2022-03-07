@@ -4,6 +4,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
@@ -203,6 +204,32 @@ public class Superstructure {
   }
 
   /**
+   * Returns the command to tune the shooter and hood for building the lookup table. The building
+   * of the lookup table still needs to be done manually.
+   *
+   * @return The command to tune the shooter and hood for building the lookup table.
+   */
+  public Command tuneScoring() {
+    // The following commands run in parallel:
+    //  - run shooter at desired speed
+    //  - run hood at desired position
+    //  - track goal with turret
+    //  - run intake and feeder
+    return new ParallelCommandGroup(
+        new RunCommand(() -> shooter_.setVelocity(
+            SmartDashboard.getNumber(Constants.kTuningShooterRPMKey, Constants.kLowGoalShooterRPM)),
+            shooter_),
+        new RunCommand(() -> hood_.setPosition(
+            SmartDashboard.getNumber(Constants.kTuningHoodAngleKey, Constants.kLowGoalHoodAngle)),
+            hood_),
+        new IntakePercent(intake_, Constants.kIntakeCollectSpeed),
+        new FeederIndex(feeder_, () -> SmartDashboard.getBoolean(Constants.kTuningScoreKey, false)),
+        trackGoalWithTurret()
+    );
+  }
+
+
+  /**
    * Returns the command to continuously track the goal with the turret.
    *
    * @return The command to continuously track the goal with the turret.
@@ -235,5 +262,10 @@ public class Superstructure {
 
     // Intake
     public static final double kIntakeCollectSpeed = 0.85;
+
+    // Tuning Entries
+    public static final String kTuningShooterRPMKey = "Shooter Speed (rpm)";
+    public static final String kTuningHoodAngleKey = "Hood Angle (deg)";
+    public static final String kTuningScoreKey = "Score";
   }
 }
