@@ -58,9 +58,12 @@ public class Robot extends TimedRobot {
   private final LimelightManager limelight_manager_ =
       new LimelightManager(robot_state_, goal_tracker_);
 
-  // Create superstructure.
+  // Create superstructure and associated commands.
   private final Superstructure superstructure_ = new Superstructure(
       turret_, shooter_, hood_, intake_, feeder_, goal_tracker_, robot_state_);
+  private final Command score_low_goal_ = superstructure_.scoreLowGoal();
+  private final Command score_high_goal_ = superstructure_.scoreHighGoal();
+  private final Command tune_shooter_ = superstructure_.tuneScoring();
 
   // Create autonomous mode selector.
   private final SendableChooser<Command> auto_selector_ = new SendableChooser<>();
@@ -261,26 +264,24 @@ public class Robot extends TimedRobot {
    * climb mode, scoring, ball in intake).
    */
   private void updateLEDs() {
-    // Climb Mode
     if (climb_reset_cmd_.isScheduled())
       led_.setOutput(LED.StandardLEDOutput.CLIMB_RESETTING);
 
     else if (climb_mode_)
       led_.setOutput(LED.StandardLEDOutput.CLIMBING);
 
-      // No Limelight
     else if (!limelight_manager_.isLimelightAlive())
       led_.setOutput(LED.StandardLEDOutput.NO_LIMELIGHT);
 
-      // Robot Disabled
     else if (isDisabled())
       led_.setOutput(LED.OutputType.RAINBOW);
 
-      // Manual Scoring (TODO)
+    else if (tune_shooter_.isScheduled())
+      led_.setOutput(LED.StandardLEDOutput.MANUAL_SCORING);
 
-      // Automatic Scoring (TODO)
+    else if (score_high_goal_.isScheduled() || score_low_goal_.isScheduled())
+      led_.setOutput(LED.StandardLEDOutput.AUTOMATIC_SCORING);
 
-      // Other Cases
     else
       led_.setOutput(LED.StandardLEDOutput.BLANK);
   }
