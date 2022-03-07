@@ -4,9 +4,12 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
+import java.io.IOException;
+import java.util.Scanner;
 import org.ghrobotics.frc2022.commands.FeederIndex;
 import org.ghrobotics.frc2022.commands.FeederScore;
 import org.ghrobotics.frc2022.commands.IntakePercent;
@@ -16,6 +19,7 @@ import org.ghrobotics.frc2022.subsystems.Intake;
 import org.ghrobotics.frc2022.subsystems.Shooter;
 import org.ghrobotics.frc2022.subsystems.Turret;
 import org.ghrobotics.frc2022.vision.GoalTracker;
+import org.ghrobotics.lib.interpolation.LookupTable;
 
 public class Superstructure {
   // Subsystems
@@ -67,6 +71,8 @@ public class Superstructure {
 
     // Assign robot state.
     robot_state_ = robot_state;
+
+    double x = HighGoalLUT.getHoodAngle(0);
   }
 
   /**
@@ -198,6 +204,35 @@ public class Superstructure {
   }
 
   public static class HighGoalLUT {
+    private static final LookupTable rpm_lut_;
+    private static final LookupTable hood_angle_lut_;
+
+    static {
+      rpm_lut_ = new LookupTable(3000);
+      hood_angle_lut_ = new LookupTable(5);
+
+      // Read table from filesystem.
+      try {
+        Scanner scanner = new Scanner(
+            Filesystem.getDeployDirectory().toPath().resolve("shooter_lut.csv"));
+
+        while (scanner.hasNextLine()) {
+          String[] str_values = scanner.nextLine().split(",");
+          double distance = Double.parseDouble(str_values[0]);
+          double rpm = Double.parseDouble(str_values[1]);
+          double angle = Double.parseDouble(str_values[2]);
+
+          rpm_lut_.put(distance, rpm);
+          hood_angle_lut_.put(distance, 90 - angle);
+          System.out.printf("Added entry to LUT -> Distance: %2.2f m: %4f rpm, %2f deg\n", distance,
+              rpm, angle);
+        }
+
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
+
     /**
      * Returns the shooter speed to score in the high goal.
      *
@@ -205,7 +240,7 @@ public class Superstructure {
      * @return The shooter speed to score in the high goal.
      */
     public static double getShooterSpeed(double distance) {
-      return 0;
+      return rpm_lut_.get(distance);
     }
 
     /**
@@ -215,7 +250,7 @@ public class Superstructure {
      * @return The hood angle to score in the high goal.
      */
     public static double getHoodAngle(double distance) {
-      return 0;
+      return Math.toRadians(hood_angle_lut_.get(distance));
     }
   }
 

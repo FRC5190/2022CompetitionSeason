@@ -14,7 +14,7 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.Button;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
-import org.ghrobotics.frc2022.auto.RTarmacFenderHG5Ball;
+import org.ghrobotics.frc2022.auto.RTarmacFenderFiveBall;
 import org.ghrobotics.frc2022.commands.ClimbAutomatic;
 import org.ghrobotics.frc2022.commands.ClimbReset;
 import org.ghrobotics.frc2022.commands.ClimbTeleop;
@@ -162,7 +162,7 @@ public class Robot extends TimedRobot {
    */
   private void setupAuto() {
     auto_selector_.addOption("Right Tarmac Fender High Goal 5 Ball",
-        new RTarmacFenderHG5Ball(robot_state_, drivetrain_, superstructure_));
+        new RTarmacFenderFiveBall(robot_state_, drivetrain_, superstructure_));
   }
 
   /**
