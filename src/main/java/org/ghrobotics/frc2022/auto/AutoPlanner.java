@@ -118,7 +118,7 @@ public class AutoPlanner {
     return createTrajectory(start_waypoint, List.of(), end_waypoint, reversed);
   }
 
-  private static class CircularRegion {
+  public static class CircularRegion {
     private final Translation2d center_;
     private final double radius_;
 

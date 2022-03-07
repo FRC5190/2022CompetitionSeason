@@ -63,7 +63,7 @@ public class Robot extends TimedRobot {
       turret_, shooter_, hood_, intake_, feeder_, goal_tracker_, robot_state_);
 
   // Create autonomous mode selector.
-  private SendableChooser<Command> auto_selector_ = new SendableChooser<>();
+  private final SendableChooser<Command> auto_selector_ = new SendableChooser<>();
   private Command autonomous_command_ = null;
 
   // Create Xbox controller for driver.
@@ -179,8 +179,6 @@ public class Robot extends TimedRobot {
     drivetrain_.setDefaultCommand(new DriveTeleop(drivetrain_, driver_controller_));
 
     // Turret:
-//    turret_.setDefaultCommand(new RunCommand(() -> turret_.setPercent(0), turret_));
-//    turret_.setDefaultCommand(new RunCommand(() -> turret_.setGoal(Math.PI, 0), turret_));
     turret_.setDefaultCommand(superstructure_.trackGoalWithTurret());
 
     // Shooter:
@@ -188,7 +186,6 @@ public class Robot extends TimedRobot {
 
     // Hood:
     hood_.setDefaultCommand(new RunCommand(() -> hood_.setPercent(0), hood_));
-//    hood_.setDefaultCommand(superstructure_.trackGoalWithHood());
 
     // Climber:
     climber_.setDefaultCommand(new ClimbTeleop(climber_, driver_controller_, () -> climb_mode_));
