@@ -6,12 +6,13 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import java.io.IOException;
 import java.util.Scanner;
+import java.util.function.BooleanSupplier;
 import org.ghrobotics.frc2022.commands.FeederIndex;
-import org.ghrobotics.frc2022.commands.FeederScore;
 import org.ghrobotics.frc2022.commands.IntakePercent;
 import org.ghrobotics.frc2022.subsystems.Feeder;
 import org.ghrobotics.frc2022.subsystems.Hood;
@@ -71,8 +72,6 @@ public class Superstructure {
 
     // Assign robot state.
     robot_state_ = robot_state;
-
-    double x = HighGoalLUT.getHoodAngle(0);
   }
 
   /**
@@ -125,18 +124,25 @@ public class Superstructure {
         new RunCommand(() -> turret_.setGoal(Math.toRadians(180), 0), turret_),
         new RunCommand(() -> shooter_.setRPM(Constants.kLowGoalShooterRPM), shooter_),
         new RunCommand(() -> hood_.setPosition(Constants.kLowGoalHoodAngle), hood_),
-        new FeederScore(feeder_, shooter_::atGoal)
+        new FeederIndex(feeder_, shooter_::atGoal)
     );
   }
 
   /**
    * Returns the command to score cargo into the high goal.
    *
+   * @param require_intake Whether the intake should also be spinning while scoring (enables
+   *                       shooting while moving while intaking).
+   * @param wait_for_score When scoring should occur; when the supplier returns true and the
+   *                       shooter is at the goal, scoring will occur.
    * @return The command to score cargo into the high goal.
    */
-  public Command scoreHighGoal() {
+  public Command scoreHighGoal(boolean require_intake, BooleanSupplier wait_for_score) {
+    BooleanSupplier score = () -> shooter_.atGoal() && wait_for_score.getAsBoolean();
+
     // The following commands run in parallel:
     //  - set turret angle, shooter speed, hood angle
+    //  - intake (if required)
     //  - wait for spin up and score
     return new ParallelCommandGroup(
         new RunCommand(() -> {
@@ -177,8 +183,18 @@ public class Superstructure {
           shooter_.setVelocity(shooter_speed);
           hood_.setPosition(hood_angle);
         }, turret_, shooter_, hood_),
-        new FeederScore(feeder_, shooter_::atGoal)
+        new FeederIndex(feeder_, score),
+        require_intake ? new IntakePercent(intake_,
+            Constants.kIntakeCollectSpeed) : new InstantCommand()
     );
+  }
+
+  /**
+   * Returns the command to score cargo into the high goal (with no intake).
+   * @return The command to score cargo into the high goal (with no intake).
+   */
+  public Command scoreHighGoal() {
+    return scoreHighGoal(false, () -> true);
   }
 
   /**
@@ -264,6 +280,6 @@ public class Superstructure {
     public static final double kLowGoalShooterRPM = 3000;
 
     // Intake
-    public static final double kIntakeCollectSpeed = +0.85;
+    public static final double kIntakeCollectSpeed = 0.85;
   }
 }
