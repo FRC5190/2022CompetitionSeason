@@ -78,6 +78,7 @@ public class Hood extends SubsystemBase {
     // Update robot state.
     robot_state_.updateHoodAngle(new Rotation2d(io_.position));
 
+    // Reset PID controller if we have to.
     if (reset_pid_) {
       reset_pid_ = false;
       pid_controller_.reset(io_.position);

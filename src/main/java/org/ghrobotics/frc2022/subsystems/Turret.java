@@ -96,11 +96,6 @@ public class Turret extends SubsystemBase {
       pid_controller_.reset(io_.position, io_.velocity);
     }
 
-    if (true) {
-      leader_.set(0);
-      return;
-    }
-
     // Write outputs.
     switch (output_type_) {
       case PERCENT:
