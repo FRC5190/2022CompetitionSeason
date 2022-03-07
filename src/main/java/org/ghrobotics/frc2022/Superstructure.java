@@ -4,23 +4,20 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
-import java.io.IOException;
-import java.util.Scanner;
 import java.util.function.BooleanSupplier;
 import org.ghrobotics.frc2022.commands.FeederIndex;
 import org.ghrobotics.frc2022.commands.IntakePercent;
+import org.ghrobotics.frc2022.planners.HighGoalPlanner;
 import org.ghrobotics.frc2022.subsystems.Feeder;
 import org.ghrobotics.frc2022.subsystems.Hood;
 import org.ghrobotics.frc2022.subsystems.Intake;
 import org.ghrobotics.frc2022.subsystems.Shooter;
 import org.ghrobotics.frc2022.subsystems.Turret;
 import org.ghrobotics.frc2022.vision.GoalTracker;
-import org.ghrobotics.lib.interpolation.LookupTable;
 
 public class Superstructure {
   // Subsystems
@@ -29,6 +26,9 @@ public class Superstructure {
   private final Hood hood_;
   private final Intake intake_;
   private final Feeder feeder_;
+
+  // High Goal Planner
+  private final HighGoalPlanner high_goal_planner_;
 
   // Goal Tracker
   private final GoalTracker goal_tracker_;
@@ -66,6 +66,10 @@ public class Superstructure {
     hood_ = hood;
     intake_ = intake;
     feeder_ = feeder;
+
+    // Initialize high goal planner.
+    high_goal_planner_ = new HighGoalPlanner(Constants.kLowGoalShooterRPM,
+        Constants.kLowGoalHoodAngle);
 
     // Assign goal tracker.
     goal_tracker_ = goal_tracker;
@@ -152,8 +156,8 @@ public class Superstructure {
                   robot_to_goal_distance_;
 
           // Calculate shooter speed and hood angle from lookup table.
-          double shooter_speed = HighGoalLUT.getShooterSpeed(robot_to_goal_distance_);
-          double hood_angle = HighGoalLUT.getShooterSpeed(robot_to_goal_distance_);
+          double shooter_speed = high_goal_planner_.getShooterSpeed(robot_to_goal_distance_);
+          double hood_angle = high_goal_planner_.getHoodAngle(robot_to_goal_distance_);
 
           // Get the speed of the ball on the xy plane.
           double ball_vxy = shooter_speed * Shooter.Constants.kWheelRadius / 2 *
@@ -191,6 +195,7 @@ public class Superstructure {
 
   /**
    * Returns the command to score cargo into the high goal (with no intake).
+   *
    * @return The command to score cargo into the high goal (with no intake).
    */
   public Command scoreHighGoal() {
@@ -216,58 +221,7 @@ public class Superstructure {
    */
   public Command trackGoalWithHood() {
     return new RunCommand(
-        () -> hood_.setPosition(HighGoalLUT.getHoodAngle(robot_to_goal_distance_)), hood_);
-  }
-
-  public static class HighGoalLUT {
-    private static final LookupTable rpm_lut_;
-    private static final LookupTable hood_angle_lut_;
-
-    static {
-      rpm_lut_ = new LookupTable(3000);
-      hood_angle_lut_ = new LookupTable(5);
-
-      // Read table from filesystem.
-      try {
-        Scanner scanner = new Scanner(
-            Filesystem.getDeployDirectory().toPath().resolve("shooter_lut.csv"));
-
-        while (scanner.hasNextLine()) {
-          String[] str_values = scanner.nextLine().split(",");
-          double distance = Double.parseDouble(str_values[0]);
-          double rpm = Double.parseDouble(str_values[1]);
-          double angle = Double.parseDouble(str_values[2]);
-
-          rpm_lut_.put(distance, rpm);
-          hood_angle_lut_.put(distance, 90 - angle);
-          System.out.printf("Added entry to LUT -> Distance: %2.2f m: %4f rpm, %2f deg\n", distance,
-              rpm, angle);
-        }
-
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    }
-
-    /**
-     * Returns the shooter speed to score in the high goal.
-     *
-     * @param distance The distance to the goal.
-     * @return The shooter speed to score in the high goal.
-     */
-    public static double getShooterSpeed(double distance) {
-      return rpm_lut_.get(distance);
-    }
-
-    /**
-     * The hood angle to score in the high goal.
-     *
-     * @param distance The distance to the goal.
-     * @return The hood angle to score in the high goal.
-     */
-    public static double getHoodAngle(double distance) {
-      return Math.toRadians(hood_angle_lut_.get(distance));
-    }
+        () -> hood_.setPosition(high_goal_planner_.getHoodAngle(robot_to_goal_distance_)), hood_);
   }
 
   public static class Constants {
