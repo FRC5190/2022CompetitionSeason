@@ -140,6 +140,9 @@ public class Robot extends TimedRobot {
     // Run command scheduler.
     CommandScheduler.getInstance().run();
 
+    // Update superstructure.
+    superstructure_.periodic();
+
     // Check if we need to clear buttons.
     if (clear_buttons_) {
       CommandScheduler.getInstance().clearButtons();
