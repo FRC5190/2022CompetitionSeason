@@ -80,8 +80,6 @@ public class LimelightManager extends SubsystemBase {
       // Calculate camera height and angle from / relative to ground.
       double camera_height = Constants.kTurretHeight + turret_to_camera_z;
       double camera_angle = Math.PI / 2 - Constants.kHoodToCameraOffset - hood_angle.getRadians();
-      SmartDashboard.putNumber("hood angle", hood_angle.getDegrees());
-      SmartDashboard.putNumber("camera angle", Math.toDegrees(camera_angle));
 
       // NOTE: ALL FURTHER GOAL CALCULATIONS ARE TO THE TAPE. "GOAL" = TAPE.
       // Calculate angle to goal. We negative value because tx is clockwise-positive whereas we
@@ -118,9 +116,6 @@ public class LimelightManager extends SubsystemBase {
 
       // Add to goal tracker.
       goal_tracker_.addSamples(timestamp, global_target_pose);
-
-      double dist = robot_pose.getTranslation().getDistance(global_target_pose.getTranslation());
-      SmartDashboard.putNumber("Distance", Units.metersToInches(dist));
     }
   }
 

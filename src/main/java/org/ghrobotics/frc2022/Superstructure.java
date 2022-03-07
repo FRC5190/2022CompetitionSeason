@@ -3,14 +3,11 @@ package org.ghrobotics.frc2022;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
-import java.util.concurrent.atomic.AtomicReference;
 import org.ghrobotics.frc2022.commands.FeederIndex;
-import org.ghrobotics.frc2022.commands.FeederPercent;
 import org.ghrobotics.frc2022.commands.FeederScore;
 import org.ghrobotics.frc2022.commands.IntakePercent;
 import org.ghrobotics.frc2022.subsystems.Feeder;
@@ -33,6 +30,17 @@ public class Superstructure {
 
   // Robot State
   private final RobotState robot_state_;
+
+  // Tracking
+  private Pose2d robot_pose_;
+  private ChassisSpeeds robot_speeds_;
+  private Translation2d robot_to_goal_;
+  private double robot_to_goal_distance_;
+  private double robot_to_goal_angle_;
+
+  // Status
+  private boolean scoring_ = false;
+
 
   /**
    * This class manages all mechanisms on the "superstructure" i.e. turret, shooter, hood, intake,
@@ -62,6 +70,28 @@ public class Superstructure {
   }
 
   /**
+   * This should be run periodically every 20 ms to update the local variables used for storing
+   * the robot state, the latest goal pose, etc.
+   */
+  public void periodic() {
+    // Get the latest robot pose and speeds.
+    robot_pose_ = robot_state_.getRobotPose();
+    robot_speeds_ = robot_state_.getRobotSpeeds();
+
+    // Get the goal position. (We can swap between GoalTracker and Pose Estimator here).
+    Translation2d goal = goal_tracker_.getClosestTarget(robot_pose_).getTranslation();
+    /* Translation2d goal = Constants.kGoal; */ // pose estimator
+
+    // Calculate translation to goal.
+    robot_to_goal_ = goal.minus(robot_pose_.getTranslation());
+
+    // Calculate distance and angle to goal.
+    robot_to_goal_distance_ = robot_to_goal_.getNorm();
+    robot_to_goal_angle_ = Math.atan2(robot_to_goal_.getY(), robot_to_goal_.getX())
+        - robot_pose_.getRotation().getRadians();
+  }
+
+  /**
    * Returns the command to intake balls and store in the feeder.
    *
    * @return The command to intake balls and store in the feeder.
@@ -76,101 +106,74 @@ public class Superstructure {
   }
 
   /**
-   * Returns the command to exhaust balls out of the feeder and through the intake.
+   * Returns the command to score cargo into the low goal.
    *
-   * @return The command to exhaust balls out of the feeder and through the intake.
+   * @return The command to score cargo into the low goal.
    */
-  public Command exhaust() {
+  public Command scoreLowGoal() {
     // The following commands run in parallel:
-    //  - the command to run the feeder in reverse
-    //  - the command to run the intake in reverse
+    //  - set turret to 180 deg
+    //  - set shooter speed and hood angle to preset values
+    //  - wait for spin up and score
     return new ParallelCommandGroup(
-        new IntakePercent(intake_, Constants.kIntakeExhaustSpeed),
-        new FeederPercent(feeder_, Constants.kFeederExhaustSpeed, Constants.kFeederExhaustSpeed));
-  }
-
-  /**
-   * Returns the command to score cargo into the hub.
-   *
-   * @param high_goal Whether the cargo should be scored into the high goal (low goal otherwise).
-   * @return The command to score cargo into the hub.
-   */
-  public Command scoreCargo(boolean high_goal) {
-    // Store goal pose.
-    AtomicReference<Pose2d> goal_pose = new AtomicReference<>();
-
-    // The following commands run sequentially:
-    //  - store goal pose.
-    //  - score
-    return new SequentialCommandGroup(
-        new InstantCommand(() -> goal_pose.set(goal_tracker_.getClosestTarget(
-            robot_state_.getRobotPose()))),
-
-        // The following commands run in parallel:
-        //  - the command to track the goal with the turret (incl. shooting while moving).
-        //  - the command to track the goal with the hood.
-        //  - the command to run the shooter at the desired rpm (incl. shooting while moving).
-        //  - the command to run the feeder into the shooter.
-        new ParallelCommandGroup(
-            new RunCommand(() -> {
-              // Get robot pose and speeds.
-              Pose2d robot_pose = robot_state_.getRobotPose();
-              ChassisSpeeds robot_speeds = robot_state_.getRobotSpeeds();
-
-              // Get goal pose.
-              Pose2d goal = goal_pose.get();
-
-              // Get turret setpoints assuming stationary robot.
-              double[] turret_setpoints = calculateTurretThetaOmega(robot_pose, robot_speeds, goal);
-
-              // Break out into turret position and velocity.
-              double turret_pos = turret_setpoints[0];
-              double turret_vel = turret_setpoints[1];
-
-              // Calculate translation to goal.
-              Translation2d robot_to_goal
-                  = goal.getTranslation().minus(robot_pose.getTranslation());
-
-              // Calculate distance and angle to goal.
-              double distance = robot_to_goal.getNorm();
-              double angle = Math.atan2(robot_to_goal.getY(), robot_to_goal.getX()) -
-                  robot_pose.getRotation().getRadians();
-
-              // Obtain shooter speed and hood angle setpoints from the lookup table.
-              double shooter_speed = high_goal ? HighGoalLUT.getShooterSpeed(distance) :
-                  LowGoalLUT.getShooterSpeed(distance);
-              double hood_angle = high_goal ? HighGoalLUT.getHoodAngle(distance) :
-                  LowGoalLUT.getHoodAngle(distance);
-
-              // Get the speed of the ball on the xy plane.
-              double ball_xy = shooter_speed * Shooter.Constants.kWheelRadius / 2 *
-                  Math.sin(hood_angle);
-
-              // Calculate time of flight (assuming no air resistance).
-              double t = distance / ball_xy;
-
-              // Calculate new distance to goal, assuming same time of flight.
-              double adjusted_distance = Math.sqrt(
-                  Math.pow(distance, 2) + Math.pow(robot_speeds.vxMetersPerSecond, 2) -
-                      2 * distance * robot_speeds.vxMetersPerSecond * t * Math.cos(angle));
-
-              // Calculate turret angle adjustment.
-              turret_pos += Math.asin(robot_speeds.vxMetersPerSecond * t *
-                  Math.sin(angle) / adjusted_distance);
-
-              // Use adjusted distance to calculate new shooter speed.
-              shooter_speed = (adjusted_distance / t) / Math.sin(hood_angle) /
-                  Shooter.Constants.kWheelRadius * 2.0;
-
-              // Send setpoints to subsystems.
-              turret_.setGoal(turret_pos, turret_vel);
-              shooter_.setVelocity(shooter_speed);
-              hood_.setPosition(hood_angle);
-            }),
-            new FeederScore(feeder_, shooter_::atGoal))
+        new RunCommand(() -> turret_.setGoal(Math.toRadians(180), 0), turret_),
+        new RunCommand(() -> shooter_.setRPM(Constants.kLowGoalShooterRPM), shooter_),
+        new RunCommand(() -> hood_.setPosition(Constants.kLowGoalHoodAngle), hood_),
+        new FeederScore(feeder_, shooter_::atGoal)
     );
   }
 
+  /**
+   * Returns the command to score cargo into the high goal.
+   *
+   * @return The command to score cargo into the high goal.
+   */
+  public Command scoreHighGoal() {
+    // The following commands run in parallel:
+    //  - set turret angle, shooter speed, hood angle
+    //  - wait for spin up and score
+    return new ParallelCommandGroup(
+        new RunCommand(() -> {
+          // Calculate turret angular velocity setpoint.
+          double turret_omega = -robot_speeds_.omegaRadiansPerSecond -
+              robot_speeds_.vxMetersPerSecond * Math.sin(robot_to_goal_angle_) /
+                  robot_to_goal_distance_;
+
+          // Calculate shooter speed and hood angle from lookup table.
+          double shooter_speed = HighGoalLUT.getShooterSpeed(robot_to_goal_distance_);
+          double hood_angle = HighGoalLUT.getShooterSpeed(robot_to_goal_distance_);
+
+          // Get the speed of the ball on the xy plane.
+          double ball_vxy = shooter_speed * Shooter.Constants.kWheelRadius / 2 *
+              Math.sin(hood_angle);
+
+          // Calculate time of flight (assuming no air resistance).
+          double t = robot_to_goal_distance_ / ball_vxy;
+
+          // Calculate new distance to goal, assuming same time of flight.
+          double adjusted_distance = Math.sqrt(
+              Math.pow(robot_to_goal_distance_, 2) + Math.pow(robot_speeds_.vxMetersPerSecond, 2) -
+                  2 * robot_to_goal_distance_ * robot_speeds_.vxMetersPerSecond * t *
+                      Math.cos(robot_to_goal_angle_)
+          );
+
+          // Calculate turret angle.
+          double turret_theta = robot_to_goal_angle_ +
+              Math.asin(robot_speeds_.vxMetersPerSecond * t * Math.sin(robot_to_goal_angle_) /
+                  adjusted_distance);
+
+          // Use adjusted distance to calculate new shooter speed.
+          shooter_speed = (adjusted_distance / t) / Math.sin(hood_angle) /
+              Shooter.Constants.kWheelRadius * 2;
+
+          // Set goals to subsystems.
+          turret_.setGoal(turret_theta, turret_omega);
+          shooter_.setVelocity(shooter_speed);
+          hood_.setPosition(hood_angle);
+        }, turret_, shooter_, hood_),
+        new FeederScore(feeder_, shooter_::atGoal)
+    );
+  }
 
   /**
    * Returns the command to continuously track the goal with the turret.
@@ -178,16 +181,10 @@ public class Superstructure {
    * @return The command to continuously track the goal with the turret.
    */
   public Command trackGoalWithTurret() {
-    return new RunCommand(() -> {
-      // Get desired turret position and velocity.
-      double[] turret_setpoints = calculateTurretThetaOmega(
-          robot_state_.getRobotPose(),
-          robot_state_.getRobotSpeeds(),
-          goal_tracker_.getClosestTarget(robot_state_.getRobotPose()));
-
-      // Set turret goal.
-      turret_.setGoal(turret_setpoints[0], turret_setpoints[1]);
-    }, turret_);
+    return new RunCommand(() -> turret_.setGoal(robot_to_goal_angle_,
+        -robot_speeds_.omegaRadiansPerSecond -
+            robot_speeds_.vxMetersPerSecond * Math.sin(robot_to_goal_angle_) /
+                robot_to_goal_distance_), turret_);
   }
 
   /**
@@ -196,36 +193,8 @@ public class Superstructure {
    * @return The command to continuously track the goal with the hood.
    */
   public Command trackGoalWithHood() {
-    return new InstantCommand();
-  }
-
-  /**
-   * Calculates the desired turret position and velocity to track the goal.
-   *
-   * @param robot_pose   The robot pose.
-   * @param robot_speeds The robot speeds.
-   * @param goal_pose    The goal pose.
-   * @return The desired turret position and velocity to track the goal.
-   */
-  private static double[] calculateTurretThetaOmega(Pose2d robot_pose, ChassisSpeeds robot_speeds,
-                                                    Pose2d goal_pose) {
-    // Calculate translation from robot pose to goal pose.
-    Translation2d robot_to_goal = goal_pose.getTranslation().minus(robot_pose.getTranslation());
-
-    // Calculate distance and angle to goal.
-    double distance_to_goal = robot_to_goal.getNorm();
-    double angle_to_goal = Math.atan2(robot_to_goal.getY(), robot_to_goal.getX()) -
-        robot_pose.getRotation().getRadians();
-
-    // Calculate angular velocity of the robot about the goal (v = r * omega).
-    double angular_velocity_about_goal = robot_speeds.vxMetersPerSecond *
-        Math.sin(angle_to_goal) / distance_to_goal;
-
-    // Calculate turret velocity.
-    double turret_omega = -angular_velocity_about_goal - robot_speeds.omegaRadiansPerSecond;
-
-    // Return position and velocity.
-    return new double[]{angle_to_goal, turret_omega};
+    return new RunCommand(
+        () -> hood_.setPosition(HighGoalLUT.getHoodAngle(robot_to_goal_distance_)), hood_);
   }
 
   public static class HighGoalLUT {
@@ -250,34 +219,16 @@ public class Superstructure {
     }
   }
 
-  public static class LowGoalLUT {
-    /**
-     * Returns the shooter speed to score in the low goal.
-     *
-     * @param distance The distance to the goal.
-     * @return The shooter speed to score in the low goal.
-     */
-    public static double getShooterSpeed(double distance) {
-      return 0;
-    }
-
-    /**
-     * The hood angle to score in the low goal.
-     *
-     * @param distance The distance to the goal.
-     * @return The hood angle to score in the low goal.
-     */
-    public static double getHoodAngle(double distance) {
-      return 0;
-    }
-  }
-
   public static class Constants {
+    // Goal
+    public static final Translation2d kGoal = new Translation2d(
+        Units.feetToMeters(27), Units.feetToMeters(13.5));
+
+    // Low Goal Scoring
+    public static final double kLowGoalHoodAngle = Math.toRadians(40);
+    public static final double kLowGoalShooterRPM = 3000;
+
     // Intake
     public static final double kIntakeCollectSpeed = +0.85;
-    public static final double kIntakeExhaustSpeed = -0.85;
-
-    // Feeder
-    public static final double kFeederExhaustSpeed = -0.75;
   }
 }

@@ -33,7 +33,7 @@ public class RTarmacFenderHG5Ball extends SequentialCommandGroup {
         // is done with traversal.
         new ParallelRaceGroup(
             new DriveTrajectory(drivetrain, robot_state, fender_to_ball_2_),
-            superstructure.scoreCargo(true)),
+            superstructure.scoreHighGoal()),
 
         // Go to ball 3 while continuously running the intake. This should pick up ball 2 and 3.
         new ParallelRaceGroup(
@@ -45,7 +45,7 @@ public class RTarmacFenderHG5Ball extends SequentialCommandGroup {
         // Go to ball 4 and 5 while scoring balls 2 and 3.
         new ParallelRaceGroup(
             new DriveTrajectory(drivetrain, robot_state, ball_3_to_hp_),
-            superstructure.scoreCargo(true)),
+            superstructure.scoreHighGoal()),
 
         // Intake (for an extended period of time).
         superstructure.intake().withTimeout(1.5),
@@ -53,7 +53,7 @@ public class RTarmacFenderHG5Ball extends SequentialCommandGroup {
         // Come back and score.
         new ParallelCommandGroup(
             new DriveTrajectory(drivetrain, robot_state, hp_to_intermediate_2_),
-            superstructure.scoreCargo(true))
+            superstructure.scoreHighGoal())
     );
   }
 }

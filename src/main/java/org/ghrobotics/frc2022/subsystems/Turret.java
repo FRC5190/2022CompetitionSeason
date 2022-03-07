@@ -29,6 +29,7 @@ public class Turret extends SubsystemBase {
   private final ProfiledPIDController pid_controller_;
   private final SimpleMotorFeedforward feedforward_;
   private double last_velocity_setpoint_ = 0;
+  private boolean reset_pid_ = true;
 
   // IO
   private OutputType output_type_ = OutputType.PERCENT;
@@ -89,9 +90,16 @@ public class Turret extends SubsystemBase {
     // Update robot state.
     robot_state_.updateTurretAngle(new Rotation2d(io_.position));
 
-    leader_.set(0);
-    if (true)
+    // Reset PID controller if we have to.
+    if (reset_pid_) {
+      reset_pid_ = false;
+      pid_controller_.reset(io_.position, io_.velocity);
+    }
+
+    if (true) {
+      leader_.set(0);
       return;
+    }
 
     // Write outputs.
     switch (output_type_) {
@@ -131,6 +139,7 @@ public class Turret extends SubsystemBase {
    */
   public void setPercent(double value) {
     last_velocity_setpoint_ = 0;
+    reset_pid_ = true;
     output_type_ = OutputType.PERCENT;
     io_.demand = value;
   }
@@ -213,7 +222,7 @@ public class Turret extends SubsystemBase {
     public static final double kV = 1.2801;
     public static final double kA = 0.069845;
     public static final double kP = 2.54;
-    public static final double kMaxVelocity = 2 * Math.PI;
-    public static final double kMaxAcceleration = 3 * Math.PI;
+    public static final double kMaxVelocity = .2 * Math.PI;
+    public static final double kMaxAcceleration = .3 * Math.PI;
   }
 }

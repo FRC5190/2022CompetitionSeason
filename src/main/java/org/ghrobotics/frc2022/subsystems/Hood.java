@@ -1,13 +1,14 @@
 package org.ghrobotics.frc2022.subsystems;
 
 import com.revrobotics.CANSparkMax;
-import com.revrobotics.RelativeEncoder;
-import com.revrobotics.SparkMaxPIDController;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.AnalogEncoder;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.ghrobotics.frc2022.RobotState;
 import static com.revrobotics.CANSparkMax.IdleMode;
@@ -22,10 +23,13 @@ public class Hood extends SubsystemBase {
   private final CANSparkMax leader_;
 
   // Sensors
-  private final RelativeEncoder encoder_;
+  private final AnalogEncoder encoder_;
 
   // Control
-  private final SparkMaxPIDController pid_controller_;
+  private final ProfiledPIDController pid_controller_;
+  private final ArmFeedforward feedforward_;
+  private double last_velocity_setpoint_ = 0;
+  private boolean reset_pid_ = true;
 
   // IO
   private OutputType output_type_ = OutputType.PERCENT;
@@ -45,30 +49,20 @@ public class Hood extends SubsystemBase {
     // Initialize motor controller.
     leader_ = new CANSparkMax(Constants.kLeaderId, MotorType.kBrushless);
     leader_.restoreFactoryDefaults();
-    leader_.setIdleMode(IdleMode.kCoast);
+    leader_.setIdleMode(IdleMode.kBrake);
     leader_.enableVoltageCompensation(12);
     leader_.setSmartCurrentLimit(Constants.kCurrentLimit);
     leader_.setInverted(true);
 
     // Initialize encoder.
-    encoder_ = leader_.getEncoder();
-    encoder_.setPositionConversionFactor(2 * Math.PI / Constants.kGearRatio);
-    encoder_.setVelocityConversionFactor(2 * Math.PI / Constants.kGearRatio / 60);
+    encoder_ = new AnalogEncoder(Constants.kEncoderId);
 
     // Initialize PID controller.
-    pid_controller_ = leader_.getPIDController();
-    pid_controller_.setP(Constants.kP);
-    pid_controller_.setSmartMotionMaxVelocity(Constants.kMaxVelocity, 0);
-    pid_controller_.setSmartMotionMaxAccel(Constants.kMaxAcceleration, 0);
+    pid_controller_ = new ProfiledPIDController(Constants.kP, 0, 0,
+        new TrapezoidProfile.Constraints(Constants.kMaxVelocity, Constants.kMaxAcceleration));
 
-    // Set and enable soft limits.
-    leader_.setSoftLimit(SoftLimitDirection.kForward, (float) Constants.kMaxAngle);
-    leader_.setSoftLimit(SoftLimitDirection.kReverse, (float) Constants.kMinAngle);
-    leader_.enableSoftLimit(SoftLimitDirection.kForward, true);
-    leader_.enableSoftLimit(SoftLimitDirection.kReverse, true);
-
-    // Assume hood starts at min angle and zero encoder as such.
-    encoder_.setPosition(Constants.kMaxAngle);
+    // Initialize feedforward.
+    feedforward_ = new ArmFeedforward(Constants.kS, Constants.kG, Constants.kV, Constants.kA);
   }
 
   /**
@@ -78,11 +72,16 @@ public class Hood extends SubsystemBase {
   @Override
   public void periodic() {
     // Read inputs.
-    io_.position = encoder_.getPosition();
-    io_.velocity = encoder_.getVelocity();
+    io_.position = Constants.kEncoderSlope * (encoder_.get() - Constants.kMinEncoderValue)
+        + Constants.kMinAngle;
 
     // Update robot state.
     robot_state_.updateHoodAngle(new Rotation2d(io_.position));
+
+    if (reset_pid_) {
+      reset_pid_ = false;
+      pid_controller_.reset(io_.position);
+    }
 
     // Write outputs.
     switch (output_type_) {
@@ -91,8 +90,17 @@ public class Hood extends SubsystemBase {
         leader_.set(io_.demand);
         break;
       case POSITION:
-        // Pass setpoint to built-in motor controller PID.
-        pid_controller_.setReference(io_.demand, CANSparkMax.ControlType.kSmartMotion);
+        // Calculate motor controller voltage from feedback and feedforward.
+        double feedback = pid_controller_.calculate(io_.position);
+        TrapezoidProfile.State setpoint = pid_controller_.getSetpoint();
+        double feedforward = feedforward_.calculate(setpoint.position, setpoint.velocity,
+            (setpoint.velocity - last_velocity_setpoint_) / 0.02);
+
+        // Store last velocity setpoint.
+        last_velocity_setpoint_ = setpoint.velocity;
+
+        // Set voltage.
+        leader_.setVoltage(feedback + feedforward);
         break;
     }
   }
@@ -103,6 +111,7 @@ public class Hood extends SubsystemBase {
    * @param value The % output in [-1, 1].
    */
   public void setPercent(double value) {
+    reset_pid_ = true;
     output_type_ = OutputType.PERCENT;
     io_.demand = value;
   }
@@ -115,6 +124,7 @@ public class Hood extends SubsystemBase {
   public void setPosition(double value) {
     output_type_ = OutputType.POSITION;
     io_.demand = MathUtil.clamp(value, Constants.kMinAngle, Constants.kMaxAngle);
+    pid_controller_.setGoal(io_.demand);
   }
 
   /**
@@ -126,15 +136,6 @@ public class Hood extends SubsystemBase {
     return io_.position;
   }
 
-  /**
-   * Returns the current hood velocity in radians / sec.
-   *
-   * @return The current hood velocity in radians / sec.
-   */
-  public double getVelocity() {
-    return io_.velocity;
-  }
-
   public enum OutputType {
     PERCENT, POSITION
   }
@@ -142,7 +143,6 @@ public class Hood extends SubsystemBase {
   public static class PeriodicIO {
     // Inputs
     double position;
-    double velocity;
 
     // Outputs
     double demand;
@@ -152,18 +152,28 @@ public class Hood extends SubsystemBase {
     // Motor Controllers
     public static final int kLeaderId = 8;
 
+    // Sensors
+    public static final int kEncoderId = 1;
+
     // Current Limits
     public static final int kCurrentLimit = 20;
 
     // Hardware
-    public static final double kGearRatio = 35.0 * 40.0 / 18.0;
+    public static final double kMinEncoderValue = 0.775;
+    public static final double kMaxEncoderValue = 0.530;
     public static final double kMaxAngle = Units.degreesToRadians(42.4);
     public static final double kMinAngle = Units.degreesToRadians(2.6);
+    public static final double kEncoderSlope =
+        (kMaxAngle - kMinAngle) / (kMaxEncoderValue - kMinEncoderValue);
 
     // Control
-    public static final double kP = 0.05;
-    public static final double kMaxVelocity = 2 * Math.PI;
-    public static final double kMaxAcceleration = 0.2 * Math.PI;
+    public static final double kS = 0.00;
+    public static final double kG = 0.52;
+    public static final double kV = 1.52;
+    public static final double kA = 0.03;
+    public static final double kP = 1.0;
+    public static final double kMaxVelocity = 4 * Math.PI;
+    public static final double kMaxAcceleration = 4 * Math.PI;
   }
 }
 

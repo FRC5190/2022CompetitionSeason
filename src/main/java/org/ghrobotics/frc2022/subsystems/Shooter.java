@@ -7,7 +7,6 @@ import com.revrobotics.CANSparkMax;
 import edu.wpi.first.math.controller.BangBangController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import static com.revrobotics.CANSparkMax.IdleMode;
 import static com.revrobotics.CANSparkMax.MotorType;
@@ -118,6 +117,15 @@ public class Shooter extends SubsystemBase {
   public void setVelocity(double value) {
     output_type_ = OutputType.VELOCITY;
     bang_bang_controller_.setSetpoint(value);
+  }
+
+  /**
+   * Sets the shooter velocity in RPM.
+   *
+   * @param value The velocity in RPM.
+   */
+  public void setRPM(double value) {
+    setVelocity(Units.rotationsPerMinuteToRadiansPerSecond(value));
   }
 
   /**

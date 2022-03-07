@@ -173,13 +173,15 @@ public class Robot extends TimedRobot {
     drivetrain_.setDefaultCommand(new DriveTeleop(drivetrain_, driver_controller_));
 
     // Turret:
-    turret_.setDefaultCommand(new RunCommand(() -> turret_.setGoal(Math.PI, 0), turret_));
+    turret_.setDefaultCommand(new RunCommand(() -> turret_.setPercent(0), turret_));
+//    turret_.setDefaultCommand(new RunCommand(() -> turret_.setGoal(Math.PI, 0), turret_));
 
     // Shooter:
     shooter_.setDefaultCommand(new RunCommand(() -> shooter_.setPercent(0), shooter_));
 
     // Hood:
     hood_.setDefaultCommand(new RunCommand(() -> hood_.setPercent(0), hood_));
+//    hood_.setDefaultCommand(superstructure_.trackGoalWithHood());
 
     // Climber:
     climber_.setDefaultCommand(new ClimbTeleop(climber_, driver_controller_, () -> climb_mode_));
@@ -198,21 +200,34 @@ public class Robot extends TimedRobot {
           new RunCommand(() -> turret_.setGoal(Math.toRadians(90), 0), turret_).schedule();
         });
 
+
+    new JoystickButton(driver_controller_, XboxController.Button.kA.value)
+        .whenHeld(new RunCommand(() -> hood_.setPosition(Math.toRadians(25)), hood_));
+
+    new JoystickButton(driver_controller_, XboxController.Button.kY.value)
+        .whenHeld(new RunCommand(() -> hood_.setPosition(Math.toRadians(2.6)), hood_));
+
     // Intake with Left Trigger.
     new Button(() -> driver_controller_.getLeftTriggerAxis() > 0.1)
         .whenHeld(superstructure_.intake());
 
-    // Exhaust with Left Bumper.
+    // Shoot low goal with Left Bumper.
     new JoystickButton(driver_controller_, XboxController.Button.kLeftBumper.value)
-        .whenHeld(superstructure_.exhaust());
+        .whenHeld(superstructure_.scoreLowGoal());
 
-    // Shoot high goal with Right Trigger.
-    new Button(() -> driver_controller_.getRightTriggerAxis() > 0.1)
-        .whenHeld(superstructure_.scoreCargo(true));
-
-    // Shoot low goal with Right Bumper.
+    // Shoot high goal with Right Bumper.
     new JoystickButton(driver_controller_, XboxController.Button.kRightBumper.value)
-        .whenHeld(superstructure_.scoreCargo(false));
+        .whenHeld(superstructure_.scoreHighGoal());
+
+    // Add field-relative turret hints with d-pad.
+    new Button(() -> driver_controller_.getPOV() == 0)
+        .whenHeld(new RunCommand(() -> turret_.setGoal(0, 0), turret_));
+    new Button(() -> driver_controller_.getPOV() == 90)
+        .whenHeld(new RunCommand(() -> turret_.setGoal(Math.toRadians(90), 0), turret_));
+    new Button(() -> driver_controller_.getPOV() == 180)
+        .whenHeld(new RunCommand(() -> turret_.setGoal(Math.toRadians(180), 0), turret_));
+    new Button(() -> driver_controller_.getPOV() == 270)
+        .whenHeld(new RunCommand(() -> turret_.setGoal(Math.toRadians(270), 0), turret_));
   }
 
   /**

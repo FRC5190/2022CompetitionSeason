@@ -17,8 +17,12 @@ public class ClimbReset extends CommandBase {
   private double left_climb_current_ = 0;
   private double right_climb_current_ = 0;
 
+  // Whether we are done resetting.
+  private boolean left_reset_complete_ = false;
+  private boolean right_reset_complete_ = false;
+
   // Timer to make sure filter fills up.
-  private Timer timer_;
+  private final Timer timer_;
 
   /**
    * Resets the state of the climber, bringing both arms down until the limit.
@@ -57,16 +61,33 @@ public class ClimbReset extends CommandBase {
 
   @Override
   public void execute() {
-    // Run each climber arm down until current threshold is reached.
-    climber_.setLeftPercent(left_climb_current_ < Constants.kCurrentThreshold ? -0.1 : 0);
-    climber_.setRightPercent(right_climb_current_ < Constants.kCurrentThreshold ? -0.1 : 0);
-
-    // Add current measurement to filter but only store if we filled up the filter.
+    // Check whether we should start assigning currents at this point.
     boolean assign = timer_.hasElapsed(Constants.kFilterSize * 0.02);
-    double l = left_climb_current_filter_.calculate(climber_.getLeftSupplyCurrent());
-    double r = right_climb_current_filter_.calculate(climber_.getRightSupplyCurrent());
-    left_climb_current_ = assign ? l : 0;
-    right_climb_current_ = assign ? r : 0;
+
+    // Run each climber arm down until current threshold is reached.
+    if (!left_reset_complete_) {
+      climber_.setLeftPercent(-0.15);
+      double l = left_climb_current_filter_.calculate(climber_.getLeftSupplyCurrent());
+      left_climb_current_ = assign ? l : 0;
+
+      // Check current value.
+      if (left_climb_current_ > Constants.kCurrentThreshold)
+        left_reset_complete_ = true;
+    } else {
+      climber_.setLeftPercent(0);
+    }
+
+    if (!right_reset_complete_) {
+      climber_.setRightPercent(-0.15);
+      double r = right_climb_current_filter_.calculate(climber_.getLeftSupplyCurrent());
+      right_climb_current_ = assign ? r : 0;
+
+      // Check current value.
+      if (right_climb_current_ > Constants.kCurrentThreshold)
+        right_reset_complete_ = true;
+    } else {
+      climber_.setRightPercent(0);
+    }
   }
 
   @Override
@@ -87,8 +108,7 @@ public class ClimbReset extends CommandBase {
 
   @Override
   public boolean isFinished() {
-    return left_climb_current_ > Constants.kCurrentThreshold &&
-        right_climb_current_ > Constants.kCurrentThreshold;
+    return left_reset_complete_ && right_reset_complete_;
   }
 
   public static class Constants {
