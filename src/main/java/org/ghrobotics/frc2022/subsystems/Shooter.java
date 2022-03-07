@@ -1,12 +1,18 @@
 package org.ghrobotics.frc2022.subsystems;
 
 import com.ctre.phoenix.sensors.CANCoder;
+import com.ctre.phoenix.sensors.CANCoderSimCollection;
 import com.ctre.phoenix.sensors.SensorTimeBase;
 import com.ctre.phoenix.sensors.SensorVelocityMeasPeriod;
 import com.revrobotics.CANSparkMax;
 import edu.wpi.first.math.controller.BangBangController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
+import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.simulation.FlywheelSim;
+import edu.wpi.first.wpilibj.simulation.SimDeviceSim;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import static com.revrobotics.CANSparkMax.IdleMode;
 import static com.revrobotics.CANSparkMax.MotorType;
@@ -23,6 +29,11 @@ public class Shooter extends SubsystemBase {
   private final BangBangController bang_bang_controller_;
   private final SimpleMotorFeedforward feedforward_;
   private double last_velocity_setpoint_ = 0;
+
+  // Simulation
+  private final FlywheelSim physics_sim_;
+  private final SimDeviceSim leader_sim_;
+  private final CANCoderSimCollection encoder_sim_;
 
   // IO
   private OutputType output_type_ = OutputType.PERCENT;
@@ -53,7 +64,7 @@ public class Shooter extends SubsystemBase {
     encoder_ = new CANCoder(Constants.kEncoderId);
     encoder_.configFactoryDefault();
     encoder_.configFeedbackCoefficient(
-        2 * Math.PI / Constants.kGearRatio / Constants.kEncoderResolution,
+        2 * Math.PI / Constants.kEncoderGearRatio / Constants.kEncoderResolution,
         "rad", SensorTimeBase.PerSecond);
     encoder_.configSensorDirection(true);
     encoder_.configVelocityMeasurementPeriod(SensorVelocityMeasPeriod.Period_2Ms);
@@ -64,6 +75,13 @@ public class Shooter extends SubsystemBase {
 
     // Initialize feedforward.
     feedforward_ = new SimpleMotorFeedforward(Constants.kS, Constants.kV, Constants.kA);
+
+    // Initialize simulation objects.
+    physics_sim_ = new FlywheelSim(
+        LinearSystemId.identifyVelocitySystem(Constants.kV, Constants.kA),
+        DCMotor.getNEO(2), Constants.kGearRatio);
+    leader_sim_ = new SimDeviceSim("SPARK MAX [" + Constants.kLeaderId + "]");
+    encoder_sim_ = encoder_.getSimCollection();
   }
 
   /**
@@ -80,6 +98,11 @@ public class Shooter extends SubsystemBase {
       case PERCENT:
         // Send the percent output value directly to the motor controller.
         leader_.set(io_.demand);
+
+        // Set simulated inputs.
+        if (RobotBase.isSimulation()) {
+          leader_sim_.getDouble("Applied Output").set(io_.demand * 12);
+        }
         break;
       case VELOCITY:
         // Calculate motor controller voltage from feedback and feedforward.
@@ -93,9 +116,29 @@ public class Shooter extends SubsystemBase {
 
         // We multiply by 0.9 to avoid overshoot. Divide by 12 to change voltage to percent.
         // See: https://docs.wpilib.org/en/stable/docs/software/advanced-controls/controllers/bang-bang.html#combining-bang-bang-control-with-feedforward
-        leader_.set(feedback + 0.9 / 12 * feedforward);
+        leader_.setVoltage(feedback * 12 + 0.9 * feedforward);
         break;
     }
+  }
+
+  /**
+   * This method runs periodically every 20 ms in simulation. Here, the physics model should be
+   * updated and simulated sensor outputs should be set.
+   */
+  @Override
+  public void simulationPeriodic() {
+    // Update physics sim with inputs.
+    // Note: a bug with REV simulation causes getAppliedOutput() to return voltage instead of
+    // duty cycle, which is why we are not multiplying by 12.
+    physics_sim_.setInputVoltage(leader_.getAppliedOutput());
+
+    // Update physics sim forward in time.
+    physics_sim_.update(0.02);
+
+    // Update encoder velocity.
+    encoder_sim_.setVelocity(
+        (int) (physics_sim_.getAngularVelocityRadPerSec() * Constants.kEncoderGearRatio *
+            Constants.kEncoderResolution / 2 / Math.PI / 10));
   }
 
   /**
@@ -170,7 +213,8 @@ public class Shooter extends SubsystemBase {
     public static final int kCurrentLimit = 40;
 
     // Hardware
-    public static final double kGearRatio = 30.0 / 18.0;
+    public static final double kGearRatio = 0.5;
+    public static final double kEncoderGearRatio = 30.0 / 18.0;
     public static final double kEncoderResolution = 4096;
     public static final double kWheelRadius = 0.0508;
 

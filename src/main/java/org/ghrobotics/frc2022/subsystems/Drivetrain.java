@@ -1,5 +1,6 @@
 package org.ghrobotics.frc2022.subsystems;
 
+import com.ctre.phoenix.sensors.BasePigeonSimCollection;
 import com.ctre.phoenix.sensors.WPI_PigeonIMU;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
@@ -9,6 +10,10 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
+import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.simulation.DifferentialDrivetrainSim;
+import edu.wpi.first.wpilibj.simulation.SimDeviceSim;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.ghrobotics.frc2022.RobotState;
 import static com.revrobotics.CANSparkMax.ControlType;
@@ -42,6 +47,11 @@ public class Drivetrain extends SubsystemBase {
   private final DifferentialDriveKinematics kinematics_;
   private final RamseteController ramsete_controller_;
 
+  // Simulation
+  private final DifferentialDrivetrainSim physics_sim_;
+  private final SimDeviceSim left_leader_sim_;
+  private final SimDeviceSim right_leader_sim_;
+  private final BasePigeonSimCollection gyro_sim_;
 
   // IO
   private OutputType output_type_ = OutputType.PERCENT;
@@ -115,6 +125,19 @@ public class Drivetrain extends SubsystemBase {
     // Initialize trajectory tracking.
     kinematics_ = new DifferentialDriveKinematics(Constants.kTrackWidth);
     ramsete_controller_ = new RamseteController();
+
+    // Initialize simulation objects.
+    physics_sim_ = new DifferentialDrivetrainSim(
+        DCMotor.getNEO(2),
+        Constants.kGearRatio,
+        Constants.kMOI,
+        Constants.kMass,
+        Constants.kWheelRadius,
+        Constants.kTrackWidth,
+        null);
+    left_leader_sim_ = new SimDeviceSim("SPARK MAX [" + Constants.kLeftLeaderId + "]");
+    right_leader_sim_ = new SimDeviceSim("SPARK MAX [" + Constants.kRightLeaderId + "]");
+    gyro_sim_ = gyro_.getSimCollection();
   }
 
   /**
@@ -143,15 +166,28 @@ public class Drivetrain extends SubsystemBase {
         // Send the percent output values directly to the motor controller.
         left_leader_.set(io_.l_demand);
         right_leader_.set(io_.r_demand);
+
+        // Set simulated inputs.
+        if (RobotBase.isSimulation()) {
+          left_leader_sim_.getDouble("Applied Output").set(io_.l_demand * 12);
+          right_leader_sim_.getDouble("Applied Output").set(io_.r_demand * 12);
+        }
         break;
       case VELOCITY:
         // Calculate feedforward value and add to built-in motor controller PID.
-        left_pid_controller_.setReference(io_.l_demand, ControlType.kVelocity, 0,
-            left_feedforward_.calculate(io_.l_demand,
-                (io_.l_demand - last_l_velocity_setpoint_) / 0.02));
-        right_pid_controller_.setReference(io_.r_demand, ControlType.kVelocity, 0,
-            right_feedforward_.calculate(io_.r_demand,
-                (io_.r_demand - last_r_velocity_setpoint_) / 0.02));
+        double l_feedforward = left_feedforward_.calculate(io_.l_demand,
+            (io_.l_demand - last_l_velocity_setpoint_) / 0.02);
+        double r_feedforward = right_feedforward_.calculate(io_.r_demand,
+            (io_.r_demand - last_r_velocity_setpoint_) / 0.02);
+
+        left_pid_controller_.setReference(io_.l_demand, ControlType.kVelocity, 0, l_feedforward);
+        right_pid_controller_.setReference(io_.r_demand, ControlType.kVelocity, 0, r_feedforward);
+
+        // Set simulated inputs.
+        if (RobotBase.isSimulation()) {
+          left_leader_sim_.getDouble("Applied Output").set(l_feedforward);
+          right_leader_sim_.getDouble("Applied Output").set(r_feedforward);
+        }
 
         // Store last velocity setpoints.
         last_l_velocity_setpoint_ = io_.l_demand;
@@ -159,6 +195,31 @@ public class Drivetrain extends SubsystemBase {
         break;
     }
   }
+
+  /**
+   * This method runs periodically every 20 ms in simulation. Here, the physics model should be
+   * updated and simulated sensor outputs should be set.
+   */
+  @Override
+  public void simulationPeriodic() {
+    // Update physics sim with inputs.
+    // Note: a bug with REV simulation causes getAppliedOutput() to return voltage instead of
+    // duty cycle, which is why we are not multiplying by 12.
+    physics_sim_.setInputs(left_leader_.getAppliedOutput(), right_leader_.getAppliedOutput());
+
+    // Update physics sim forward in time.
+    physics_sim_.update(0.02);
+
+    // Update encoder values.
+    left_leader_sim_.getDouble("Position").set(physics_sim_.getLeftPositionMeters());
+    left_leader_sim_.getDouble("Velocity").set(physics_sim_.getLeftVelocityMetersPerSecond());
+    right_leader_sim_.getDouble("Position").set(physics_sim_.getRightPositionMeters());
+    right_leader_sim_.getDouble("Velocity").set(physics_sim_.getRightVelocityMetersPerSecond());
+
+    // Update gyro values.
+    gyro_sim_.setRawHeading(physics_sim_.getHeading().getDegrees());
+  }
+
 
   /**
    * Sets the idle mode on each of the drivetrain motors.
@@ -284,6 +345,8 @@ public class Drivetrain extends SubsystemBase {
     public static double kGearRatio = 6.07;
     public static double kWheelRadius = 0.0508;
     public static double kTrackWidth = 0.759;
+    public static double kMass = 65.0;
+    public static double kMOI = 10.0;
 
     // Control
     public static double kLeftKs = 0.25438;

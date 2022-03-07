@@ -143,6 +143,9 @@ public class Robot extends TimedRobot {
     // Update superstructure.
     superstructure_.periodic();
 
+    // Update telemetry.
+    telemetry_.periodic();
+
     // Check if we need to clear buttons.
     if (clear_buttons_) {
       CommandScheduler.getInstance().clearButtons();
@@ -176,8 +179,9 @@ public class Robot extends TimedRobot {
     drivetrain_.setDefaultCommand(new DriveTeleop(drivetrain_, driver_controller_));
 
     // Turret:
-    turret_.setDefaultCommand(new RunCommand(() -> turret_.setPercent(0), turret_));
+//    turret_.setDefaultCommand(new RunCommand(() -> turret_.setPercent(0), turret_));
 //    turret_.setDefaultCommand(new RunCommand(() -> turret_.setGoal(Math.PI, 0), turret_));
+    turret_.setDefaultCommand(superstructure_.trackGoalWithTurret());
 
     // Shooter:
     shooter_.setDefaultCommand(new RunCommand(() -> shooter_.setPercent(0), shooter_));

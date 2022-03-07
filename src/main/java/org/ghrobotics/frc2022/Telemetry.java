@@ -1,11 +1,16 @@
 package org.ghrobotics.frc2022;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import java.util.function.BooleanSupplier;
 import org.ghrobotics.frc2022.subsystems.Climber;
@@ -37,6 +42,9 @@ public class Telemetry {
 
   // Misc Data Sources
   private final BooleanSupplier climb_mode_;
+
+  // Field
+  private final Field2d field_;
 
   /**
    * Handles reporting of telemetry to the drivers / programmers, including autonomous mode
@@ -76,6 +84,11 @@ public class Telemetry {
 
     // Assign misc data sources.
     climb_mode_ = climb_mode;
+
+    // Initialize field and add it to SmartDashboard (we don't need to view this on the primary
+    // Shuffleboard tab).
+    field_ = new Field2d();
+    SmartDashboard.putData("Field", field_);
 
     // Put autonomous mode selector on Shuffleboard.
     tab_.add("Autonomous Mode Selector", auto_selector_)
@@ -150,5 +163,18 @@ public class Telemetry {
         .withPosition(6, 2);
     feeder_layout.addBoolean("Intake Sensor", feeder::getIntakeSensor);
     feeder_layout.addBoolean("Exit Sensor", feeder::getExitSensor);
+  }
+
+  public void periodic() {
+    // Get robot pose from state.
+    Pose2d robot_pose = robot_state_.getRobotPose();
+
+    // Update field view with robot pose.
+    field_.setRobotPose(robot_pose);
+
+    // Update field view with turret pose.
+    field_.getObject("Turret").setPose(
+        robot_pose.transformBy(
+            new Transform2d(new Translation2d(), robot_state_.getTurretAngle())));
   }
 }

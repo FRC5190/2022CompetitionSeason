@@ -1,15 +1,98 @@
 {
+  "HALProvider": {
+    "Other Devices": {
+      "SPARK MAX [5]": {
+        "header": {
+          "open": true
+        }
+      }
+    },
+    "Timing": {
+      "window": {
+        "visible": false
+      }
+    }
+  },
   "NTProvider": {
     "types": {
       "/FMSInfo": "FMSInfo",
-      "/Shuffleboard/Apex/Autonomous Mode Selector": "String Chooser"
+      "/Shuffleboard/Apex/Autonomous Mode Selector": "String Chooser",
+      "/Shuffleboard/Apex/Field": "Field2d",
+      "/SmartDashboard/Field": "Field2d"
     },
     "windows": {
-      "/Shuffleboard/Apex/Autonomous Mode Selector": {
+      "/SmartDashboard/Field": {
+        "Robot": {
+          "arrowSize": 45,
+          "arrowWeight": 1.0,
+          "length": 1.0,
+          "weight": 2.0,
+          "width": 1.0
+        },
+        "Turret": {
+          "arrowColor": [
+            0.8382352590560913,
+            0.33282873034477234,
+            0.7936407327651978,
+            255.0
+          ],
+          "arrowSize": 24,
+          "arrowWeight": 0.20000000298023224,
+          "color": [
+            0.5098038911819458,
+            0.6828142404556274,
+            1.0,
+            255.0
+          ],
+          "length": 0.5,
+          "weight": 0.20000000298023224,
+          "width": 0.5
+        },
+        "bottom": 900,
+        "height": 8.229599952697754,
+        "image": "/Users/prateekma/Documents/Dev/PathWeaver/src/main/resources/edu/wpi/first/pathweaver/2022-field.png",
+        "left": 74,
+        "right": 1774,
+        "top": 50,
+        "width": 16.459199905395508,
         "window": {
           "visible": true
         }
       }
+    }
+  },
+  "NetworkTables": {
+    "Shuffleboard": {
+      "Apex": {
+        "Scoring Subsystems": {
+          "open": true
+        },
+        "open": true
+      },
+      "open": true
+    },
+    "SmartDashboard": {
+      "open": true
+    }
+  },
+  "Plot": {
+    "Plot <0>": {
+      "plots": [
+        {
+          "height": 326,
+          "series": [
+            {
+              "color": [
+                0.2980392277240753,
+                0.44705885648727417,
+                0.6901960968971252,
+                1.0
+              ],
+              "id": "NT:/Shuffleboard/Apex/Scoring Subsystems/Turret Position (deg)"
+            }
+          ]
+        }
+      ]
     }
   }
 }

@@ -2,6 +2,7 @@ package org.ghrobotics.frc2022.subsystems;
 
 import com.ctre.phoenix.sensors.AbsoluteSensorRange;
 import com.ctre.phoenix.sensors.CANCoder;
+import com.ctre.phoenix.sensors.CANCoderSimCollection;
 import com.ctre.phoenix.sensors.SensorInitializationStrategy;
 import com.ctre.phoenix.sensors.SensorTimeBase;
 import com.ctre.phoenix.sensors.SensorVelocityMeasPeriod;
@@ -9,7 +10,11 @@ import com.revrobotics.CANSparkMax;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.wpilibj.simulation.DCMotorSim;
+import edu.wpi.first.wpilibj.simulation.SimDeviceSim;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.ghrobotics.frc2022.RobotState;
 import static com.revrobotics.CANSparkMax.IdleMode;
@@ -30,6 +35,11 @@ public class Turret extends SubsystemBase {
   private final SimpleMotorFeedforward feedforward_;
   private double last_velocity_setpoint_ = 0;
   private boolean reset_pid_ = true;
+
+  // Simulation
+  private final DCMotorSim physics_sim_;
+  private final SimDeviceSim leader_sim_;
+  private final CANCoderSimCollection encoder_sim_;
 
   // IO
   private OutputType output_type_ = OutputType.PERCENT;
@@ -75,6 +85,11 @@ public class Turret extends SubsystemBase {
 
     // Initialize feedforward.
     feedforward_ = new SimpleMotorFeedforward(Constants.kS, Constants.kV, Constants.kA);
+
+    // Initialize simulation objects.
+    physics_sim_ = new DCMotorSim(DCMotor.getNEO(1), Constants.kGearRatio, Constants.kMOI);
+    leader_sim_ = new SimDeviceSim("SPARK MAX [" + Constants.kLeaderId + "]");
+    encoder_sim_ = encoder_.getSimCollection();
   }
 
   /**
@@ -84,7 +99,7 @@ public class Turret extends SubsystemBase {
   @Override
   public void periodic() {
     // Read inputs.
-    io_.position = encoder_.getAbsolutePosition();
+    io_.position = encoder_.getPosition();
     io_.velocity = encoder_.getVelocity();
 
     // Update robot state.
@@ -109,6 +124,8 @@ public class Turret extends SubsystemBase {
         double feedforward = feedforward_.calculate(setpoint.velocity,
             (setpoint.velocity - last_velocity_setpoint_) / 0.02);
 
+        SmartDashboard.putNumber("Setpoint", Math.toDegrees(setpoint.position));
+
         // Store last velocity setpoint.
         last_velocity_setpoint_ = setpoint.velocity;
 
@@ -116,6 +133,28 @@ public class Turret extends SubsystemBase {
         leader_.setVoltage(feedback + feedforward);
         break;
     }
+  }
+
+  /**
+   * This method runs periodically every 20 ms in simulation. Here, the physics model should be
+   * updated and simulated sensor outputs should be set.
+   */
+  @Override
+  public void simulationPeriodic() {
+    // Update physics sim with inputs.
+    // Note: a bug with REV simulation causes getAppliedOutput() to return voltage instead of
+    // duty cycle, which is why we are not multiplying by 12.
+    physics_sim_.setInputVoltage(-leader_.getAppliedOutput());
+
+    // Update physics sim forward in time.
+    physics_sim_.update(0.02);
+
+    // Set encoder inputs.
+    encoder_sim_.setRawPosition(
+        (int) (physics_sim_.getAngularPositionRad() / 2 / Math.PI * Constants.kEncoderResolution));
+    encoder_sim_.setVelocity(
+        (int) (physics_sim_.getAngularVelocityRadPerSec() / 2 / Math.PI *
+            Constants.kEncoderResolution / 10));
   }
 
   /**
@@ -211,13 +250,15 @@ public class Turret extends SubsystemBase {
     public static final double kMaxAngle = 2 * Math.PI;
     public static final double kEncoderMagnetOffset = 344;
     public static final double kEncoderResolution = 4096;
+    public static final double kGearRatio = 7.0 * 150 / 16.0;
+    public static final double kMOI = 0.1764;
 
     // Control
     public static final double kS = 0.37308;
     public static final double kV = 1.2801;
     public static final double kA = 0.069845;
     public static final double kP = 2.54;
-    public static final double kMaxVelocity = .2 * Math.PI;
-    public static final double kMaxAcceleration = .3 * Math.PI;
+    public static final double kMaxVelocity = 2 * Math.PI;
+    public static final double kMaxAcceleration = 3 * Math.PI;
   }
 }

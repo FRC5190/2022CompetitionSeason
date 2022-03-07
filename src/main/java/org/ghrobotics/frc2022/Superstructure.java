@@ -89,8 +89,8 @@ public class Superstructure {
     robot_speeds_ = robot_state_.getRobotSpeeds();
 
     // Get the goal position. (We can swap between GoalTracker and Pose Estimator here).
-    Translation2d goal = goal_tracker_.getClosestTarget(robot_pose_).getTranslation();
-    /* Translation2d goal = Constants.kGoal; */ // pose estimator
+//    Translation2d goal = goal_tracker_.getClosestTarget(robot_pose_).getTranslation();
+    Translation2d goal = Constants.kGoal; // pose estimator
 
     // Calculate translation to goal.
     robot_to_goal_ = goal.minus(robot_pose_.getTranslation());
