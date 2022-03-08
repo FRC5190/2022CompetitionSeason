@@ -8,9 +8,9 @@ goalHeight = 8 * 12 + 9     # in
 trajectories = []
 
 measuredTerminalVelocity = 66.7  # ft/s
-dragCoefficient = 0.23
+dragCoefficient = 0.25
 airDensity = 1.23  # kg/m3
-liftCoefficient = 0.0
+liftCoefficient = 0.13
 
 gravity = -9.8  # m/s2
 ballDiameter = 9.5  # in
@@ -110,7 +110,7 @@ d = 1.0
 while d <= 8.0:
     updatedTrajectories = list(map(lambda t: t.update({'d1': distance1(t), 'd2': distance2(t, d)}) or t, trajectories))
     # print(updatedTrajectories)
-    filteredTrajectories = list(filter(lambda t: (t['d2'] < 0.05) and (t['hc'] > goalHeightMet + 0.3) and 
+    filteredTrajectories = list(filter(lambda t: (t['d2'] < 0.05) and (t['hc'] > goalHeightMet + 0.3) and
         (t['dg'] - 2*(t['dg'] - t['dc']) < d - 0.75) and t['ag'] < -0.5, updatedTrajectories))
     sortedTrajectories = sorted(filteredTrajectories, key = lambda t: t['d1'])
     if len(sortedTrajectories) > 0:
