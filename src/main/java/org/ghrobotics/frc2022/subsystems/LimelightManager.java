@@ -7,7 +7,6 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.ghrobotics.frc2022.RobotState;
 import org.ghrobotics.frc2022.vision.GoalTracker;
@@ -67,8 +66,6 @@ public class LimelightManager extends SubsystemBase {
       Rotation2d turret_angle = robot_state_.getTurretAngle(timestamp);
       Rotation2d hood_angle = robot_state_.getHoodAngle(timestamp);
 
-      // Calculate
-
       // Get tx and ty values.
       double tx = limelight_.getTx();
       double ty = limelight_.getTy();
@@ -90,8 +87,6 @@ public class LimelightManager extends SubsystemBase {
       double distance_to_goal = (Constants.kGoalHeight - camera_height) /
           Math.tan(camera_angle + Math.toRadians(ty)) / Math.cos(angle_to_goal);
 
-      SmartDashboard.putNumber("Camera Dist", Units.metersToInches(distance_to_goal));
-
       // Calculate camera to goal transformation.
       Transform2d camera_to_goal = new Transform2d(
           new Translation2d(distance_to_goal * Math.cos(angle_to_goal),
@@ -109,13 +104,23 @@ public class LimelightManager extends SubsystemBase {
       Transform2d robot_to_turret = new Transform2d(
           new Translation2d(Constants.kRobotToTurretDistance, 0), turret_angle);
 
+      // Calculate overall transform.
+      Transform2d robot_to_goal = robot_to_turret.plus(turret_to_camera).plus(camera_to_goal)
+          .plus(Constants.kGoalToGoalCenter);
+
       // Calculate global target pose.
-      Pose2d global_target_pose =
-          robot_pose.transformBy(robot_to_turret).transformBy(turret_to_camera).transformBy(
-              camera_to_goal).transformBy(Constants.kGoalToGoalCenter);
+      Pose2d global_target_pose = robot_pose.transformBy(robot_to_goal);
+
+      // Calculate robot pose from vision measurements.
+      Rotation2d goal_rotation = robot_pose.transformBy(robot_to_goal).getRotation();
+      Pose2d vision_robot_pose = new Pose2d(Constants.kGoal, goal_rotation)
+          .transformBy(robot_to_goal.inverse());
 
       // Add to goal tracker.
       goal_tracker_.addSamples(timestamp, global_target_pose);
+
+      // Add to pose estimator.
+      robot_state_.addVisionMeasurement(timestamp, vision_robot_pose);
     }
   }
 
@@ -136,7 +141,9 @@ public class LimelightManager extends SubsystemBase {
     public static final int kAliveFilterTaps = 10;
 
     // Goal Measurements
-    public static final double kGoalHeight = Units.inchesToMeters(100); // TODO
+    public static final double kGoalHeight = Units.inchesToMeters(100);
+    public static final Translation2d kGoal = new Translation2d(Units.feetToMeters(27),
+        Units.feetToMeters(13.5));
     public static final Transform2d kGoalToGoalCenter = new Transform2d(
         new Translation2d(Units.inchesToMeters(27), 0), new Rotation2d());
 

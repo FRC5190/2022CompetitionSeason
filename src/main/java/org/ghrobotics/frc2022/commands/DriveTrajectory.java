@@ -4,6 +4,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
 import edu.wpi.first.math.trajectory.Trajectory;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import org.ghrobotics.frc2022.RobotState;
@@ -80,6 +81,15 @@ public class DriveTrajectory extends CommandBase {
     // Stop and reset the timer.
     timer_.stop();
     timer_.reset();
+
+    // Debug: print error
+    Pose2d end_pose = trajectory_.sample(trajectory_.getTotalTimeSeconds()).poseMeters;
+    Pose2d robot_pose = robot_state_.getRobotPose();
+
+    System.out.printf("X Error (in): %3.2f, Y Error (in): %3.2f, Theta Error (deg): %3.2f\n",
+        Units.metersToFeet(end_pose.getX() - robot_pose.getX()),
+        Units.metersToFeet(end_pose.getY() - robot_pose.getY()),
+        end_pose.getRotation().getDegrees() - robot_pose.getRotation().getDegrees());
   }
 
   @Override

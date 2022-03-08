@@ -1,6 +1,8 @@
 package org.ghrobotics.frc2022;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
@@ -16,6 +18,7 @@ import org.ghrobotics.frc2022.planners.HighGoalPlanner;
 import org.ghrobotics.frc2022.subsystems.Feeder;
 import org.ghrobotics.frc2022.subsystems.Hood;
 import org.ghrobotics.frc2022.subsystems.Intake;
+import org.ghrobotics.frc2022.subsystems.LimelightManager;
 import org.ghrobotics.frc2022.subsystems.Shooter;
 import org.ghrobotics.frc2022.subsystems.Turret;
 import org.ghrobotics.frc2022.vision.GoalTracker;
@@ -40,13 +43,9 @@ public class Superstructure {
   // Tracking
   private Pose2d robot_pose_;
   private ChassisSpeeds robot_speeds_;
-  private Translation2d robot_to_goal_;
-  private double robot_to_goal_distance_;
-  private double robot_to_goal_angle_;
-
-  // Status
-  private boolean scoring_ = false;
-
+  private Translation2d turret_to_goal_;
+  private double turret_to_goal_distance_;
+  private double turret_to_goal_angle_;
 
   /**
    * This class manages all mechanisms on the "superstructure" i.e. turret, shooter, hood, intake,
@@ -88,17 +87,24 @@ public class Superstructure {
     robot_pose_ = robot_state_.getRobotPose();
     robot_speeds_ = robot_state_.getRobotSpeeds();
 
-    // Get the goal position. (We can swap between GoalTracker and Pose Estimator here).
-//    Translation2d goal = goal_tracker_.getClosestTarget(robot_pose_).getTranslation();
-    Translation2d goal = Constants.kGoal; // pose estimator
+    // Get the goal position.
+    Translation2d goal;
+    if (Robot.kUsePoseEstimator)
+      goal = Constants.kGoal;
+    else
+      goal = goal_tracker_.getClosestTarget(robot_pose_).getTranslation();
+
+    // Calculate turret pose.
+    Pose2d turret_pose = robot_pose_.transformBy(
+        new Transform2d(new Translation2d(LimelightManager.Constants.kRobotToTurretDistance, 0),
+            new Rotation2d()));
 
     // Calculate translation to goal.
-    robot_to_goal_ = goal.minus(robot_pose_.getTranslation());
+    turret_to_goal_ = new Pose2d(goal, new Rotation2d()).relativeTo(turret_pose).getTranslation();
 
     // Calculate distance and angle to goal.
-    robot_to_goal_distance_ = robot_to_goal_.getNorm();
-    robot_to_goal_angle_ = Math.atan2(robot_to_goal_.getY(), robot_to_goal_.getX())
-        - robot_pose_.getRotation().getRadians();
+    turret_to_goal_distance_ = turret_to_goal_.getNorm();
+    turret_to_goal_angle_ = Math.atan2(turret_to_goal_.getY(), turret_to_goal_.getX());
   }
 
   /**
@@ -153,30 +159,30 @@ public class Superstructure {
         new RunCommand(() -> {
           // Calculate turret angular velocity setpoint.
           double turret_omega = -robot_speeds_.omegaRadiansPerSecond -
-              robot_speeds_.vxMetersPerSecond * Math.sin(robot_to_goal_angle_) /
-                  robot_to_goal_distance_;
+              robot_speeds_.vxMetersPerSecond * Math.sin(turret_to_goal_angle_) /
+                  turret_to_goal_distance_;
 
           // Calculate shooter speed and hood angle from lookup table.
-          double shooter_speed = high_goal_planner_.getShooterSpeed(robot_to_goal_distance_);
-          double hood_angle = high_goal_planner_.getHoodAngle(robot_to_goal_distance_);
+          double shooter_speed = high_goal_planner_.getShooterSpeed(turret_to_goal_distance_);
+          double hood_angle = high_goal_planner_.getHoodAngle(turret_to_goal_distance_);
 
           // Get the speed of the ball on the xy plane.
           double ball_vxy = shooter_speed * Shooter.Constants.kWheelRadius / 2 *
               Math.sin(hood_angle);
 
           // Calculate time of flight (assuming no air resistance).
-          double t = robot_to_goal_distance_ / ball_vxy;
+          double t = turret_to_goal_distance_ / ball_vxy;
 
           // Calculate new distance to goal, assuming same time of flight.
           double adjusted_distance = Math.sqrt(
-              Math.pow(robot_to_goal_distance_, 2) + Math.pow(robot_speeds_.vxMetersPerSecond, 2) -
-                  2 * robot_to_goal_distance_ * robot_speeds_.vxMetersPerSecond * t *
-                      Math.cos(robot_to_goal_angle_)
+              Math.pow(turret_to_goal_distance_, 2) + Math.pow(robot_speeds_.vxMetersPerSecond, 2) -
+                  2 * turret_to_goal_distance_ * robot_speeds_.vxMetersPerSecond * t *
+                      Math.cos(turret_to_goal_angle_)
           );
 
           // Calculate turret angle.
-          double turret_theta = robot_to_goal_angle_ +
-              Math.asin(robot_speeds_.vxMetersPerSecond * t * Math.sin(robot_to_goal_angle_) /
+          double turret_theta = turret_to_goal_angle_ +
+              Math.asin(robot_speeds_.vxMetersPerSecond * t * Math.sin(turret_to_goal_angle_) /
                   adjusted_distance);
 
           // Use adjusted distance to calculate new shooter speed.
@@ -235,10 +241,10 @@ public class Superstructure {
    * @return The command to continuously track the goal with the turret.
    */
   public Command trackGoalWithTurret() {
-    return new RunCommand(() -> turret_.setGoal(robot_to_goal_angle_,
+    return new RunCommand(() -> turret_.setGoal(turret_to_goal_angle_,
         -robot_speeds_.omegaRadiansPerSecond -
-            robot_speeds_.vxMetersPerSecond * Math.sin(robot_to_goal_angle_) /
-                robot_to_goal_distance_), turret_);
+            robot_speeds_.vxMetersPerSecond * Math.sin(turret_to_goal_angle_) /
+                turret_to_goal_distance_), turret_);
   }
 
   /**
@@ -248,7 +254,25 @@ public class Superstructure {
    */
   public Command trackGoalWithHood() {
     return new RunCommand(
-        () -> hood_.setPosition(high_goal_planner_.getHoodAngle(robot_to_goal_distance_)), hood_);
+        () -> hood_.setPosition(high_goal_planner_.getHoodAngle(turret_to_goal_distance_)), hood_);
+  }
+
+  /**
+   * Returns the distance from the robot to goal.
+   *
+   * @return The distance from the robot to goal.
+   */
+  public double getRobotToGoalDistance() {
+    return turret_to_goal_distance_;
+  }
+
+  /**
+   * Returns the angle from the robot to goal.
+   *
+   * @return The angle from the robot to goal.
+   */
+  public double getRobotToGoalAngle() {
+    return turret_to_goal_angle_;
   }
 
   public static class Constants {
@@ -257,8 +281,8 @@ public class Superstructure {
         Units.feetToMeters(27), Units.feetToMeters(13.5));
 
     // Low Goal Scoring
-    public static final double kLowGoalHoodAngle = Math.toRadians(40);
-    public static final double kLowGoalShooterRPM = 3000;
+    public static final double kLowGoalHoodAngle = Math.toRadians(2.6);
+    public static final double kLowGoalShooterRPM = 3500;
 
     // Intake
     public static final double kIntakeCollectSpeed = 0.85;

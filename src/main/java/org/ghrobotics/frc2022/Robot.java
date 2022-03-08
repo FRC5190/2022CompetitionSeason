@@ -5,6 +5,8 @@
 package org.ghrobotics.frc2022;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
@@ -14,6 +16,7 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.Button;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import org.ghrobotics.frc2022.auto.AutoPlanner;
 import org.ghrobotics.frc2022.auto.RTarmacFenderFiveBall;
 import org.ghrobotics.frc2022.commands.ClimbAutomatic;
 import org.ghrobotics.frc2022.commands.ClimbReset;
@@ -38,6 +41,10 @@ import static com.revrobotics.CANSparkMax.IdleMode;
  * project.
  */
 public class Robot extends TimedRobot {
+  // Constants
+  public static final boolean kUsePoseEstimator = true;
+  public static final boolean kUsePoseEstimatorInAuto = false;
+
   // Initialize robot state.
   RobotState robot_state_ = new RobotState();
 
@@ -82,12 +89,17 @@ public class Robot extends TimedRobot {
   // Create telemetry.
   private final Telemetry telemetry_ = new Telemetry(
       robot_state_, drivetrain_, turret_, shooter_, hood_, intake_, feeder_, climber_,
+      superstructure_,
       auto_selector_, () -> climb_mode_);
 
   @Override
   public void robotInit() {
     // Disable LiveWindow telemetry.
     LiveWindow.disableAllTelemetry();
+
+    // Silence joystick warnings in sim.
+    if (RobotBase.isSimulation())
+      DriverStation.silenceJoystickConnectionWarning(true);
 
     // Enable NetworkTables flush() at higher rate.
     setNetworkTablesFlushEnabled(true);
@@ -128,6 +140,7 @@ public class Robot extends TimedRobot {
   public void teleopInit() {
     // Temporarily disable soft limits.
     climber_.enableSoftLimits(false);
+    robot_state_.resetPosition(AutoPlanner.kRTarmacFenderWallToBottomCargo.getInitialPose());
 
     // Set brake mode on turret and drivetrain.
     drivetrain_.setIdleMode(IdleMode.kBrake);
@@ -188,7 +201,7 @@ public class Robot extends TimedRobot {
     shooter_.setDefaultCommand(new RunCommand(() -> shooter_.setPercent(0), shooter_));
 
     // Hood:
-    hood_.setDefaultCommand(new RunCommand(() -> hood_.setPercent(0), hood_));
+    hood_.setDefaultCommand(superstructure_.trackGoalWithHood());
 
     // Climber:
     climber_.setDefaultCommand(new ClimbTeleop(climber_, driver_controller_, () -> climb_mode_));
@@ -207,12 +220,13 @@ public class Robot extends TimedRobot {
           new RunCommand(() -> turret_.setGoal(Math.toRadians(90), 0), turret_).schedule();
         });
 
-
+    // TESTING: turret
     new JoystickButton(driver_controller_, XboxController.Button.kA.value)
-        .whenHeld(new RunCommand(() -> hood_.setPosition(Math.toRadians(25)), hood_));
+        .whenHeld(new RunCommand(() -> turret_.setGoal(Math.toRadians(270), 0), turret_));
 
+    // TESTING: turret
     new JoystickButton(driver_controller_, XboxController.Button.kY.value)
-        .whenHeld(new RunCommand(() -> hood_.setPosition(Math.toRadians(2.6)), hood_));
+        .whenHeld(new RunCommand(() -> turret_.setGoal(Math.toRadians(90), 0), turret_));
 
     // Intake with Left Trigger.
     new Button(() -> driver_controller_.getLeftTriggerAxis() > 0.1)
@@ -264,7 +278,9 @@ public class Robot extends TimedRobot {
    * climb mode, scoring, ball in intake).
    */
   private void updateLEDs() {
-    if (climb_reset_cmd_.isScheduled())
+    if (turret_.getLimitSwitch())
+      led_.setOutput(LED.StandardLEDOutput.AUTOMATIC_SCORING);
+    else if (climb_reset_cmd_.isScheduled())
       led_.setOutput(LED.StandardLEDOutput.CLIMB_RESETTING);
 
     else if (climb_mode_)

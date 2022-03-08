@@ -7,11 +7,13 @@ import com.ctre.phoenix.sensors.SensorInitializationStrategy;
 import com.ctre.phoenix.sensors.SensorTimeBase;
 import com.ctre.phoenix.sensors.SensorVelocityMeasPeriod;
 import com.revrobotics.CANSparkMax;
+import com.revrobotics.RelativeEncoder;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.simulation.SimDeviceSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -29,6 +31,8 @@ public class Turret extends SubsystemBase {
 
   // Sensors
   private final CANCoder encoder_;
+  private final RelativeEncoder backup_encoder_;
+  private final DigitalInput limit_switch_;
 
   // Control
   private final ProfiledPIDController pid_controller_;
@@ -78,6 +82,15 @@ public class Turret extends SubsystemBase {
     encoder_.configSensorInitializationStrategy(
         SensorInitializationStrategy.BootToAbsolutePosition);
 
+
+    limit_switch_ = new DigitalInput(Constants.kLimitSwitchId);
+
+
+    backup_encoder_ = leader_.getEncoder();
+    backup_encoder_.setPositionConversionFactor(2 * Math.PI / Constants.kGearRatio);
+    backup_encoder_.setVelocityConversionFactor(2 * Math.PI / Constants.kGearRatio / 60);
+    backup_encoder_.setPosition(Math.toRadians(270));
+
     // Initialize PID controller.
     pid_controller_ = new ProfiledPIDController(Constants.kP, 0, 0,
         new TrapezoidProfile.Constraints(Constants.kMaxVelocity, Constants.kMaxAcceleration));
@@ -99,8 +112,9 @@ public class Turret extends SubsystemBase {
   @Override
   public void periodic() {
     // Read inputs.
-    io_.position = encoder_.getPosition();
-    io_.velocity = encoder_.getVelocity();
+    io_.position = backup_encoder_.getPosition();
+    io_.velocity = backup_encoder_.getVelocity();
+    io_.limit_switch = !limit_switch_.get();
 
     // Update robot state.
     robot_state_.updateTurretAngle(new Rotation2d(io_.position));
@@ -123,8 +137,6 @@ public class Turret extends SubsystemBase {
         TrapezoidProfile.State setpoint = pid_controller_.getSetpoint();
         double feedforward = feedforward_.calculate(setpoint.velocity,
             (setpoint.velocity - last_velocity_setpoint_) / 0.02);
-
-        SmartDashboard.putNumber("Setpoint", Math.toDegrees(setpoint.position));
 
         // Store last velocity setpoint.
         last_velocity_setpoint_ = setpoint.velocity;
@@ -207,6 +219,11 @@ public class Turret extends SubsystemBase {
     return io_.velocity;
   }
 
+  public boolean getLimitSwitch() {
+    SmartDashboard.putBoolean("Lim", io_.limit_switch);
+    return io_.limit_switch;
+  }
+
   /**
    * Constrains a given setpoint within the range of the turret.
    *
@@ -230,6 +247,7 @@ public class Turret extends SubsystemBase {
     // Inputs
     double position;
     double velocity;
+    boolean limit_switch;
 
     // Outputs
     double demand;
@@ -241,6 +259,7 @@ public class Turret extends SubsystemBase {
 
     // Sensors
     public static final int kEncoderId = 18;
+    public static final int kLimitSwitchId = 9;
 
     // Current Limits
     public static final int kCurrentLimit = 30;
@@ -248,17 +267,17 @@ public class Turret extends SubsystemBase {
     // Hardware
     public static final double kMinAngle = 0;
     public static final double kMaxAngle = 2 * Math.PI;
-    public static final double kEncoderMagnetOffset = 344;
+    public static final double kEncoderMagnetOffset = 131;
     public static final double kEncoderResolution = 4096;
     public static final double kGearRatio = 7.0 * 150 / 16.0;
     public static final double kMOI = 0.1764;
 
     // Control
-    public static final double kS = 0.37308;
+    public static final double kS = 0.22;
     public static final double kV = 1.2801;
     public static final double kA = 0.069845;
     public static final double kP = 2.54;
-    public static final double kMaxVelocity = 2 * Math.PI;
+    public static final double kMaxVelocity = 4 * Math.PI;
     public static final double kMaxAcceleration = 3 * Math.PI;
   }
 }

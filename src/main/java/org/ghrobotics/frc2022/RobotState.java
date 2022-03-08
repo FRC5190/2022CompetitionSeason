@@ -9,6 +9,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N5;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import org.ghrobotics.lib.estimator.PoseEstimator;
 
@@ -73,6 +74,24 @@ public class RobotState {
   }
 
   /**
+   * Adds a vision measurement to the pose estimator.
+   *
+   * @param timestamp         The time of capture of the frame.
+   * @param vision_robot_pose The robot pose as calculated from vision at the time of capture.
+   */
+  public void addVisionMeasurement(double timestamp, Pose2d vision_robot_pose) {
+    if (Robot.kUsePoseEstimator) {
+      if (Robot.kUsePoseEstimatorInAuto || !DriverStation.isAutonomous()) {
+        // Apply odometry transform from timestamp to now to vision robot pose.
+        vision_robot_pose = vision_robot_pose.plus(getRobotPose().minus(getRobotPose(timestamp)));
+
+        // Add to pose estimator.
+        pose_estimator_.addVisionMeasurement(vision_robot_pose);
+      }
+    }
+  }
+
+  /**
    * Updates the robot speeds.
    *
    * @param speeds The current robot speeds, as measured by the encoders and gyro.
@@ -113,6 +132,10 @@ public class RobotState {
 
     // Reset pose estimator.
     pose_estimator_.resetPosition(pose, new Rotation2d());
+
+    // Reset pose buffer.
+    pose_buffer_.clear();
+    pose_buffer_.addSample(Timer.getFPGATimestamp(), pose);
   }
 
   /**

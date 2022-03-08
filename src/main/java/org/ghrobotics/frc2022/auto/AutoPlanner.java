@@ -39,18 +39,20 @@ public class AutoPlanner {
   // Robot Dimensions
   public static final double kBumperThickness = 0.102;
   public static final double kDrivetrainLength = 0.38;
-  public static final double kIntakeLength = 0.33;
+  public static final double kIntakeLength = 0.63;
 
-  public static final Transform2d kRobotEdgeToCenter = new Transform2d(
+  public static final Transform2d kRobotFrontEdgeToCenter = new Transform2d(
       new Translation2d(-kBumperThickness - kDrivetrainLength / 2, 0), new Rotation2d());
+  public static final Transform2d kRobotBackEdgeToCenter = new Transform2d(
+      new Translation2d(kBumperThickness + kDrivetrainLength / 2, 0), new Rotation2d());
   public static final Transform2d kIntakeToCenter = new Transform2d(
       new Translation2d(-kIntakeLength - kDrivetrainLength / 2, 0), new Rotation2d());
 
   // Trajectory Constraints
-  public static final double kMaxVelocity = 3.5;
+  public static final double kMaxVelocity = 2.5;
   public static final double kMaxCargoRegionVelocity = 0.5;
-  public static final double kMaxAcceleration = 2.5;
-  public static final double kMaxCentripetalAcceleration = 1.5;
+  public static final double kMaxAcceleration = 1.0;
+  public static final double kMaxCentripetalAcceleration = .5;
 
   public static final MaxVelocityConstraint kRegionMaxVelocityConstraint =
       new MaxVelocityConstraint(kMaxCargoRegionVelocity);
@@ -65,7 +67,8 @@ public class AutoPlanner {
 
   // Trajectories
   public static final Trajectory kRTarmacFenderWallToBottomCargo = createTrajectory(
-      new Pose2d(kRTarmacFenderWall, Rotation2d.fromDegrees(201)).transformBy(kRobotEdgeToCenter),
+      new Pose2d(kRTarmacFenderWall, Rotation2d.fromDegrees(249))
+          .transformBy(kRobotBackEdgeToCenter),
       new Pose2d(kBottomCargo, Rotation2d.fromDegrees(270)).transformBy(kIntakeToCenter), false);
 
   public static final Trajectory kBottomCargoToIntermediateA = createTrajectory(
@@ -78,7 +81,7 @@ public class AutoPlanner {
       new Pose2d(kBottomCargo, Rotation2d.fromDegrees(270))
           .transformBy(new Transform2d(new Translation2d(-1, 0.3), Rotation2d.fromDegrees(-90))),
       List.of(kMiddleCargo),
-      new Pose2d(kHPCargo, Rotation2d.fromDegrees(225)), false);
+      new Pose2d(kHPCargo, Rotation2d.fromDegrees(225)), false).transformBy(kIntakeToCenter);
 
   public static final Trajectory kHPCargoToMiddleCargo = createTrajectory(
       new Pose2d(kHPCargo, Rotation2d.fromDegrees(225)),

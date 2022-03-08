@@ -97,6 +97,11 @@ public class Hood extends SubsystemBase {
         double feedforward = feedforward_.calculate(setpoint.position, setpoint.velocity,
             (setpoint.velocity - last_velocity_setpoint_) / 0.02);
 
+        SmartDashboard.putNumber("Hood Setpoint", Math.toDegrees(setpoint.position));
+        SmartDashboard.putNumber("Hood Feedback", feedback);
+        SmartDashboard.putNumber("Hood Feedforward", feedforward);
+        SmartDashboard.putNumber("Hood Current", leader_.getOutputCurrent());
+
         // Store last velocity setpoint.
         last_velocity_setpoint_ = setpoint.velocity;
 
@@ -169,12 +174,12 @@ public class Hood extends SubsystemBase {
 
     // Control
     public static final double kS = 0.00;
-    public static final double kG = 0.52;
+    public static final double kG = 0.0;
     public static final double kV = 1.52;
     public static final double kA = 0.03;
-    public static final double kP = 1.0;
-    public static final double kMaxVelocity = 4 * Math.PI;
-    public static final double kMaxAcceleration = 4 * Math.PI;
+    public static final double kP = 2.0;
+    public static final double kMaxVelocity = 2 * Math.PI;
+    public static final double kMaxAcceleration = 2 * Math.PI;
   }
 }
 
