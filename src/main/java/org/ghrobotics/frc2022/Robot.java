@@ -17,7 +17,7 @@ import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.Button;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import org.ghrobotics.frc2022.auto.AutoPlanner;
-import org.ghrobotics.frc2022.auto.RTarmacFenderFiveBall;
+import org.ghrobotics.frc2022.auto.RTFenderHG5Ball;
 import org.ghrobotics.frc2022.commands.ClimbAutomatic;
 import org.ghrobotics.frc2022.commands.ClimbReset;
 import org.ghrobotics.frc2022.commands.ClimbTeleop;
@@ -68,7 +68,8 @@ public class Robot extends TimedRobot {
   // Create superstructure and associated commands.
   private final Superstructure superstructure_ = new Superstructure(
       turret_, shooter_, hood_, intake_, feeder_, goal_tracker_, robot_state_);
-  private final Command score_low_goal_ = superstructure_.scoreLowGoal();
+  private final Command score_low_goal_fender_ = superstructure_.scoreLowGoalFender();
+  private final Command score_high_goal_fender_ = superstructure_.scoreHighGoalFender();
   private final Command score_high_goal_ = superstructure_.scoreHighGoal();
   private final Command tune_shooter_ = superstructure_.tuneScoring();
 
@@ -122,6 +123,8 @@ public class Robot extends TimedRobot {
     // Set coast mode on drivetrain and turret to make them easier to move.
     drivetrain_.setIdleMode(IdleMode.kCoast);
     turret_.setIdleMode(IdleMode.kCoast);
+
+    robot_state_.resetPosition(AutoPlanner.kRTarmacFenderWallToBottomCargo.getInitialPose());
   }
 
   @Override
@@ -184,7 +187,7 @@ public class Robot extends TimedRobot {
    */
   private void setupAuto() {
     auto_selector_.addOption("Right Tarmac Fender High Goal 5 Ball",
-        new RTarmacFenderFiveBall(robot_state_, drivetrain_, superstructure_));
+        new RTFenderHG5Ball(robot_state_, drivetrain_, superstructure_));
   }
 
   /**
@@ -232,23 +235,35 @@ public class Robot extends TimedRobot {
     new Button(() -> driver_controller_.getLeftTriggerAxis() > 0.1)
         .whenHeld(superstructure_.intake());
 
-    // Shoot low goal with Left Bumper.
+    // Shoot low goal from fender with Left Bumper.
     new JoystickButton(driver_controller_, XboxController.Button.kLeftBumper.value)
-        .whenHeld(superstructure_.scoreLowGoal());
+        .whenHeld(score_low_goal_fender_);
 
-    // Shoot high goal with Right Bumper.
+    // Shoot high goal from fender with Right Bumper.
     new JoystickButton(driver_controller_, XboxController.Button.kRightBumper.value)
-        .whenHeld(superstructure_.scoreHighGoal());
+        .whenHeld(score_high_goal_fender_);
+
+    // Shoot high goal with Right Trigger.
+    new Button(() -> driver_controller_.getRightTriggerAxis() > 0.1)
+        .whenHeld(score_high_goal_);
 
     // Add field-relative turret hints with d-pad.
     new Button(() -> driver_controller_.getPOV() == 0)
-        .whenHeld(new RunCommand(() -> turret_.setGoal(0, 0), turret_));
+        .whenHeld(new RunCommand(
+            () -> turret_.setGoal(0 - robot_state_.getRobotPose().getRotation().getRadians(), 0),
+            turret_));
     new Button(() -> driver_controller_.getPOV() == 90)
-        .whenHeld(new RunCommand(() -> turret_.setGoal(Math.toRadians(90), 0), turret_));
+        .whenHeld(new RunCommand(() -> turret_.setGoal(
+            Math.toRadians(90) - robot_state_.getRobotPose().getRotation().getRadians(), 0),
+            turret_));
     new Button(() -> driver_controller_.getPOV() == 180)
-        .whenHeld(new RunCommand(() -> turret_.setGoal(Math.toRadians(180), 0), turret_));
+        .whenHeld(new RunCommand(() -> turret_.setGoal(
+            Math.toRadians(180) - robot_state_.getRobotPose().getRotation().getRadians(), 0),
+            turret_));
     new Button(() -> driver_controller_.getPOV() == 270)
-        .whenHeld(new RunCommand(() -> turret_.setGoal(Math.toRadians(270), 0), turret_));
+        .whenHeld(new RunCommand(() -> turret_.setGoal(
+            Math.toRadians(270) - robot_state_.getRobotPose().getRotation().getRadians(), 0),
+            turret_));
   }
 
   /**
@@ -278,9 +293,7 @@ public class Robot extends TimedRobot {
    * climb mode, scoring, ball in intake).
    */
   private void updateLEDs() {
-    if (turret_.getLimitSwitch())
-      led_.setOutput(LED.StandardLEDOutput.AUTOMATIC_SCORING);
-    else if (climb_reset_cmd_.isScheduled())
+    if (climb_reset_cmd_.isScheduled())
       led_.setOutput(LED.StandardLEDOutput.CLIMB_RESETTING);
 
     else if (climb_mode_)
@@ -292,10 +305,11 @@ public class Robot extends TimedRobot {
     else if (isDisabled())
       led_.setOutput(LED.OutputType.RAINBOW);
 
-    else if (tune_shooter_.isScheduled())
+    else if (tune_shooter_.isScheduled() || score_low_goal_fender_.isScheduled() ||
+        score_high_goal_fender_.isScheduled())
       led_.setOutput(LED.StandardLEDOutput.MANUAL_SCORING);
 
-    else if (score_high_goal_.isScheduled() || score_low_goal_.isScheduled())
+    else if (score_high_goal_.isScheduled())
       led_.setOutput(LED.StandardLEDOutput.AUTOMATIC_SCORING);
 
     else

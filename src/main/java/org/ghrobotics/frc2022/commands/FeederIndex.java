@@ -73,7 +73,7 @@ public class FeederIndex extends CommandBase {
   }
 
   public static class Constants {
-    public static final double kScoringSpeed = 0.85;
+    public static final double kScoringSpeed = 1.0;
     public static final double kIndexingSpeed = 0.75;
   }
 }

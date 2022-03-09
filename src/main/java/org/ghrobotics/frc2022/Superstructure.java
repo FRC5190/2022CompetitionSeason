@@ -122,11 +122,11 @@ public class Superstructure {
   }
 
   /**
-   * Returns the command to score cargo into the low goal.
+   * Returns the command to score cargo into the low goal from the fender.
    *
-   * @return The command to score cargo into the low goal.
+   * @return The command to score cargo into the low goal from the fender.
    */
-  public Command scoreLowGoal() {
+  public Command scoreLowGoalFender() {
     // The following commands run in parallel:
     //  - set turret to 180 deg
     //  - set shooter speed and hood angle to preset values
@@ -135,6 +135,24 @@ public class Superstructure {
         new RunCommand(() -> turret_.setGoal(Math.toRadians(180), 0), turret_),
         new RunCommand(() -> shooter_.setRPM(Constants.kLowGoalShooterRPM), shooter_),
         new RunCommand(() -> hood_.setPosition(Constants.kLowGoalHoodAngle), hood_),
+        new FeederIndex(feeder_, shooter_::atGoal)
+    );
+  }
+
+  /**
+   * Returns the command to score cargo into the high goal from the fender.
+   *
+   * @return The command to score cargo into the high goal from the fender.
+   */
+  public Command scoreHighGoalFender() {
+    // The following commands run in parallel:
+    //  - set turret to 180 deg
+    //  - set shooter speed and hood angle to preset values
+    //  - wait for spin up and score
+    return new ParallelCommandGroup(
+        new RunCommand(() -> turret_.setGoal(Math.toRadians(180), 0), turret_),
+        new RunCommand(() -> shooter_.setRPM(Constants.kHighGoalShooterRPM), shooter_),
+        new RunCommand(() -> hood_.setPosition(Constants.kHighGoalHoodAngle), hood_),
         new FeederIndex(feeder_, shooter_::atGoal)
     );
   }
@@ -281,8 +299,12 @@ public class Superstructure {
         Units.feetToMeters(27), Units.feetToMeters(13.5));
 
     // Low Goal Scoring
-    public static final double kLowGoalHoodAngle = Math.toRadians(2.6);
-    public static final double kLowGoalShooterRPM = 3500;
+    public static final double kLowGoalHoodAngle = Math.toRadians(42);
+    public static final double kLowGoalShooterRPM = 1200;
+
+    // High Goal Scoring
+    public static final double kHighGoalHoodAngle = Math.toRadians(13);
+    public static final double kHighGoalShooterRPM = 2970;
 
     // Intake
     public static final double kIntakeCollectSpeed = 0.85;

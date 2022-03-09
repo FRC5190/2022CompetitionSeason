@@ -1,11 +1,5 @@
 package org.ghrobotics.frc2022.subsystems;
 
-import com.ctre.phoenix.sensors.AbsoluteSensorRange;
-import com.ctre.phoenix.sensors.CANCoder;
-import com.ctre.phoenix.sensors.CANCoderSimCollection;
-import com.ctre.phoenix.sensors.SensorInitializationStrategy;
-import com.ctre.phoenix.sensors.SensorTimeBase;
-import com.ctre.phoenix.sensors.SensorVelocityMeasPeriod;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import edu.wpi.first.math.controller.ProfiledPIDController;
@@ -14,6 +8,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.simulation.SimDeviceSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -30,9 +25,8 @@ public class Turret extends SubsystemBase {
   private final CANSparkMax leader_;
 
   // Sensors
-  private final CANCoder encoder_;
-  private final RelativeEncoder backup_encoder_;
-  private final DigitalInput limit_switch_;
+  private final RelativeEncoder encoder_;
+  private final DigitalInput hall_sensor_;
 
   // Control
   private final ProfiledPIDController pid_controller_;
@@ -43,7 +37,6 @@ public class Turret extends SubsystemBase {
   // Simulation
   private final DCMotorSim physics_sim_;
   private final SimDeviceSim leader_sim_;
-  private final CANCoderSimCollection encoder_sim_;
 
   // IO
   private OutputType output_type_ = OutputType.PERCENT;
@@ -69,32 +62,16 @@ public class Turret extends SubsystemBase {
     leader_.setInverted(false);
 
     // Initialize encoder.
-    encoder_ = new CANCoder(Constants.kEncoderId);
-    encoder_.configFactoryDefault();
-    encoder_.configFeedbackCoefficient(
-        2 * Math.PI / Constants.kEncoderResolution, "rad",
-        SensorTimeBase.PerSecond);
-    encoder_.configSensorDirection(true);
-    encoder_.configVelocityMeasurementPeriod(SensorVelocityMeasPeriod.Period_10Ms);
-    encoder_.configVelocityMeasurementWindow(8);
-    encoder_.configMagnetOffset(Constants.kEncoderMagnetOffset);
-    encoder_.configAbsoluteSensorRange(AbsoluteSensorRange.Unsigned_0_to_360);
-    encoder_.configSensorInitializationStrategy(
-        SensorInitializationStrategy.BootToAbsolutePosition);
+    encoder_ = leader_.getEncoder();
+    encoder_.setPositionConversionFactor(2 * Math.PI / Constants.kGearRatio);
+    encoder_.setVelocityConversionFactor(2 * Math.PI / Constants.kGearRatio / 60);
 
-
-    limit_switch_ = new DigitalInput(Constants.kLimitSwitchId);
-
-
-    backup_encoder_ = leader_.getEncoder();
-    backup_encoder_.setPositionConversionFactor(2 * Math.PI / Constants.kGearRatio);
-    backup_encoder_.setVelocityConversionFactor(2 * Math.PI / Constants.kGearRatio / 60);
-    backup_encoder_.setPosition(Math.toRadians(270));
+    // Initialize hall sensor.
+    hall_sensor_ = new DigitalInput(Constants.kLimitSwitchId);
 
     // Initialize PID controller.
-    pid_controller_ = new ProfiledPIDController(Constants.kP, 0, 0,
+    pid_controller_ = new ProfiledPIDController(Constants.kP, 0, Constants.kD,
         new TrapezoidProfile.Constraints(Constants.kMaxVelocity, Constants.kMaxAcceleration));
-    pid_controller_.reset(encoder_.getAbsolutePosition());
 
     // Initialize feedforward.
     feedforward_ = new SimpleMotorFeedforward(Constants.kS, Constants.kV, Constants.kA);
@@ -102,7 +79,6 @@ public class Turret extends SubsystemBase {
     // Initialize simulation objects.
     physics_sim_ = new DCMotorSim(DCMotor.getNEO(1), Constants.kGearRatio, Constants.kMOI);
     leader_sim_ = new SimDeviceSim("SPARK MAX [" + Constants.kLeaderId + "]");
-    encoder_sim_ = encoder_.getSimCollection();
   }
 
   /**
@@ -112,9 +88,9 @@ public class Turret extends SubsystemBase {
   @Override
   public void periodic() {
     // Read inputs.
-    io_.position = backup_encoder_.getPosition();
-    io_.velocity = backup_encoder_.getVelocity();
-    io_.limit_switch = !limit_switch_.get();
+    io_.position = encoder_.getPosition();
+    io_.velocity = encoder_.getVelocity();
+    io_.hall_sensor = !hall_sensor_.get();
 
     // Update robot state.
     robot_state_.updateTurretAngle(new Rotation2d(io_.position));
@@ -130,6 +106,10 @@ public class Turret extends SubsystemBase {
       case PERCENT:
         // Send the percent output value directly to the motor controller.
         leader_.set(io_.demand);
+
+        // Update simulated inputs.
+        if (RobotBase.isSimulation())
+          leader_sim_.getDouble("Applied Output").set(io_.demand * 12);
         break;
       case PROFILE:
         // Calculate motor controller voltage from feedback and feedforward.
@@ -162,11 +142,8 @@ public class Turret extends SubsystemBase {
     physics_sim_.update(0.02);
 
     // Set encoder inputs.
-    encoder_sim_.setRawPosition(
-        (int) (physics_sim_.getAngularPositionRad() / 2 / Math.PI * Constants.kEncoderResolution));
-    encoder_sim_.setVelocity(
-        (int) (physics_sim_.getAngularVelocityRadPerSec() / 2 / Math.PI *
-            Constants.kEncoderResolution / 10));
+    leader_sim_.getDouble("Position").set(physics_sim_.getAngularPositionRad());
+    leader_sim_.getDouble("Velocity").set(physics_sim_.getAngularVelocityRadPerSec());
   }
 
   /**
@@ -220,8 +197,8 @@ public class Turret extends SubsystemBase {
   }
 
   public boolean getLimitSwitch() {
-    SmartDashboard.putBoolean("Lim", io_.limit_switch);
-    return io_.limit_switch;
+    SmartDashboard.putBoolean("Lim", io_.hall_sensor);
+    return io_.hall_sensor;
   }
 
   /**
@@ -247,7 +224,7 @@ public class Turret extends SubsystemBase {
     // Inputs
     double position;
     double velocity;
-    boolean limit_switch;
+    boolean hall_sensor;
 
     // Outputs
     double demand;
@@ -258,7 +235,6 @@ public class Turret extends SubsystemBase {
     public static final int kLeaderId = 5;
 
     // Sensors
-    public static final int kEncoderId = 18;
     public static final int kLimitSwitchId = 9;
 
     // Current Limits
@@ -267,8 +243,6 @@ public class Turret extends SubsystemBase {
     // Hardware
     public static final double kMinAngle = 0;
     public static final double kMaxAngle = 2 * Math.PI;
-    public static final double kEncoderMagnetOffset = 131;
-    public static final double kEncoderResolution = 4096;
     public static final double kGearRatio = 7.0 * 150 / 16.0;
     public static final double kMOI = 0.1764;
 
@@ -277,6 +251,7 @@ public class Turret extends SubsystemBase {
     public static final double kV = 1.2801;
     public static final double kA = 0.069845;
     public static final double kP = 2.54;
+    public static final double kD = 0.254;
     public static final double kMaxVelocity = 4 * Math.PI;
     public static final double kMaxAcceleration = 3 * Math.PI;
   }

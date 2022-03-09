@@ -34,6 +34,9 @@ public class RobotState {
   private double r_encoder_ = 0.0;
   private Rotation2d gyro_ = new Rotation2d();
 
+  // Last Vision Pose
+  private Pose2d last_vision_pose_ = new Pose2d();
+
   /**
    * Constructs a "robot state" instance. This keeps track of various states on the robot,
    * including robot pose, turret angle, and hood angle across time.
@@ -85,8 +88,10 @@ public class RobotState {
         // Apply odometry transform from timestamp to now to vision robot pose.
         vision_robot_pose = vision_robot_pose.plus(getRobotPose().minus(getRobotPose(timestamp)));
 
+        last_vision_pose_ = vision_robot_pose;
+
         // Add to pose estimator.
-        pose_estimator_.addVisionMeasurement(vision_robot_pose);
+//        pose_estimator_.addVisionMeasurement(vision_robot_pose);
       }
     }
   }
@@ -164,6 +169,15 @@ public class RobotState {
    */
   public Pose2d getRobotPose() {
     return getRobotPose(Timer.getFPGATimestamp());
+  }
+
+  /**
+   * Returns the last vision robot pose.
+   *
+   * @return The last vision robot pose.
+   */
+  public Pose2d getLastVisionPose() {
+    return last_vision_pose_;
   }
 
   /**

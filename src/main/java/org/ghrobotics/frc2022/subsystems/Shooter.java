@@ -116,7 +116,7 @@ public class Shooter extends SubsystemBase {
 
         // We multiply by 0.9 to avoid overshoot. Divide by 12 to change voltage to percent.
         // See: https://docs.wpilib.org/en/stable/docs/software/advanced-controls/controllers/bang-bang.html#combining-bang-bang-control-with-feedforward
-        leader_.setVoltage(feedback * 10 + 0.85 * feedforward);
+        leader_.setVoltage(feedback * 12 + 0.9 * feedforward);
         break;
     }
   }
@@ -222,6 +222,6 @@ public class Shooter extends SubsystemBase {
     public static final double kS = 0.64101;
     public static final double kV = 0.013676;
     public static final double kA = 0.0029748;
-    public static final double kErrorTolerance = Units.rotationsPerMinuteToRadiansPerSecond(100);
+    public static final double kErrorTolerance = Units.rotationsPerMinuteToRadiansPerSecond(300);
   }
 }
