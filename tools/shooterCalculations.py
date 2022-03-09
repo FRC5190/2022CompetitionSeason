@@ -8,7 +8,7 @@ goalHeight = 8 * 12 + 9     # in
 trajectories = []
 
 measuredTerminalVelocity = 66.7  # ft/s
-dragCoefficient = 0.25
+dragCoefficient = 0.65
 airDensity = 1.23  # kg/m3
 liftCoefficient = 0.13
 
