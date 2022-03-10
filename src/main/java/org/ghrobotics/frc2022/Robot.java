@@ -24,6 +24,7 @@ import org.ghrobotics.frc2022.commands.ClimbAutomatic;
 import org.ghrobotics.frc2022.commands.ClimbReset;
 import org.ghrobotics.frc2022.commands.ClimbTeleop;
 import org.ghrobotics.frc2022.commands.DriveTeleop;
+import org.ghrobotics.frc2022.commands.TurretZero;
 import org.ghrobotics.frc2022.subsystems.Climber;
 import org.ghrobotics.frc2022.subsystems.Drivetrain;
 import org.ghrobotics.frc2022.subsystems.Hood;
@@ -117,6 +118,9 @@ public class Robot extends TimedRobot {
 
     // Setup teleop controls.
     setupTeleopControls();
+
+    // Start command to zero the turret.
+    new TurretZero(turret_, driver_controller_::getBackButton).schedule();
   }
 
   @Override
@@ -298,6 +302,12 @@ public class Robot extends TimedRobot {
 
     else if (climb_mode_)
       led_.setOutput(LED.StandardLEDOutput.CLIMBING);
+
+    else if (turret_.getStatus() == Turret.Status.NO_ZERO)
+      led_.setOutput(LED.StandardLEDOutput.NO_TURRET_ZERO);
+
+    else if (turret_.getStatus() == Turret.Status.ZEROING)
+      led_.setOutput(LED.StandardLEDOutput.TURRET_ZEROING);
 
     else if (!limelight_manager_.isLimelightAlive())
       led_.setOutput(LED.StandardLEDOutput.NO_LIMELIGHT);

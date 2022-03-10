@@ -11,7 +11,6 @@ import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.simulation.SimDeviceSim;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.ghrobotics.frc2022.RobotState;
 import static com.revrobotics.CANSparkMax.IdleMode;
@@ -37,6 +36,9 @@ public class Turret extends SubsystemBase {
   // Simulation
   private final DCMotorSim physics_sim_;
   private final SimDeviceSim leader_sim_;
+
+  // Status
+  private Status status_ = Status.NO_ZERO;
 
   // IO
   private OutputType output_type_ = OutputType.PERCENT;
@@ -93,6 +95,13 @@ public class Turret extends SubsystemBase {
     io_.velocity = encoder_.getVelocity();
     io_.hall_sensor = !hall_sensor_.get();
 
+    // Zero the turret position if we want to.
+    if (io_.wants_encoder_reset) {
+      io_.wants_encoder_reset = false;
+      encoder_.setPosition(io_.encoder_reset_value);
+      io_.position = io_.encoder_reset_value;
+    }
+
     // Update robot state.
     robot_state_.updateTurretAngle(new Rotation2d(io_.position));
 
@@ -148,6 +157,24 @@ public class Turret extends SubsystemBase {
   }
 
   /**
+   * Zeroes the turret.
+   */
+  public void zero() {
+    setStatus(Status.READY);
+    io_.wants_encoder_reset = true;
+    io_.encoder_reset_value = Constants.kZeroPosition;
+  }
+
+  /**
+   * Sets that status of the turret.
+   *
+   * @param status The status of the turret.
+   */
+  public void setStatus(Status status) {
+    status_ = status;
+  }
+
+  /**
    * Sets brake mode on the turret.
    *
    * @param value Whether brake mode should be enabled.
@@ -197,9 +224,22 @@ public class Turret extends SubsystemBase {
     return io_.velocity;
   }
 
-  public boolean getLimitSwitch() {
-    SmartDashboard.putBoolean("Lim", io_.hall_sensor);
+  /**
+   * Returns the hall effect sensor status.
+   *
+   * @return The hall effect sensor status.
+   */
+  public boolean getHallSensor() {
     return io_.hall_sensor;
+  }
+
+  /**
+   * Returns the turret status.
+   *
+   * @return The turret status.
+   */
+  public Status getStatus() {
+    return status_;
   }
 
   /**
@@ -217,6 +257,10 @@ public class Turret extends SubsystemBase {
     return setpoint;
   }
 
+  public enum Status {
+    NO_ZERO, ZEROING, READY
+  }
+
   public enum OutputType {
     PERCENT, PROFILE
   }
@@ -229,6 +273,8 @@ public class Turret extends SubsystemBase {
 
     // Outputs
     double demand;
+    double encoder_reset_value;
+    boolean wants_encoder_reset;
   }
 
   public static class Constants {
@@ -242,6 +288,7 @@ public class Turret extends SubsystemBase {
     public static final int kCurrentLimit = 30;
 
     // Hardware
+    public static final double kZeroPosition = Math.toRadians(270);
     public static final double kMinAngle = 0;
     public static final double kMaxAngle = 2 * Math.PI;
     public static final double kGearRatio = 7.0 * 150 / 16.0;
