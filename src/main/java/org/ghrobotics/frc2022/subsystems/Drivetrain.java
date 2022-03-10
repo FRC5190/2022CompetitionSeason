@@ -222,11 +222,12 @@ public class Drivetrain extends SubsystemBase {
 
 
   /**
-   * Sets the idle mode on each of the drivetrain motors.
+   * Sets brake mode on each of the drivetrain motors.
    *
-   * @param mode The desired idle mode (brake or coast).
+   * @param value Whether brake mode should be enabled.
    */
-  public void setIdleMode(IdleMode mode) {
+  public void setBrakeMode(boolean value) {
+    IdleMode mode = value ? IdleMode.kBrake : IdleMode.kCoast;
     left_leader_.setIdleMode(mode);
     left_follower_.setIdleMode(mode);
     right_leader_.setIdleMode(mode);

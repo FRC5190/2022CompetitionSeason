@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.Button;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import org.ghrobotics.frc2022.auto.AutoPlanner;
+import org.ghrobotics.frc2022.auto.RTFenderHigh3Ball;
 import org.ghrobotics.frc2022.auto.RTFenderHigh5Ball;
 import org.ghrobotics.frc2022.auto.RTFenderLow1Ball;
 import org.ghrobotics.frc2022.commands.ClimbAutomatic;
@@ -33,7 +34,6 @@ import org.ghrobotics.frc2022.subsystems.LimelightManager;
 import org.ghrobotics.frc2022.subsystems.Shooter;
 import org.ghrobotics.frc2022.subsystems.Turret;
 import org.ghrobotics.frc2022.vision.GoalTracker;
-import static com.revrobotics.CANSparkMax.IdleMode;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -121,18 +121,18 @@ public class Robot extends TimedRobot {
 
   @Override
   public void disabledInit() {
-    // Set coast mode on drivetrain and turret to make them easier to move.
-    drivetrain_.setIdleMode(IdleMode.kCoast);
-    turret_.setIdleMode(IdleMode.kCoast);
-
-    robot_state_.resetPosition(AutoPlanner.kRTarmacFenderWallToBottomCargo.getInitialPose());
+    // Set coast mode on drivetrain, turret, and hood to make then easier to move.
+    drivetrain_.setBrakeMode(false);
+    turret_.setBrakeMode(false);
+    hood_.setBrakeMode(false);
   }
 
   @Override
   public void autonomousInit() {
     // Set brake mode on turret and drivetrain.
-    drivetrain_.setIdleMode(IdleMode.kBrake);
-    turret_.setIdleMode(IdleMode.kBrake);
+    drivetrain_.setBrakeMode(true);
+    turret_.setBrakeMode(true);
+    hood_.setBrakeMode(true);
 
     // Start autonomous program.
     autonomous_command_ = auto_selector_.getSelected();
@@ -146,9 +146,10 @@ public class Robot extends TimedRobot {
     climber_.enableSoftLimits(false);
     robot_state_.resetPosition(AutoPlanner.kRTarmacFenderWallToBottomCargo.getInitialPose());
 
-    // Set brake mode on turret and drivetrain.
-    drivetrain_.setIdleMode(IdleMode.kBrake);
-    turret_.setIdleMode(IdleMode.kBrake);
+    // Set brake mode on drivetrain, turret, and hood.
+    drivetrain_.setBrakeMode(true);
+    turret_.setBrakeMode(true);
+    hood_.setBrakeMode(true);
 
     // Cancel autonomous program.
     if (autonomous_command_ != null)
@@ -189,6 +190,8 @@ public class Robot extends TimedRobot {
   private void setupAuto() {
     auto_selector_.addOption("Right Tarmac Fender High Goal 5 Ball",
         new RTFenderHigh5Ball(robot_state_, drivetrain_, superstructure_));
+    auto_selector_.addOption("Right Tarmac Fender High Goal 3 Ball",
+        new RTFenderHigh3Ball(robot_state_, drivetrain_, superstructure_));
     auto_selector_.addOption("Right Tarmac Fender Low Goal 1 Ball",
         new RTFenderLow1Ball(robot_state_, drivetrain_, superstructure_));
   }
@@ -225,14 +228,6 @@ public class Robot extends TimedRobot {
           clear_buttons_ = true;
           new RunCommand(() -> turret_.setGoal(Math.toRadians(90), 0), turret_).schedule();
         });
-
-    // TESTING: turret
-    new JoystickButton(driver_controller_, XboxController.Button.kA.value)
-        .whenHeld(new RunCommand(() -> turret_.setGoal(Math.toRadians(270), 0), turret_));
-
-    // TESTING: turret
-    new JoystickButton(driver_controller_, XboxController.Button.kY.value)
-        .whenHeld(new RunCommand(() -> turret_.setGoal(Math.toRadians(90), 0), turret_));
 
     // Intake with Left Trigger.
     new Button(() -> driver_controller_.getLeftTriggerAxis() > 0.1)

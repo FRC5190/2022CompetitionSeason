@@ -111,6 +111,15 @@ public class Hood extends SubsystemBase {
   }
 
   /**
+   * Sets brake mode on the hood.
+   *
+   * @param value Whether brake mode should be enabled.
+   */
+  public void setBrakeMode(boolean value) {
+    leader_.setIdleMode(value ? IdleMode.kBrake : IdleMode.kCoast);
+  }
+
+  /**
    * Sets the % output on the hood.
    *
    * @param value The % output in [-1, 1].

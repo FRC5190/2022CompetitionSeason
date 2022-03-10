@@ -148,12 +148,12 @@ public class Turret extends SubsystemBase {
   }
 
   /**
-   * Sets the idle mode on the turret.
+   * Sets brake mode on the turret.
    *
-   * @param mode The desired idle mode.
+   * @param value Whether brake mode should be enabled.
    */
-  public void setIdleMode(IdleMode mode) {
-    leader_.setIdleMode(mode);
+  public void setBrakeMode(boolean value) {
+    leader_.setIdleMode(value ? IdleMode.kBrake : IdleMode.kCoast);
   }
 
   /**

@@ -83,6 +83,11 @@ public class AutoPlanner {
       List.of(kMiddleCargo),
       new Pose2d(kHPCargo, Rotation2d.fromDegrees(225)), false).transformBy(kIntakeToCenter);
 
+  public static final Trajectory kIntermediateAToMiddleCargo = createTrajectory(
+      new Pose2d(kBottomCargo, Rotation2d.fromDegrees(270))
+          .transformBy(new Transform2d(new Translation2d(-1, 0.3), Rotation2d.fromDegrees(-90))),
+      new Pose2d(kMiddleCargo, Rotation2d.fromDegrees(120)), false);
+
   public static final Trajectory kHPCargoToMiddleCargo = createTrajectory(
       new Pose2d(kHPCargo, Rotation2d.fromDegrees(225)),
       new Pose2d(kMiddleCargo, Rotation2d.fromDegrees(190)), true);
