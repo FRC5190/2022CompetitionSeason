@@ -83,7 +83,7 @@ public class RobotState {
    * @param vision_robot_pose The robot pose as calculated from vision at the time of capture.
    */
   public void addVisionMeasurement(double timestamp, Pose2d vision_robot_pose) {
-    if (Robot.kUsePoseEstimator) {
+    if (Robot.kUsePoseEstimator && DriverStation.isEnabled()) {
       if (Robot.kUsePoseEstimatorInAuto || !DriverStation.isAutonomous()) {
         // Apply odometry transform from timestamp to now to vision robot pose.
         vision_robot_pose = vision_robot_pose.plus(getRobotPose().minus(getRobotPose(timestamp)));
