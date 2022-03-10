@@ -12,7 +12,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.ghrobotics.frc2022.RobotState;
 import static com.revrobotics.CANSparkMax.IdleMode;
-import static com.revrobotics.CANSparkMax.SoftLimitDirection;
 import static com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 public class Hood extends SubsystemBase {

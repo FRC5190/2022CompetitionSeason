@@ -121,7 +121,7 @@ public class LED extends SubsystemBase {
 
     // Superstructure Indicators:
     AUTOMATIC_SCORING(Color.kGreen, 0.075, 0.075),
-    MANUAL_SCORING(Color.kBlue, 0.5, 0.5);
+    MANUAL_SCORING(Color.kBlue, 0.075, 0.075);
 
 
     // Stores the color and on percentage for the current output.

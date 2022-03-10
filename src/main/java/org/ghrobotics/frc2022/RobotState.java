@@ -90,8 +90,11 @@ public class RobotState {
 
         last_vision_pose_ = vision_robot_pose;
 
-        // Add to pose estimator.
-//        pose_estimator_.addVisionMeasurement(vision_robot_pose);
+        // Add to pose estimator if within the tolerance.
+        if (vision_robot_pose.getTranslation().getDistance(getRobotPose().getTranslation()) <
+            Constants.kErrorTolerance) {
+          pose_estimator_.addVisionMeasurement(vision_robot_pose);
+        }
       }
     }
   }
@@ -226,6 +229,8 @@ public class RobotState {
         VecBuilder.fill(0.01, 0.01, 0.01);
     public static final Matrix<N3, N1> kEstimatorVisionStdDevs =
         VecBuilder.fill(0.1, 0.1, 0.01);
+
+    public static final double kErrorTolerance = 1.5;
 
     // Buffer
     public static final double kBufferLifetime = 1.25;

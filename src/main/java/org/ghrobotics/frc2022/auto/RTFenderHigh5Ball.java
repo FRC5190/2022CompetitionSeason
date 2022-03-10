@@ -8,10 +8,10 @@ import org.ghrobotics.frc2022.Superstructure;
 import org.ghrobotics.frc2022.commands.DriveTrajectory;
 import org.ghrobotics.frc2022.subsystems.Drivetrain;
 
-public class RTFenderHG5Ball extends SequentialCommandGroup {
+public class RTFenderHigh5Ball extends SequentialCommandGroup {
   // Start at right tarmac up against fender; score 5 balls.
-  public RTFenderHG5Ball(RobotState robot_state, Drivetrain drivetrain,
-                         Superstructure superstructure) {
+  public RTFenderHigh5Ball(RobotState robot_state, Drivetrain drivetrain,
+                           Superstructure superstructure) {
     // Create routine.
     addCommands(
         // Reset odometry.

@@ -114,7 +114,7 @@ public class Feeder extends SubsystemBase {
     public static final int kCurrentLimit = 25;
 
     // Thresholds
-    public static final double kIntakeSensorVThreshold = 1.0;
+    public static final double kIntakeSensorVThreshold = 1.28;
     public static final double kExitSensorVThreshold = 2.7;
   }
 }

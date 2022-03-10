@@ -65,6 +65,7 @@ public class Turret extends SubsystemBase {
     encoder_ = leader_.getEncoder();
     encoder_.setPositionConversionFactor(2 * Math.PI / Constants.kGearRatio);
     encoder_.setVelocityConversionFactor(2 * Math.PI / Constants.kGearRatio / 60);
+    encoder_.setPosition(Math.toRadians(270));
 
     // Initialize hall sensor.
     hall_sensor_ = new DigitalInput(Constants.kLimitSwitchId);
@@ -250,8 +251,8 @@ public class Turret extends SubsystemBase {
     public static final double kS = 0.22;
     public static final double kV = 1.2801;
     public static final double kA = 0.069845;
-    public static final double kP = 2.54;
-    public static final double kD = 0.254;
+    public static final double kP = 4.54;
+    public static final double kD = 0.4;
     public static final double kMaxVelocity = 4 * Math.PI;
     public static final double kMaxAcceleration = 3 * Math.PI;
   }
