@@ -227,6 +227,7 @@ public class Robot extends TimedRobot {
           climb_mode_ = true;
           clear_buttons_ = true;
           new RunCommand(() -> turret_.setGoal(Math.toRadians(90), 0), turret_).schedule();
+          new RunCommand(() -> hood_.setPosition(Hood.Constants.kMinAngle), hood_).schedule();
         });
 
     // Intake with Left Trigger.
@@ -275,6 +276,7 @@ public class Robot extends TimedRobot {
           climb_mode_ = false;
           clear_buttons_ = true;
           turret_.getDefaultCommand().schedule();
+          hood_.getDefaultCommand().schedule();
         });
 
     // Reset climber when Back is pressed.
