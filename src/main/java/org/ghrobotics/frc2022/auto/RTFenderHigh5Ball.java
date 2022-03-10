@@ -28,11 +28,15 @@ public class RTFenderHigh5Ball extends SequentialCommandGroup {
                 new DriveTrajectory(drivetrain, robot_state,
                     AutoPlanner.kIntermediateAToMiddleCargoToHPCargo),
                 new DriveTrajectory(drivetrain, robot_state,
-                    AutoPlanner.kHPCargoToMiddleCargo)
+                    AutoPlanner.kHPCargoToRightScoringLocation)
             ),
             superstructure.scoreHighGoal(() -> true, () ->
                 AutoPlanner.kBottomCargoRegion.isPoseInRegion(robot_state.getRobotPose()) ||
-                    AutoPlanner.kMiddleCargoRegion.isPoseInRegion(robot_state.getRobotPose())))
+                    AutoPlanner.kMiddleCargoRegion.isPoseInRegion(robot_state.getRobotPose()))
+        ),
+
+        // Finish scoring.
+        superstructure.scoreHighGoal().withTimeout(2.5)
     );
   }
 }

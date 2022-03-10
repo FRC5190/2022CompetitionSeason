@@ -17,9 +17,10 @@ import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.Button;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import org.ghrobotics.frc2022.auto.AutoPlanner;
+import org.ghrobotics.frc2022.auto.LTLCornerHigh2Ball;
+import org.ghrobotics.frc2022.auto.LTLCornerHigh4Ball;
 import org.ghrobotics.frc2022.auto.RTFenderHigh3Ball;
 import org.ghrobotics.frc2022.auto.RTFenderHigh5Ball;
-import org.ghrobotics.frc2022.auto.RTFenderLow1Ball;
 import org.ghrobotics.frc2022.commands.ClimbAutomatic;
 import org.ghrobotics.frc2022.commands.ClimbReset;
 import org.ghrobotics.frc2022.commands.ClimbTeleop;
@@ -47,10 +48,10 @@ public class Robot extends TimedRobot {
   public static final boolean kUsePoseEstimatorInAuto = false;
 
   // Initialize robot state.
-  RobotState robot_state_ = new RobotState();
+  private final RobotState robot_state_ = new RobotState();
 
   // Initialize goal tracker.
-  GoalTracker goal_tracker_ = new GoalTracker();
+  private final GoalTracker goal_tracker_ = new GoalTracker();
 
   // Create subsystems.
   private final Drivetrain drivetrain_ = new Drivetrain(robot_state_);
@@ -80,7 +81,6 @@ public class Robot extends TimedRobot {
   // Create autonomous mode selector.
   private final SendableChooser<Command> auto_selector_ = new SendableChooser<>();
   private Command autonomous_command_ = null;
-
 
   // Keeps track of whether we are in climb mode / climb reset.
   private final Command climb_reset_cmd_ = new ClimbReset(climber_);
@@ -192,12 +192,15 @@ public class Robot extends TimedRobot {
    * Creates auto modes and adds them to the selector.
    */
   private void setupAuto() {
+    auto_selector_.addOption("Left Tarmac Left Corner High Goal 2 Ball",
+        new LTLCornerHigh2Ball(robot_state_, drivetrain_, superstructure_));
+    auto_selector_.addOption("Left Tarmac Left Corner High Goal 4 Ball",
+        new LTLCornerHigh4Ball(robot_state_, drivetrain_, superstructure_));
+
     auto_selector_.addOption("Right Tarmac Fender High Goal 5 Ball",
         new RTFenderHigh5Ball(robot_state_, drivetrain_, superstructure_));
     auto_selector_.addOption("Right Tarmac Fender High Goal 3 Ball",
         new RTFenderHigh3Ball(robot_state_, drivetrain_, superstructure_));
-    auto_selector_.addOption("Right Tarmac Fender Low Goal 1 Ball",
-        new RTFenderLow1Ball(robot_state_, drivetrain_, superstructure_));
   }
 
   /**
@@ -249,6 +252,10 @@ public class Robot extends TimedRobot {
     // Shoot high goal with Right Trigger.
     new Button(() -> driver_controller_.getRightTriggerAxis() > 0.1)
         .whenHeld(score_high_goal_);
+
+    // Eject with back button.
+    new JoystickButton(driver_controller_, XboxController.Button.kBack.value)
+        .whenHeld(superstructure_.eject());
 
     // Add field-relative turret hints with d-pad.
     new Button(() -> driver_controller_.getPOV() == 0)

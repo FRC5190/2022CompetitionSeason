@@ -215,6 +215,20 @@ public class Superstructure {
   }
 
   /**
+   * Returns the command to eject a ball in the opposite direction from the goal.
+   *
+   * @return The command to eject a ball in the opposite direction from the goal.
+   */
+  public Command eject() {
+    return new ParallelCommandGroup(
+        new RunCommand(() -> hood_.setPosition(Constants.kLowGoalHoodAngle), hood_),
+        new RunCommand(() -> shooter_.setRPM(Constants.kLowGoalShooterRPM), shooter_),
+        new RunCommand(() -> turret_.setGoal(turret_to_goal_angle_ + Math.PI, 0), turret_),
+        new IntakeAutomatic(intake_, () -> false, shooter_::atGoal, () -> true)
+    );
+  }
+
+  /**
    * Returns the command to tune the shooter and hood for building the lookup table. The building
    * of the lookup table still needs to be done manually.
    *

@@ -2,7 +2,6 @@ package org.ghrobotics.frc2022.auto;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
@@ -22,9 +21,6 @@ import java.util.List;
  */
 public class AutoPlanner {
   // Waypoints
-  public static final Translation2d kLTarmacFenderWall = createWaypoint(291.90, 174.57);
-  public static final Translation2d kRTarmacFenderWall = createWaypoint(311.40, 130.62);
-
   public static final Translation2d kBottomCargo = createWaypoint(292.94, 12.25);
   public static final Translation2d kMiddleCargo = createWaypoint(193.83, 76.36);
   public static final Translation2d kTopCargo = createWaypoint(189.87, 239.30);
@@ -35,18 +31,6 @@ public class AutoPlanner {
   public static final CircularRegion kMiddleCargoRegion = new CircularRegion(kMiddleCargo, 1);
   public static final CircularRegion kTopCargoRegion = new CircularRegion(kTopCargo, 1);
   public static final CircularRegion kHPCargoRegion = new CircularRegion(kHPCargo, 1);
-
-  // Robot Dimensions
-  public static final double kBumperThickness = 0.102;
-  public static final double kDrivetrainLength = 0.38;
-  public static final double kIntakeLength = 0.63;
-
-  public static final Transform2d kRobotFrontEdgeToCenter = new Transform2d(
-      new Translation2d(-kBumperThickness - kDrivetrainLength / 2, 0), new Rotation2d());
-  public static final Transform2d kRobotBackEdgeToCenter = new Transform2d(
-      new Translation2d(kBumperThickness + kDrivetrainLength / 2, 0), new Rotation2d());
-  public static final Transform2d kIntakeToCenter = new Transform2d(
-      new Translation2d(-kIntakeLength - kDrivetrainLength / 2, 0), new Rotation2d());
 
   // Trajectory Constraints
   public static final double kMaxVelocity = 2.5;
@@ -67,31 +51,46 @@ public class AutoPlanner {
 
   // Trajectories
   public static final Trajectory kRTarmacFenderWallToBottomCargo = createTrajectory(
-      new Pose2d(kRTarmacFenderWall, Rotation2d.fromDegrees(249))
-          .transformBy(kRobotBackEdgeToCenter),
-      new Pose2d(kBottomCargo, Rotation2d.fromDegrees(270)).transformBy(kIntakeToCenter), false);
+      new Pose2d(7.773, 2.903, Rotation2d.fromDegrees(249)),
+      new Pose2d(7.602, 0.830, Rotation2d.fromDegrees(270)),
+      false);
 
   public static final Trajectory kBottomCargoToIntermediateA = createTrajectory(
-      new Pose2d(kBottomCargo, Rotation2d.fromDegrees(270)).transformBy(kIntakeToCenter),
-      new Pose2d(kBottomCargo, Rotation2d.fromDegrees(270))
-          .transformBy(new Transform2d(new Translation2d(-1, 0.3), Rotation2d.fromDegrees(-90))),
+      new Pose2d(7.602, 0.830, Rotation2d.fromDegrees(270)),
+      new Pose2d(8.298, 1.256, Rotation2d.fromDegrees(182)),
       true);
 
-  public static final Trajectory kIntermediateAToMiddleCargoToHPCargo = createTrajectory(
-      new Pose2d(kBottomCargo, Rotation2d.fromDegrees(270))
-          .transformBy(new Transform2d(new Translation2d(-1, 0.3), Rotation2d.fromDegrees(-90))),
-      List.of(kMiddleCargo),
-      new Pose2d(kHPCargo, Rotation2d.fromDegrees(225)), false).transformBy(kIntakeToCenter);
-
   public static final Trajectory kIntermediateAToMiddleCargo = createTrajectory(
-      new Pose2d(kBottomCargo, Rotation2d.fromDegrees(270))
-          .transformBy(new Transform2d(new Translation2d(-1, 0.3), Rotation2d.fromDegrees(-90))),
-      new Pose2d(kMiddleCargo, Rotation2d.fromDegrees(120)), false);
+      new Pose2d(8.298, 1.256, Rotation2d.fromDegrees(182)),
+      new Pose2d(5.387, 1.710, Rotation2d.fromDegrees(148)),
+      false);
 
-  public static final Trajectory kHPCargoToMiddleCargo = createTrajectory(
-      new Pose2d(kHPCargo, Rotation2d.fromDegrees(225)),
-      new Pose2d(kMiddleCargo, Rotation2d.fromDegrees(190)), true);
+  public static final Trajectory kIntermediateAToMiddleCargoToHPCargo = createTrajectory(
+      new Pose2d(8.298, 1.256, Rotation2d.fromDegrees(182)),
+      List.of(new Translation2d(5.387, 1.710)),
+      new Pose2d(1.454, 1.483, Rotation2d.fromDegrees(225)),
+      false);
 
+  public static final Trajectory kHPCargoToRightScoringLocation = createTrajectory(
+      new Pose2d(1.454, 1.483, Rotation2d.fromDegrees(225)),
+      new Pose2d(5.060, 1.852, Rotation2d.fromDegrees(222)),
+      true);
+
+  public static final Trajectory kLTarmacMLCornerToTopCargo = createTrajectory(
+      new Pose2d(6.186, 5.233, Rotation2d.fromDegrees(135)),
+      new Pose2d(5.306, 5.900, Rotation2d.fromDegrees(135)),
+      false);
+
+  public static final Trajectory kTopCargoToHPCargo = createTrajectory(
+      new Pose2d(5.306, 5.900, Rotation2d.fromDegrees(135)),
+      List.of(new Translation2d(4.204, 5.081)),
+      new Pose2d(1.454, 1.483, Rotation2d.fromDegrees(225)),
+      false);
+
+  public static final Trajectory kHPCargoToLeftScoringLocation = createTrajectory(
+      new Pose2d(1.454, 1.483, Rotation2d.fromDegrees(225)),
+      new Pose2d(4.653, 4.579, Rotation2d.fromDegrees(205)),
+      true);
 
   /**
    * Creates a waypoint from the provided measurements (in inches).
