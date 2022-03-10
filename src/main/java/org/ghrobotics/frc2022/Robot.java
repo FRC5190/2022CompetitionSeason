@@ -26,7 +26,6 @@ import org.ghrobotics.frc2022.commands.ClimbTeleop;
 import org.ghrobotics.frc2022.commands.DriveTeleop;
 import org.ghrobotics.frc2022.subsystems.Climber;
 import org.ghrobotics.frc2022.subsystems.Drivetrain;
-import org.ghrobotics.frc2022.subsystems.Feeder;
 import org.ghrobotics.frc2022.subsystems.Hood;
 import org.ghrobotics.frc2022.subsystems.Intake;
 import org.ghrobotics.frc2022.subsystems.LED;
@@ -58,7 +57,6 @@ public class Robot extends TimedRobot {
   private final Shooter shooter_ = new Shooter();
   private final Hood hood_ = new Hood(robot_state_);
   private final Intake intake_ = new Intake();
-  private final Feeder feeder_ = new Feeder();
   private final Climber climber_ = new Climber();
   private final LED led_ = new LED();
 
@@ -66,20 +64,22 @@ public class Robot extends TimedRobot {
   private final LimelightManager limelight_manager_ =
       new LimelightManager(robot_state_, goal_tracker_);
 
+  // Create Xbox controller for driver.
+  private final XboxController driver_controller_ = new XboxController(0);
+
   // Create superstructure and associated commands.
   private final Superstructure superstructure_ = new Superstructure(
-      turret_, shooter_, hood_, intake_, feeder_, goal_tracker_, robot_state_);
+      turret_, shooter_, hood_, intake_, goal_tracker_, robot_state_);
   private final Command score_low_goal_fender_ = superstructure_.scoreLowGoalFender();
   private final Command score_high_goal_fender_ = superstructure_.scoreHighGoalFender();
-  private final Command score_high_goal_ = superstructure_.scoreHighGoal();
+  private final Command score_high_goal_ = superstructure_.scoreHighGoal(
+      () -> driver_controller_.getLeftTriggerAxis() > 0.1, () -> true);
   private final Command tune_shooter_ = superstructure_.tuneScoring();
 
   // Create autonomous mode selector.
   private final SendableChooser<Command> auto_selector_ = new SendableChooser<>();
   private Command autonomous_command_ = null;
 
-  // Create Xbox controller for driver.
-  private final XboxController driver_controller_ = new XboxController(0);
 
   // Keeps track of whether we are in climb mode / climb reset.
   private final Command climb_reset_cmd_ = new ClimbReset(climber_);
@@ -90,7 +90,7 @@ public class Robot extends TimedRobot {
 
   // Create telemetry.
   private final Telemetry telemetry_ = new Telemetry(
-      robot_state_, drivetrain_, turret_, shooter_, hood_, intake_, feeder_, climber_,
+      robot_state_, drivetrain_, turret_, shooter_, hood_, intake_, climber_,
       superstructure_,
       auto_selector_, () -> climb_mode_);
 
@@ -231,7 +231,7 @@ public class Robot extends TimedRobot {
 
     // Intake with Left Trigger.
     new Button(() -> driver_controller_.getLeftTriggerAxis() > 0.1)
-        .whenHeld(superstructure_.intake());
+        .whenPressed(superstructure_.intake());
 
     // Shoot low goal from fender with Left Bumper.
     new JoystickButton(driver_controller_, XboxController.Button.kLeftBumper.value)

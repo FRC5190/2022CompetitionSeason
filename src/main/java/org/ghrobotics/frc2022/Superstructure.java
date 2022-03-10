@@ -8,14 +8,11 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import java.util.function.BooleanSupplier;
-import org.ghrobotics.frc2022.commands.FeederIndex;
-import org.ghrobotics.frc2022.commands.IntakePercent;
+import org.ghrobotics.frc2022.commands.IntakeAutomatic;
 import org.ghrobotics.frc2022.planners.HighGoalPlanner;
-import org.ghrobotics.frc2022.subsystems.Feeder;
 import org.ghrobotics.frc2022.subsystems.Hood;
 import org.ghrobotics.frc2022.subsystems.Intake;
 import org.ghrobotics.frc2022.subsystems.LimelightManager;
@@ -29,7 +26,6 @@ public class Superstructure {
   private final Shooter shooter_;
   private final Hood hood_;
   private final Intake intake_;
-  private final Feeder feeder_;
 
   // High Goal Planner
   private final HighGoalPlanner high_goal_planner_;
@@ -56,16 +52,14 @@ public class Superstructure {
    * @param shooter Reference to shooter subsystem.
    * @param hood    Reference to hood subsystem.
    * @param intake  Reference to intake subsystem.
-   * @param feeder  Reference to feeder subsystem.
    */
-  public Superstructure(Turret turret, Shooter shooter, Hood hood, Intake intake, Feeder feeder,
+  public Superstructure(Turret turret, Shooter shooter, Hood hood, Intake intake,
                         GoalTracker goal_tracker, RobotState robot_state) {
     // Assign subsystem references.
     turret_ = turret;
     shooter_ = shooter;
     hood_ = hood;
     intake_ = intake;
-    feeder_ = feeder;
 
     // Initialize high goal planner.
     high_goal_planner_ = new HighGoalPlanner(Constants.kLowGoalShooterRPM,
@@ -113,12 +107,7 @@ public class Superstructure {
    * @return The command to intake balls and store in the feeder.
    */
   public Command intake() {
-    // The following commands run in parallel:
-    //  - command to run the intake at the desired speed.
-    //  - command to run the feeder based on sensor input.
-    return new ParallelCommandGroup(
-        new IntakePercent(intake_, Constants.kIntakeCollectSpeed),
-        new FeederIndex(feeder_));
+    return new IntakeAutomatic(intake_, () -> true, () -> false, () -> true);
   }
 
   /**
@@ -135,7 +124,7 @@ public class Superstructure {
         new RunCommand(() -> turret_.setGoal(Math.toRadians(180), 0), turret_),
         new RunCommand(() -> shooter_.setRPM(Constants.kLowGoalShooterRPM), shooter_),
         new RunCommand(() -> hood_.setPosition(Constants.kLowGoalHoodAngle), hood_),
-        new FeederIndex(feeder_, shooter_::atGoal)
+        new IntakeAutomatic(intake_, () -> false, shooter_::atGoal, () -> true)
     );
   }
 
@@ -153,7 +142,7 @@ public class Superstructure {
         new RunCommand(() -> turret_.setGoal(Math.toRadians(180), 0), turret_),
         new RunCommand(() -> shooter_.setRPM(Constants.kHighGoalShooterRPM), shooter_),
         new RunCommand(() -> hood_.setPosition(Constants.kHighGoalHoodAngle), hood_),
-        new FeederIndex(feeder_, shooter_::atGoal)
+        new IntakeAutomatic(intake_, () -> false, shooter_::atGoal, () -> true)
     );
   }
 
@@ -166,7 +155,7 @@ public class Superstructure {
    *                       shooter is at the goal, scoring will occur.
    * @return The command to score cargo into the high goal.
    */
-  public Command scoreHighGoal(boolean require_intake, BooleanSupplier wait_for_score) {
+  public Command scoreHighGoal(BooleanSupplier require_intake, BooleanSupplier wait_for_score) {
     BooleanSupplier score = () -> shooter_.atGoal() && wait_for_score.getAsBoolean();
 
     // The following commands run in parallel:
@@ -212,9 +201,7 @@ public class Superstructure {
           shooter_.setVelocity(shooter_speed);
           hood_.setPosition(hood_angle);
         }, turret_, shooter_, hood_),
-        new FeederIndex(feeder_, score),
-        require_intake ? new IntakePercent(intake_,
-            Constants.kIntakeCollectSpeed) : new InstantCommand()
+        new IntakeAutomatic(intake_, require_intake, score, () -> true)
     );
   }
 
@@ -224,7 +211,7 @@ public class Superstructure {
    * @return The command to score cargo into the high goal (with no intake).
    */
   public Command scoreHighGoal() {
-    return scoreHighGoal(false, () -> true);
+    return scoreHighGoal(() -> false, () -> true);
   }
 
   /**
@@ -246,8 +233,8 @@ public class Superstructure {
         new RunCommand(() -> hood_.setPosition(
             SmartDashboard.getNumber(Constants.kTuningHoodAngleKey, Constants.kLowGoalHoodAngle)),
             hood_),
-        new IntakePercent(intake_, Constants.kIntakeCollectSpeed),
-        new FeederIndex(feeder_, () -> SmartDashboard.getBoolean(Constants.kTuningScoreKey, false)),
+        new IntakeAutomatic(intake_, () -> true,
+            () -> SmartDashboard.getBoolean(Constants.kTuningScoreKey, false), () -> false),
         trackGoalWithTurret()
     );
   }

@@ -1,8 +1,6 @@
 package org.ghrobotics.frc2022;
 
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Transform2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
@@ -15,7 +13,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import java.util.function.BooleanSupplier;
 import org.ghrobotics.frc2022.subsystems.Climber;
 import org.ghrobotics.frc2022.subsystems.Drivetrain;
-import org.ghrobotics.frc2022.subsystems.Feeder;
 import org.ghrobotics.frc2022.subsystems.Hood;
 import org.ghrobotics.frc2022.subsystems.Intake;
 import org.ghrobotics.frc2022.subsystems.Shooter;
@@ -34,7 +31,6 @@ public class Telemetry {
   private final Shooter shooter_;
   private final Hood hood_;
   private final Intake intake_;
-  private final Feeder feeder_;
   private final Climber climber_;
 
   private final Superstructure superstructure_;
@@ -58,14 +54,13 @@ public class Telemetry {
    * @param shooter        Reference to shooter subsystem.
    * @param hood           Reference to hood subsystem.
    * @param intake         Reference to intake subsystem.
-   * @param feeder         Reference to feeder subsystem.
    * @param climber        Reference to climber subsystem.
    * @param superstructure Reference to superstructure.
    * @param auto_selector  Reference to autonomous mode selector.
    * @param climb_mode     Supplier for climb mode.
    */
   public Telemetry(RobotState robot_state, Drivetrain drivetrain, Turret turret, Shooter shooter,
-                   Hood hood, Intake intake, Feeder feeder, Climber climber,
+                   Hood hood, Intake intake, Climber climber,
                    Superstructure superstructure,
                    SendableChooser<Command> auto_selector, BooleanSupplier climb_mode) {
     // Create Shuffleboard tab to show all robot information.
@@ -80,7 +75,6 @@ public class Telemetry {
     shooter_ = shooter;
     hood_ = hood;
     intake_ = intake;
-    feeder_ = feeder;
     climber_ = climber;
 
     // Assign superstructure.
@@ -164,12 +158,12 @@ public class Telemetry {
     climber_layout.addBoolean("Climb Mode", climb_mode_)
         .withPosition(2, 0);
 
-    // Add feeder information.
-    ShuffleboardLayout feeder_layout = tab_.getLayout("Feeder", BuiltInLayouts.kGrid)
+    // Add intake information.
+    ShuffleboardLayout intake_layout = tab_.getLayout("Intake", BuiltInLayouts.kGrid)
         .withSize(1, 2)
         .withPosition(6, 2);
-    feeder_layout.addBoolean("Intake Sensor", feeder::getIntakeSensor);
-    feeder_layout.addBoolean("Exit Sensor", feeder::getExitSensor);
+    intake_layout.addBoolean("Intake Sensor", intake::getIntakeSensor);
+    intake_layout.addBoolean("Exit Sensor", intake::getExitSensor);
 
     // Add superstructure information.
     ShuffleboardLayout superstructure_layout = tab_.getLayout("Superstructure",
