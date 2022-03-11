@@ -79,7 +79,7 @@ public class ClimbReset extends CommandBase {
 
     if (!right_reset_complete_) {
       climber_.setRightPercent(-0.15);
-      double r = right_climb_current_filter_.calculate(climber_.getLeftSupplyCurrent());
+      double r = right_climb_current_filter_.calculate(climber_.getRightSupplyCurrent());
       right_climb_current_ = assign ? r : 0;
 
       // Check current value.

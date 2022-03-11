@@ -52,11 +52,11 @@ public class AutoPlanner {
   // Trajectories
   public static final Trajectory kRTarmacFenderWallToBottomCargo = createTrajectory(
       new Pose2d(7.773, 2.903, Rotation2d.fromDegrees(249)),
-      new Pose2d(7.602, 0.830, Rotation2d.fromDegrees(270)),
+      new Pose2d(7.602, 1.030, Rotation2d.fromDegrees(270)),
       false);
 
   public static final Trajectory kBottomCargoToIntermediateA = createTrajectory(
-      new Pose2d(7.602, 0.830, Rotation2d.fromDegrees(270)),
+      new Pose2d(7.602, 1.030, Rotation2d.fromDegrees(270)),
       new Pose2d(8.298, 1.256, Rotation2d.fromDegrees(182)),
       true);
 

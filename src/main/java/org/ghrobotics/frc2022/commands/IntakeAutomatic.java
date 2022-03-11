@@ -74,10 +74,11 @@ public class IntakeAutomatic extends CommandBase {
     intake_.setIntakePercent(0);
     intake_.setFloorPercent(0);
     intake_.setWallPercent(0);
+    intake_.setPivot(false);
   }
 
   public static class Constants {
-    public static final double kCollectionIntakeSpeed = 0.85;
+    public static final double kCollectionIntakeSpeed = 1.0;
     public static final double kScoreIntakeSpeed = 0.85;
     public static final double kScoreFeederSpeed = 0.85;
     public static final double kIndexFeederSpeed = 0.85;

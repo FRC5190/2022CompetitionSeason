@@ -166,7 +166,7 @@ public class Intake extends SubsystemBase {
     double feeder_wall_demand;
 
     boolean pivot_value = true;
-    boolean wants_pneumatics_update;
+    boolean wants_pneumatics_update = true;
   }
 
   public static class Constants {
@@ -186,7 +186,7 @@ public class Intake extends SubsystemBase {
     public static final int kFeederWallSensorId = 3;
 
     // Current Limits
-    public static final int kIntakeCurrentLimit = 40;
+    public static final int kIntakeCurrentLimit = 80;
     public static final int kBridgeCurrentLimit = 20;
     public static final int kFeederCurrentLimit = 25;
 

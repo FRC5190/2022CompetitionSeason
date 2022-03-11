@@ -132,7 +132,7 @@ public class Climber extends SubsystemBase {
     }
 
     // If brake is engaged, don't do anything to prevent damage.
-    if (io_.brake_value) {
+    if (io_.brake_value && right_output_type_ != OutputType.ORCHESTRA) {
       // Set output to zero and exit out of here.
       right_leader_.set(0);
       return;
@@ -404,22 +404,22 @@ public class Climber extends SubsystemBase {
     public static final int kRightRevLimitSwitchId = 9;
 
     // Hardware
-    public static final double kMaxHeightNativeUnits = 10000000;
-    public static final double kMaxHeight = Units.inchesToMeters(23);
+    public static final double kMaxHeightNativeUnits = 153000;
+    public static final double kMaxHeight = Units.inchesToMeters(25.75);
 
     // Control
-    public static final int kLeftKs = 0;
-    public static final int kLeftKv = 0;
-    public static final int kLeftKa = 0;
-    public static final int kLeftKp = 0;
+    public static final double kLeftKs = 0;
+    public static final double kLeftKv = 0;
+    public static final double kLeftKa = 0;
+    public static final double kLeftKp = 0.2;
 
-    public static final int kRightKs = 0;
-    public static final int kRightKv = 0;
-    public static final int kRightKa = 0;
-    public static final int kRightKp = 0;
+    public static final double kRightKs = 0;
+    public static final double kRightKv = 0;
+    public static final double kRightKa = 0;
+    public static final double kRightKp = 0.2;
 
-    public static final double kMaxVelocity = Units.inchesToMeters(24);
-    public static final double kMaxAcceleration = Units.inchesToMeters(100);
-    public static final double kErrorTolerance = Units.inchesToMeters(0.25);
+    public static final double kMaxVelocity = Units.inchesToMeters(0.1);
+    public static final double kMaxAcceleration = Units.inchesToMeters(0.1);
+    public static final double kErrorTolerance = Units.inchesToMeters(1.0);
   }
 }

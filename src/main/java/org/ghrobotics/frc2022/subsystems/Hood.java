@@ -72,7 +72,7 @@ public class Hood extends SubsystemBase {
   public void periodic() {
     // Read inputs.
     io_.position = Constants.kEncoderSlope * (encoder_.get() - Constants.kMinEncoderValue)
-        + Constants.kMinAngle;
+        + Constants.kMinAngle + Math.toRadians(7.1);
 
     // Update robot state.
     robot_state_.updateHoodAngle(new Rotation2d(io_.position));

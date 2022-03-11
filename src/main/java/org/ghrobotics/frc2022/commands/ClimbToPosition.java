@@ -20,7 +20,7 @@ public class ClimbToPosition extends CommandBase {
     // Assign member variables.
     climber_ = climber;
     l_setpoint_ = l_setpoint;
-    r_setpoint_ = l_setpoint;
+    r_setpoint_ = r_setpoint;
 
     // Set subsystem requirements.
     addRequirements(climber_);

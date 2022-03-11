@@ -6,6 +6,7 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
@@ -156,7 +157,8 @@ public class Superstructure {
    * @return The command to score cargo into the high goal.
    */
   public Command scoreHighGoal(BooleanSupplier require_intake, BooleanSupplier wait_for_score) {
-    BooleanSupplier score = () -> shooter_.atGoal() && wait_for_score.getAsBoolean();
+    BooleanSupplier score =
+        () -> (!DriverStation.isTeleop() || shooter_.atGoal()) && wait_for_score.getAsBoolean();
 
     // The following commands run in parallel:
     //  - set turret angle, shooter speed, hood angle

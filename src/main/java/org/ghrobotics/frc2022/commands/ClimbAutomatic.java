@@ -19,6 +19,7 @@ public class ClimbAutomatic extends SequentialCommandGroup {
     // Create the automatic climb routine.
     addCommands(
         // Part 1: move the arms to be ready for mid rung climb.
+        new InstantCommand(() -> climber.setPivot(true, true)),
         new InstantCommand(() -> climber.setPivot(true, false)),
         new ClimbToPosition(climber, Constants.kMaxHeight, Constants.kReadyForL2Height)
             .withInterrupt(() ->
@@ -30,6 +31,7 @@ public class ClimbAutomatic extends SequentialCommandGroup {
         // Part 2: climb to mid rung: pull the right arm all the way down. When the left arm is
         // all the way up, un-pivot it.
         new ClimbToPosition(climber, Constants.kMaxHeight, Constants.kClimbHeight),
+        new WaitCommand(0.75),
         new InstantCommand(() -> climber.setPivot(false, false)),
         new WaitUntilCommand(advance_button),
 
@@ -37,18 +39,24 @@ public class ClimbAutomatic extends SequentialCommandGroup {
         // top, pivot right arm and extend to max height. Once the right arm reaches max height,
         // un-pivot it.
         new ClimbToPosition(climber, Constants.kSafeL3PivotHeight, Constants.kClimbHeight),
+        new WaitCommand(3),
+        new ClimbToPosition(climber, Constants.kClimbHeight, Constants.kClimbHeight),
+        new WaitUntilCommand(advance_button),
         new InstantCommand(() -> climber.setPivot(false, true)),
         new ClimbToPosition(climber, Constants.kClimbHeight, Constants.kMaxHeight),
+        new WaitCommand(0.5),
         new InstantCommand(() -> climber.setPivot(false, false)),
         new WaitUntilCommand(advance_button),
 
         // Part 4: climb to traversal rung: pull the right arm all the way down.
         new ClimbToPosition(climber, 0, Constants.kClimbHeight),
         new InstantCommand(() -> climber.setBrake(true)),
+        new InstantCommand(() -> climber.setLeftPercent(0)),
+        new InstantCommand(() -> climber.setRightPercent(0)),
 
         // Celebrate.
         new InstantCommand(climber::setOrchestra),
-        new WaitCommand(Constants.kOrchestraWaitTime)
+        new WaitCommand(10000)
     );
 
     // Set subsystem requirements.
@@ -59,8 +67,8 @@ public class ClimbAutomatic extends SequentialCommandGroup {
     // Heights
     public static final double kMaxHeight = Climber.Constants.kMaxHeight;
     public static final double kClimbHeight = Units.inchesToMeters(0);
-    public static final double kReadyForL2Height = Units.inchesToMeters(17);
-    public static final double kSafeL3PivotHeight = kMaxHeight - Units.inchesToMeters(7);
+    public static final double kReadyForL2Height = Units.inchesToMeters(20);
+    public static final double kSafeL3PivotHeight = kMaxHeight - Units.inchesToMeters(15);
 
     // Celebration
     public static final double kOrchestraWaitTime = 15;

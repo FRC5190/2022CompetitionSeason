@@ -5,6 +5,7 @@
 package org.ghrobotics.frc2022;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -212,6 +213,7 @@ public class Robot extends TimedRobot {
 
     // Turret:
     turret_.setDefaultCommand(superstructure_.trackGoalWithTurret());
+//    turret_.setDefaultCommand(new RunCommand(() -> turret_.setPercent(0), turret_));
 
     // Shooter:
     shooter_.setDefaultCommand(new RunCommand(() -> shooter_.setPercent(0), shooter_));
@@ -239,7 +241,7 @@ public class Robot extends TimedRobot {
 
     // Intake with Left Trigger.
     new Button(() -> driver_controller_.getLeftTriggerAxis() > 0.1)
-        .whenPressed(superstructure_.intake());
+        .whenHeld(superstructure_.intake());
 
     // Shoot low goal from fender with Left Bumper.
     new JoystickButton(driver_controller_, XboxController.Button.kLeftBumper.value)

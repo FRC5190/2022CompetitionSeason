@@ -222,6 +222,6 @@ public class Shooter extends SubsystemBase {
     public static final double kS = 0.64101;
     public static final double kV = 0.013676;
     public static final double kA = 0.0029748;
-    public static final double kErrorTolerance = Units.rotationsPerMinuteToRadiansPerSecond(400);
+    public static final double kErrorTolerance = Units.rotationsPerMinuteToRadiansPerSecond(250);
   }
 }

@@ -3,6 +3,7 @@ package org.ghrobotics.frc2022.auto;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import org.ghrobotics.frc2022.RobotState;
 import org.ghrobotics.frc2022.Superstructure;
 import org.ghrobotics.frc2022.commands.DriveTrajectory;
@@ -14,6 +15,7 @@ public class RTFenderHigh5Ball extends SequentialCommandGroup {
                            Superstructure superstructure) {
     // Create routine.
     addCommands(
+        new WaitCommand(1.0),
         // Reset odometry.
         new InstantCommand(() -> robot_state.resetPosition(
             AutoPlanner.kRTarmacFenderWallToBottomCargo.getInitialPose())),
