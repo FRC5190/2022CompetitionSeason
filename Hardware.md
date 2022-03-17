@@ -26,9 +26,12 @@ This document details all of the hardware (motors, motor controllers, sensors, e
 
 ## Pneumatics
 
-| Solenoid ID(s) |    Mechanism    |
-| -------------- | --------------- |
-| 0              | Intake Pivot    |
-| 1              | Climber Brake   |
-| 2              | L Climber Pivot |
-| 3              | R Climber Pivot |
+| Solenoid ID(s) |        Mechanism        |
+| -------------- | ------------------------|
+| 0              | Climber Brake           |
+| 1              | L Climber Pivot Forward |
+| 2              | L Climber Pivot Reverse |
+| 3              | R Climber Pivot Forward |
+| 4              | R Climber Pivot Reverse |
+| 5              | Intake Pivot Forward    |
+| 6              | Intake Pivot Reverse    |

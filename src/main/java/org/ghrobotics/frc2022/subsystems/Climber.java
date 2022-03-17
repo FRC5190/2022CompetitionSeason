@@ -9,6 +9,7 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.Solenoid;
+import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.List;
 
@@ -19,8 +20,8 @@ public class Climber extends SubsystemBase {
 
   // Pneumatics
   private final Solenoid brake_;
-  private final Solenoid left_pivot_;
-  private final Solenoid right_pivot_;
+  private final DoubleSolenoid left_pivot_;
+  private final DoubleSolenoid right_pivot_;
 
   // Control
   private final SimpleMotorFeedforward left_feedforward_;
@@ -56,9 +57,11 @@ public class Climber extends SubsystemBase {
     right_leader_.setInverted(true);
 
     // Initialize pneumatics.
-    brake_ = new Solenoid(PneumaticsModuleType.REVPH, Constants.kBrakeId);
-    left_pivot_ = new Solenoid(PneumaticsModuleType.REVPH, Constants.kLeftPivotId);
-    right_pivot_ = new Solenoid(PneumaticsModuleType.REVPH, Constants.kRightPivotId);
+    brake_ = new Solenoid(PneumaticsModuleType.CTREPCM, Constants.kBrakeId);
+    left_pivot_ = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, Constants.kLeftPivotForwardId, 
+        Constants.kLeftPivotReverseId);
+    right_pivot_ = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, Constants.kRightPivotForwardId, 
+        Constants.kRightPivotReverseId);
 
     // Initialize feedback.
     left_leader_.configMotionCruiseVelocity(toCTREVelocity(Constants.kMaxVelocity));
@@ -114,8 +117,8 @@ public class Climber extends SubsystemBase {
 
       // Set solenoid values.
       brake_.set(!io_.brake_value); // brake is wired backward
-      left_pivot_.set(io_.l_pivot_value);
-      right_pivot_.set(io_.r_pivot_value);
+      left_pivot_.set(io_.l_pivot_value ? DoubleSolenoid.Value.kForward :  DoubleSolenoid.Value.kReverse);
+      right_pivot_.set(io_.r_pivot_value ? DoubleSolenoid.Value.kForward :  DoubleSolenoid.Value.kReverse);
     }
 
     // Set motor outputs.
@@ -395,9 +398,11 @@ public class Climber extends SubsystemBase {
     public static final int kRightLeaderId = 15;
 
     // Pneumatics
-    public static final int kBrakeId = 1;
-    public static final int kLeftPivotId = 2;
-    public static final int kRightPivotId = 3;
+    public static final int kBrakeId = 0;
+    public static final int kLeftPivotForwardId = 1;
+    public static final int kLeftPivotReverseId = 2;
+    public static final int kRightPivotForwardId = 3;
+    public static final int kRightPivotReverseId = 4;
 
     // Sensors
     public static final int kLeftRevLimitSwitchId = 8;

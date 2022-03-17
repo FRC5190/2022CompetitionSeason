@@ -69,7 +69,7 @@ public class Intake extends SubsystemBase {
     feeder_wall_leader_.setInverted(true);
 
     // Initialize pneumatics.
-    pivot_ = new DoubleSolenoid(PneumaticsModuleType.REVPH, Constants.kPivotForwardId,
+    pivot_ = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, Constants.kPivotForwardId,
         Constants.kPivotReverseId);
 
     // Initialize sensors.
@@ -178,8 +178,8 @@ public class Intake extends SubsystemBase {
     public static final int kFeederWallId = 13;
 
     // Pneumatics
-    public static final int kPivotForwardId = 4;
-    public static final int kPivotReverseId = 5;
+    public static final int kPivotForwardId = 5;
+    public static final int kPivotReverseId = 6;
 
     // Sensors
     public static final int kFeederFloorSensorId = 2;

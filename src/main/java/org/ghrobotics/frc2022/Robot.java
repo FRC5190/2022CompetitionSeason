@@ -12,6 +12,8 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.RunCommand;
@@ -36,6 +38,7 @@ import org.ghrobotics.frc2022.subsystems.LimelightManager;
 import org.ghrobotics.frc2022.subsystems.Shooter;
 import org.ghrobotics.frc2022.subsystems.Turret;
 import org.ghrobotics.frc2022.vision.GoalTracker;
+
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -211,8 +214,11 @@ public class Robot extends TimedRobot {
     // Drivetrain:
     drivetrain_.setDefaultCommand(new DriveTeleop(drivetrain_, driver_controller_));
 
+    // Climber:
+    climber_.setDefaultCommand(new ClimbTeleop(climber_, driver_controller_, () -> climb_mode_));
+
     // Turret:
-    turret_.setDefaultCommand(superstructure_.trackGoalWithTurret());
+    turret_.setDefaultCommand(new SequentialCommandGroup(new WaitCommand(1), superstructure_.trackGoalWithTurret()));
 //    turret_.setDefaultCommand(new RunCommand(() -> turret_.setPercent(0), turret_));
 
     // Shooter:
@@ -221,8 +227,6 @@ public class Robot extends TimedRobot {
     // Hood:
     hood_.setDefaultCommand(superstructure_.trackGoalWithHood());
 
-    // Climber:
-    climber_.setDefaultCommand(new ClimbTeleop(climber_, driver_controller_, () -> climb_mode_));
   }
 
   /**
