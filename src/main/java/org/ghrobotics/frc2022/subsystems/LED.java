@@ -115,6 +115,8 @@ public class LED extends SubsystemBase {
     // Climb Indicators:
     CLIMBING(Color.kOrange, 0.75, 0.75),
     CLIMB_RESETTING(Color.kOrange, 0.1, 0.1),
+    CLIMB_AUTO(Color.kBlue, 0.5, 0.5),
+    CLIMB_AUTO_WAIT(Color.kPurple, 0.25, 0.25),
 
     // Turret Zero Indicators:
     NO_TURRET_ZERO(Color.kRed, 0.5, 0.5),

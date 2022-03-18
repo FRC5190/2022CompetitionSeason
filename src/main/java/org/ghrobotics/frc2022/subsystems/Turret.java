@@ -293,7 +293,7 @@ public class Turret extends SubsystemBase {
     public static final int kCurrentLimit = 30;
 
     // Hardware
-    public static final double kZeroPosition = Math.toRadians(90);
+    public static final double kZeroPosition = Math.toRadians(84);
     public static final double kMinAngle = 0;
     public static final double kMaxAngle = 2 * Math.PI;
     public static final double kGearRatio = 7.0 * 150 / 16.0;

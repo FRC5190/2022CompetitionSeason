@@ -81,6 +81,7 @@ public class Robot extends TimedRobot {
   private final Command score_high_goal_ = superstructure_.scoreHighGoal(
       () -> driver_controller_.getLeftTriggerAxis() > 0.1, () -> true);
   private final Command tune_shooter_ = superstructure_.tuneScoring();
+  private final ClimbAutomatic auto_climb = new ClimbAutomatic(climber_, driver_controller_::getAButton);
 
   // Create autonomous mode selector.
   private final SendableChooser<Command> auto_selector_ = new SendableChooser<>();
@@ -239,7 +240,7 @@ public class Robot extends TimedRobot {
         .whenPressed(() -> {
           climb_mode_ = true;
           clear_buttons_ = true;
-          new RunCommand(() -> turret_.setGoal(Math.toRadians(90), 0), turret_).schedule();
+          new RunCommand(() -> turret_.setGoal(Math.toRadians(270), 0), turret_).schedule();
           new RunCommand(() -> hood_.setPosition(Hood.Constants.kMinAngle), hood_).schedule();
         });
 
@@ -302,7 +303,7 @@ public class Robot extends TimedRobot {
 
     // Toggle automatic climb with Start button.
     new JoystickButton(driver_controller_, XboxController.Button.kStart.value)
-        .toggleWhenPressed(new ClimbAutomatic(climber_, driver_controller_::getAButton));
+        .toggleWhenPressed(auto_climb);
   }
 
   /**
@@ -312,6 +313,12 @@ public class Robot extends TimedRobot {
   private void updateLEDs() {
     if (climb_reset_cmd_.isScheduled())
       led_.setOutput(LED.StandardLEDOutput.CLIMB_RESETTING);
+
+    else if (auto_climb.isScheduled() && auto_climb.waiting_)
+      led_.setOutput(LED.StandardLEDOutput.CLIMB_AUTO_WAIT);
+
+    else if (auto_climb.isScheduled())
+      led_.setOutput(LED.StandardLEDOutput.CLIMB_AUTO);
 
     else if (climb_mode_)
       led_.setOutput(LED.StandardLEDOutput.CLIMBING);

@@ -33,6 +33,17 @@ public class IntakeAutomatic extends CommandBase {
 
   @Override
   public void execute() {
+    // Check whether we want to score.
+    if (wants_score_.getAsBoolean()) {
+      // Run feeder wall and floor at feed rate.
+      intake_.setFloorPercent(Constants.kScoreFeederSpeed);
+      intake_.setWallPercent(Constants.kScoreFeederSpeed);
+
+      // Run intake and intake speed for scoring.
+      intake_.setIntakePercent(Constants.kScoreIntakeSpeed);
+      return;
+    }
+
     // Check whether we want to intake.
     if (wants_intake_.getAsBoolean()) {
       // Extend intake out.
@@ -57,15 +68,6 @@ public class IntakeAutomatic extends CommandBase {
       intake_.setPivot(wants_stow_.getAsBoolean());
     }
 
-    // Check whether we want to score.
-    if (wants_score_.getAsBoolean()) {
-      // Run feeder wall and floor at feed rate.
-      intake_.setFloorPercent(Constants.kScoreFeederSpeed);
-      intake_.setWallPercent(Constants.kScoreFeederSpeed);
-
-      // Run intake and intake speed for scoring.
-      intake_.setIntakePercent(Constants.kScoreIntakeSpeed);
-    }
   }
 
   @Override
