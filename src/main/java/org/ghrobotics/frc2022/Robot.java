@@ -5,7 +5,6 @@
 package org.ghrobotics.frc2022;
 
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -20,10 +19,11 @@ import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.Button;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import org.ghrobotics.frc2022.auto.AutoPlanner;
-import org.ghrobotics.frc2022.auto.LTLCornerHigh2Ball;
-import org.ghrobotics.frc2022.auto.LTLCornerHigh4Ball;
-import org.ghrobotics.frc2022.auto.RTFenderHigh3Ball;
-import org.ghrobotics.frc2022.auto.RTFenderHigh5Ball;
+import org.ghrobotics.frc2022.auto.LTLCorner2Score;
+import org.ghrobotics.frc2022.auto.LTLCorner2Score2Eject;
+import org.ghrobotics.frc2022.auto.LTLCorner4Score;
+import org.ghrobotics.frc2022.auto.RTFender3Score;
+import org.ghrobotics.frc2022.auto.RTFender5Score;
 import org.ghrobotics.frc2022.commands.ClimbAutomatic;
 import org.ghrobotics.frc2022.commands.ClimbReset;
 import org.ghrobotics.frc2022.commands.ClimbTeleop;
@@ -151,8 +151,8 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopInit() {
-    // Temporarily disable soft limits.
-    climber_.enableSoftLimits(false);
+    // Reset robot pose to fender location.
+    // TODO: remove before competition
     robot_state_.resetPosition(AutoPlanner.kRTarmacFenderWallToBottomCargo.getInitialPose());
 
     // Set brake mode on drivetrain, turret, and hood.
@@ -198,14 +198,17 @@ public class Robot extends TimedRobot {
    */
   private void setupAuto() {
     auto_selector_.addOption("Left Tarmac Left Corner High Goal 2 Ball",
-        new LTLCornerHigh2Ball(robot_state_, drivetrain_, superstructure_));
+        new LTLCorner2Score(robot_state_, drivetrain_, superstructure_));
     auto_selector_.addOption("Left Tarmac Left Corner High Goal 4 Ball",
-        new LTLCornerHigh4Ball(robot_state_, drivetrain_, superstructure_));
+        new LTLCorner4Score(robot_state_, drivetrain_, superstructure_));
+
+    auto_selector_.addOption("Left Tarmac Left Corner Steal",
+        new LTLCorner2Score2Eject(robot_state_, drivetrain_, superstructure_));
 
     auto_selector_.addOption("Right Tarmac Fender High Goal 5 Ball",
-        new RTFenderHigh5Ball(robot_state_, drivetrain_, superstructure_));
+        new RTFender5Score(robot_state_, drivetrain_, superstructure_));
     auto_selector_.addOption("Right Tarmac Fender High Goal 3 Ball",
-        new RTFenderHigh3Ball(robot_state_, drivetrain_, superstructure_));
+        new RTFender3Score(robot_state_, drivetrain_, superstructure_));
   }
 
   /**
@@ -220,7 +223,6 @@ public class Robot extends TimedRobot {
 
     // Turret:
     turret_.setDefaultCommand(new SequentialCommandGroup(new WaitCommand(1), superstructure_.trackGoalWithTurret()));
-//    turret_.setDefaultCommand(new RunCommand(() -> turret_.setPercent(0), turret_));
 
     // Shooter:
     shooter_.setDefaultCommand(new RunCommand(() -> shooter_.setPercent(0), shooter_));

@@ -228,7 +228,7 @@ public class RobotState {
     public static final Matrix<N3, N1> kEstimatorLocalStdDevs =
         VecBuilder.fill(0.01, 0.01, 0.01);
     public static final Matrix<N3, N1> kEstimatorVisionStdDevs =
-        VecBuilder.fill(0.1, 0.1, 0.01);
+        VecBuilder.fill(0.05, 0.05, 0.01);
 
     public static final double kErrorTolerance = 1.5;
 

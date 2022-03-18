@@ -7,8 +7,10 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import java.util.function.BooleanSupplier;
@@ -37,12 +39,19 @@ public class Superstructure {
   // Robot State
   private final RobotState robot_state_;
 
+  // Goal
+  private final BooleanSupplier ready_to_score_;
+
   // Tracking
   private Pose2d robot_pose_;
   private ChassisSpeeds robot_speeds_;
   private Translation2d turret_to_goal_;
   private double turret_to_goal_distance_;
   private double turret_to_goal_angle_;
+  private double turret_eject_angle_;
+
+  // Timer
+  private final Timer timer_;
 
   /**
    * This class manages all mechanisms on the "superstructure" i.e. turret, shooter, hood, intake,
@@ -71,6 +80,12 @@ public class Superstructure {
 
     // Assign robot state.
     robot_state_ = robot_state;
+
+    // Initialize timer.
+    timer_ = new Timer();
+
+    // Create ready-to-score supplier.
+    ready_to_score_ = () -> timer_.get() > 1;
   }
 
   /**
@@ -97,6 +112,12 @@ public class Superstructure {
     // Calculate translation to goal.
     turret_to_goal_ = new Pose2d(goal, new Rotation2d()).relativeTo(turret_pose).getTranslation();
 
+    // Calculate turret angle to eject ball.
+    Translation2d turret_to_eject_location = new Pose2d(Constants.kEjectLocation,
+        new Rotation2d()).relativeTo(turret_pose).getTranslation();
+    turret_eject_angle_ = Math.atan2(turret_to_eject_location.getY(),
+        turret_to_eject_location.getX());
+
     // Calculate distance and angle to goal.
     turret_to_goal_distance_ = turret_to_goal_.getNorm();
     turret_to_goal_angle_ = Math.atan2(turret_to_goal_.getY(), turret_to_goal_.getX());
@@ -122,10 +143,11 @@ public class Superstructure {
     //  - set shooter speed and hood angle to preset values
     //  - wait for spin up and score
     return new ParallelCommandGroup(
+        startTimer(),
         new RunCommand(() -> turret_.setGoal(Math.toRadians(180), 0), turret_),
         new RunCommand(() -> shooter_.setRPM(Constants.kLowGoalShooterRPM), shooter_),
         new RunCommand(() -> hood_.setPosition(Constants.kLowGoalHoodAngle), hood_),
-        new IntakeAutomatic(intake_, () -> false, shooter_::atGoal, () -> true)
+        new IntakeAutomatic(intake_, () -> false, ready_to_score_, () -> true)
     );
   }
 
@@ -140,10 +162,11 @@ public class Superstructure {
     //  - set shooter speed and hood angle to preset values
     //  - wait for spin up and score
     return new ParallelCommandGroup(
+        startTimer(),
         new RunCommand(() -> turret_.setGoal(Math.toRadians(180), 0), turret_),
         new RunCommand(() -> shooter_.setRPM(Constants.kHighGoalShooterRPM), shooter_),
         new RunCommand(() -> hood_.setPosition(Constants.kHighGoalHoodAngle), hood_),
-        new IntakeAutomatic(intake_, () -> false, shooter_::atGoal, () -> true)
+        new IntakeAutomatic(intake_, () -> false, ready_to_score_, () -> true)
     );
   }
 
@@ -157,14 +180,14 @@ public class Superstructure {
    * @return The command to score cargo into the high goal.
    */
   public Command scoreHighGoal(BooleanSupplier require_intake, BooleanSupplier wait_for_score) {
-    BooleanSupplier score =
-        () -> (!DriverStation.isTeleop() || shooter_.atGoal()) && wait_for_score.getAsBoolean();
+    BooleanSupplier score = () -> ready_to_score_.getAsBoolean() && wait_for_score.getAsBoolean();
 
     // The following commands run in parallel:
     //  - set turret angle, shooter speed, hood angle
     //  - intake (if required)
     //  - wait for spin up and score
     return new ParallelCommandGroup(
+        startTimer(),
         new RunCommand(() -> {
           // Calculate turret angular velocity setpoint.
           double turret_omega = -robot_speeds_.omegaRadiansPerSecond -
@@ -223,10 +246,11 @@ public class Superstructure {
    */
   public Command eject() {
     return new ParallelCommandGroup(
+        startTimer(),
         new RunCommand(() -> hood_.setPosition(Constants.kLowGoalHoodAngle), hood_),
         new RunCommand(() -> shooter_.setRPM(Constants.kLowGoalShooterRPM), shooter_),
-        new RunCommand(() -> turret_.setGoal(turret_to_goal_angle_ + Math.PI, 0), turret_),
-        new IntakeAutomatic(intake_, () -> false, shooter_::atGoal, () -> true)
+        new RunCommand(() -> turret_.setGoal(turret_eject_angle_, 0), turret_),
+        new IntakeAutomatic(intake_, () -> false, ready_to_score_, () -> true)
     );
   }
 
@@ -296,10 +320,21 @@ public class Superstructure {
     return turret_to_goal_angle_;
   }
 
+  private Command startTimer() {
+    return new InstantCommand(() -> {
+      // Stop, reset, and start timer.
+      timer_.stop();
+      timer_.reset();
+      timer_.start();
+    });
+  }
+
   public static class Constants {
     // Goal
     public static final Translation2d kGoal = new Translation2d(
         Units.feetToMeters(27), Units.feetToMeters(13.5));
+    public static final Translation2d kEjectLocation = new Translation2d(
+        0, Units.feetToMeters(27));
 
     // Low Goal Scoring
     public static final double kLowGoalHoodAngle = Math.toRadians(42);

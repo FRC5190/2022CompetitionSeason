@@ -5,6 +5,9 @@
         "header": {
           "open": true
         }
+      },
+      "window": {
+        "visible": false
       }
     }
   },
@@ -67,6 +70,9 @@
         "Scoring Subsystems": {
           "open": true
         },
+        "Superstructure": {
+          "open": true
+        },
         "open": true
       },
       "open": true
@@ -79,7 +85,7 @@
     "Plot <0>": {
       "plots": [
         {
-          "height": 326,
+          "height": 333,
           "series": [
             {
               "color": [
@@ -88,14 +94,11 @@
                 0.6901960968971252,
                 1.0
               ],
-              "id": "NT:/Shuffleboard/Apex/Scoring Subsystems/Turret Position (deg)"
+              "id": "NT:/Shuffleboard/Apex/Scoring Subsystems/Shooter Velocity (rpm)"
             }
           ]
         }
-      ],
-      "window": {
-        "visible": false
-      }
+      ]
     }
   }
 }

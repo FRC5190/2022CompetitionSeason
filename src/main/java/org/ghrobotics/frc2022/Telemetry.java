@@ -1,6 +1,8 @@
 package org.ghrobotics.frc2022;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
@@ -182,11 +184,10 @@ public class Telemetry {
 
     // Update field view with robot pose.
     field_.setRobotPose(robot_pose);
-    field_.getObject("Vision Robot Pose").setPose(robot_state_.getLastVisionPose());
 
     // Update field view with turret pose.
-//    field_.getObject("Turret").setPose(
-//        robot_pose.transformBy(
-//            new Transform2d(new Translation2d(), robot_state_.getTurretAngle())));
+    field_.getObject("Turret").setPose(
+        robot_pose.transformBy(
+            new Transform2d(new Translation2d(), robot_state_.getTurretAngle())));
   }
 }

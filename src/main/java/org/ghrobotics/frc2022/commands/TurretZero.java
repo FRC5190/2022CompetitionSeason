@@ -1,5 +1,6 @@
 package org.ghrobotics.frc2022.commands;
 
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import java.util.function.BooleanSupplier;
@@ -55,8 +56,8 @@ public class TurretZero extends CommandBase {
 
   @Override
   public boolean isFinished() {
-    // We are done when we have been zeroing for 3 seconds.
-    return timer_.hasElapsed(3);
+    // We are done when we have been zeroing for 3 seconds (or if we are in simulation).
+    return timer_.hasElapsed(3) || RobotBase.isSimulation();
   }
 
   @Override

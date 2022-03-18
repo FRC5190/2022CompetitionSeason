@@ -9,13 +9,14 @@ import org.ghrobotics.frc2022.Superstructure;
 import org.ghrobotics.frc2022.commands.DriveTrajectory;
 import org.ghrobotics.frc2022.subsystems.Drivetrain;
 
-public class RTFenderHigh5Ball extends SequentialCommandGroup {
+public class RTFender5Score extends SequentialCommandGroup {
   // Start at right tarmac up against fender; score 5 balls.
-  public RTFenderHigh5Ball(RobotState robot_state, Drivetrain drivetrain,
-                           Superstructure superstructure) {
+  public RTFender5Score(RobotState robot_state, Drivetrain drivetrain,
+                        Superstructure superstructure) {
     // Create routine.
     addCommands(
         new WaitCommand(1.0),
+
         // Reset odometry.
         new InstantCommand(() -> robot_state.resetPosition(
             AutoPlanner.kRTarmacFenderWallToBottomCargo.getInitialPose())),

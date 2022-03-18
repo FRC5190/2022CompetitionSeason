@@ -75,6 +75,7 @@ public class Turret extends SubsystemBase {
     // Initialize PID controller.
     pid_controller_ = new ProfiledPIDController(Constants.kP, 0, Constants.kD,
         new TrapezoidProfile.Constraints(Constants.kMaxVelocity, Constants.kMaxAcceleration));
+    pid_controller_.setTolerance(Constants.kPositionTolerance, Constants.kVelocityTolerance);
 
     // Initialize feedforward.
     feedforward_ = new SimpleMotorFeedforward(Constants.kS, Constants.kV, Constants.kA);
@@ -151,7 +152,7 @@ public class Turret extends SubsystemBase {
     // Update physics sim with inputs.
     // Note: a bug with REV simulation causes getAppliedOutput() to return voltage instead of
     // duty cycle, which is why we are not multiplying by 12.
-    physics_sim_.setInputVoltage(-leader_.getAppliedOutput());
+    physics_sim_.setInputVoltage(leader_.getAppliedOutput());
 
     // Update physics sim forward in time.
     physics_sim_.update(0.02);
@@ -209,6 +210,14 @@ public class Turret extends SubsystemBase {
   public void setGoal(double position, double velocity) {
     output_type_ = OutputType.PROFILE;
     pid_controller_.setGoal(new TrapezoidProfile.State(constrainSetpoint(position), velocity));
+  }
+
+  /**
+   * Returns whether the turret is at the goal position and velocity.
+   * @return Whether the turret is at the goal position and velocity.
+   */
+  public boolean atGoal() {
+    return pid_controller_.atGoal();
   }
 
   /**
@@ -307,5 +316,7 @@ public class Turret extends SubsystemBase {
     public static final double kD = 0.4;
     public static final double kMaxVelocity = 4 * Math.PI;
     public static final double kMaxAcceleration = 3 * Math.PI;
+    public static final double kPositionTolerance = Math.toRadians(2);
+    public static final double kVelocityTolerance = Math.toRadians(10);
   }
 }

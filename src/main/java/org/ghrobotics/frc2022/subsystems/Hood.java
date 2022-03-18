@@ -59,6 +59,7 @@ public class Hood extends SubsystemBase {
     // Initialize PID controller.
     pid_controller_ = new ProfiledPIDController(Constants.kP, 0, 0,
         new TrapezoidProfile.Constraints(Constants.kMaxVelocity, Constants.kMaxAcceleration));
+    pid_controller_.setTolerance(Constants.kTolerance);
 
     // Initialize feedforward.
     feedforward_ = new ArmFeedforward(Constants.kS, Constants.kG, Constants.kV, Constants.kA);
@@ -95,11 +96,6 @@ public class Hood extends SubsystemBase {
         TrapezoidProfile.State setpoint = pid_controller_.getSetpoint();
         double feedforward = feedforward_.calculate(setpoint.position, setpoint.velocity,
             (setpoint.velocity - last_velocity_setpoint_) / 0.02);
-
-        SmartDashboard.putNumber("Hood Setpoint", Math.toDegrees(setpoint.position));
-        SmartDashboard.putNumber("Hood Feedback", feedback);
-        SmartDashboard.putNumber("Hood Feedforward", feedforward);
-        SmartDashboard.putNumber("Hood Current", leader_.getOutputCurrent());
 
         // Store last velocity setpoint.
         last_velocity_setpoint_ = setpoint.velocity;
@@ -139,6 +135,15 @@ public class Hood extends SubsystemBase {
     output_type_ = OutputType.POSITION;
     io_.demand = MathUtil.clamp(value, Constants.kMinAngle, Constants.kMaxAngle);
     pid_controller_.setGoal(io_.demand);
+  }
+
+  /**
+   * Returns whether the hood is at the position goal.
+   *
+   * @return Whether the hood is at the position goal.
+   */
+  public boolean atGoal() {
+    return pid_controller_.atGoal();
   }
 
   /**
@@ -188,6 +193,7 @@ public class Hood extends SubsystemBase {
     public static final double kP = 2.0;
     public static final double kMaxVelocity = 2 * Math.PI;
     public static final double kMaxAcceleration = 2 * Math.PI;
+    public static final double kTolerance = Math.toRadians(2);
   }
 }
 

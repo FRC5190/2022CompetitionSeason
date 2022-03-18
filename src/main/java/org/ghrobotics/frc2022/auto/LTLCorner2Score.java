@@ -1,17 +1,19 @@
 package org.ghrobotics.frc2022.auto;
 
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelRaceGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import org.ghrobotics.frc2022.RobotState;
 import org.ghrobotics.frc2022.Superstructure;
 import org.ghrobotics.frc2022.commands.DriveTrajectory;
 import org.ghrobotics.frc2022.subsystems.Drivetrain;
 
-public class LTLCornerHigh2Ball extends SequentialCommandGroup {
+public class LTLCorner2Score extends SequentialCommandGroup {
   // Start at middle left corner of left tarmac; score 2 balls.
-  public LTLCornerHigh2Ball(RobotState robot_state, Drivetrain drivetrain,
-                            Superstructure superstructure) {
+  public LTLCorner2Score(RobotState robot_state, Drivetrain drivetrain,
+                         Superstructure superstructure) {
     // Create routine.
     addCommands(
         // Reset odometry.

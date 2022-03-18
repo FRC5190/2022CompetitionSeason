@@ -27,16 +27,16 @@ public class AutoPlanner {
   public static final Translation2d kHPCargo = createWaypoint(38.12, 40.52);
 
   // Regions
-  public static final CircularRegion kBottomCargoRegion = new CircularRegion(kBottomCargo, 1);
+  public static final CircularRegion kBottomCargoRegion = new CircularRegion(kBottomCargo, 0.6);
   public static final CircularRegion kMiddleCargoRegion = new CircularRegion(kMiddleCargo, 1);
   public static final CircularRegion kTopCargoRegion = new CircularRegion(kTopCargo, 1);
   public static final CircularRegion kHPCargoRegion = new CircularRegion(kHPCargo, 1);
 
   // Trajectory Constraints
-  public static final double kMaxVelocity = 2.5;
-  public static final double kMaxCargoRegionVelocity = 0.5;
-  public static final double kMaxAcceleration = 1.0;
-  public static final double kMaxCentripetalAcceleration = .5;
+  public static final double kMaxVelocity = 3.0;
+  public static final double kMaxCargoRegionVelocity = 0.75;
+  public static final double kMaxAcceleration = 1.5;
+  public static final double kMaxCentripetalAcceleration = 1.5;
 
   public static final MaxVelocityConstraint kRegionMaxVelocityConstraint =
       new MaxVelocityConstraint(kMaxCargoRegionVelocity);
@@ -79,6 +79,21 @@ public class AutoPlanner {
   public static final Trajectory kLTarmacMLCornerToTopCargo = createTrajectory(
       new Pose2d(6.186, 5.233, Rotation2d.fromDegrees(135)),
       new Pose2d(5.306, 5.900, Rotation2d.fromDegrees(135)),
+      false);
+
+  public static final Trajectory kLTarmacMLCornerToTopStealCargo = createTrajectory(
+      new Pose2d(6.186, 5.233, Rotation2d.fromDegrees(135)),
+      new Pose2d(6.257, 6.908, Rotation2d.fromDegrees(116)),
+      false);
+
+  public static final Trajectory kTopStealCargoToTopCargo = createTrajectory(
+      new Pose2d(6.257, 6.908, Rotation2d.fromDegrees(116)),
+      new Pose2d(5.249, 6.567, Rotation2d.fromDegrees(230)),
+      false);
+
+  public static final Trajectory kTopCargoToMiddleStealCargo = createTrajectory(
+      new Pose2d(5.249, 6.567, Rotation2d.fromDegrees(230)),
+      new Pose2d(4.440, 3.713, Rotation2d.fromDegrees(270)),
       false);
 
   public static final Trajectory kTopCargoToHPCargo = createTrajectory(

@@ -4,20 +4,17 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelRaceGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
-import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import org.ghrobotics.frc2022.RobotState;
 import org.ghrobotics.frc2022.Superstructure;
 import org.ghrobotics.frc2022.commands.DriveTrajectory;
 import org.ghrobotics.frc2022.subsystems.Drivetrain;
 
-public class RTFenderHigh3Ball extends SequentialCommandGroup {
+public class RTFender3Score extends SequentialCommandGroup {
   // Start at right tarmac up against fender; score 3 balls.
-  public RTFenderHigh3Ball(RobotState robot_state, Drivetrain drivetrain,
-                           Superstructure superstructure) {
+  public RTFender3Score(RobotState robot_state, Drivetrain drivetrain,
+                        Superstructure superstructure) {
     // Create routine.
     addCommands(
-        new WaitCommand(1.0),
-
         // Reset odometry.
         new InstantCommand(() -> robot_state.resetPosition(
             AutoPlanner.kRTarmacFenderWallToBottomCargo.getInitialPose())),
@@ -26,7 +23,10 @@ public class RTFenderHigh3Ball extends SequentialCommandGroup {
         new ParallelRaceGroup(
             new DriveTrajectory(drivetrain, robot_state,
                 AutoPlanner.kRTarmacFenderWallToBottomCargo),
-            superstructure.trackGoalWithTurret(),
+            new SequentialCommandGroup(
+                new WaitCommand(1),
+                superstructure.trackGoalWithTurret()
+            ),
             superstructure.trackGoalWithHood(),
             superstructure.intake()
         ),

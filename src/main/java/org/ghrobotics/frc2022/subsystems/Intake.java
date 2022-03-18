@@ -37,21 +37,18 @@ public class Intake extends SubsystemBase {
     intake_leader_.restoreFactoryDefaults();
     intake_leader_.setIdleMode(IdleMode.kCoast);
     intake_leader_.enableVoltageCompensation(12);
-    intake_leader_.setSmartCurrentLimit(Constants.kIntakeCurrentLimit);
     intake_leader_.setInverted(true);
 
     bridge_leader_ = new CANSparkMax(Constants.kBridgeLeaderId, MotorType.kBrushless);
     bridge_leader_.restoreFactoryDefaults();
     bridge_leader_.setIdleMode(IdleMode.kCoast);
     bridge_leader_.enableVoltageCompensation(12);
-    bridge_leader_.setSmartCurrentLimit(Constants.kBridgeCurrentLimit);
     bridge_leader_.setInverted(false);
 
     bridge_follower_ = new CANSparkMax(Constants.kBridgeFollowerId, MotorType.kBrushless);
     bridge_follower_.restoreFactoryDefaults();
     bridge_follower_.setIdleMode(IdleMode.kCoast);
     bridge_follower_.enableVoltageCompensation(12);
-    bridge_follower_.setSmartCurrentLimit(Constants.kBridgeCurrentLimit);
     bridge_follower_.follow(bridge_leader_, true);
 
     feeder_floor_leader_ = new CANSparkMax(Constants.kFeederFloorId, MotorType.kBrushless);
@@ -165,7 +162,7 @@ public class Intake extends SubsystemBase {
     double feeder_floor_demand;
     double feeder_wall_demand;
 
-    boolean pivot_value = true;
+    boolean pivot_value = false;
     boolean wants_pneumatics_update = true;
   }
 
