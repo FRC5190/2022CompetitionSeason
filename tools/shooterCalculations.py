@@ -8,9 +8,9 @@ goalHeight = 8 * 12 + 9     # in
 trajectories = []
 
 measuredTerminalVelocity = 66.7  # ft/s
-dragCoefficient = 0.65
+dragCoefficient = 0.0
 airDensity = 1.23  # kg/m3
-liftCoefficient = 0.13
+liftCoefficient = 0.30
 
 gravity = -9.8  # m/s2
 ballDiameter = 9.5  # in

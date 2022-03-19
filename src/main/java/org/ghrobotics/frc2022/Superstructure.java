@@ -129,7 +129,7 @@ public class Superstructure {
    * @return The command to intake balls and store in the feeder.
    */
   public Command intake() {
-    return new IntakeAutomatic(intake_, () -> true, () -> false, () -> true);
+    return new IntakeAutomatic(intake_, () -> true, () -> false, () -> false);
   }
 
   /**
@@ -268,13 +268,12 @@ public class Superstructure {
     //  - run intake and feeder
     return new ParallelCommandGroup(
         new RunCommand(() -> shooter_.setVelocity(
-            SmartDashboard.getNumber(Constants.kTuningShooterRPMKey, Constants.kLowGoalShooterRPM)),
+            SmartDashboard.getNumber(Constants.kTuningShooterRPMKey, 0)),
             shooter_),
-        new RunCommand(() -> hood_.setPosition(
-            SmartDashboard.getNumber(Constants.kTuningHoodAngleKey, Constants.kLowGoalHoodAngle)),
+        new RunCommand(() -> hood_.setPosition(Math.toRadians(Double.parseDouble(DriverStation.getGameSpecificMessage()))),
             hood_),
-        new IntakeAutomatic(intake_, () -> true,
-            () -> SmartDashboard.getBoolean(Constants.kTuningScoreKey, false), () -> false),
+//        new IntakeAutomatic(intake_, () -> true,
+//            () -> SmartDashboard.getBoolean(Constants.kTuningScoreKey, false), () -> false),
         trackGoalWithTurret()
     );
   }
@@ -341,8 +340,8 @@ public class Superstructure {
     public static final double kLowGoalShooterRPM = 1200;
 
     // High Goal Scoring
-    public static final double kHighGoalHoodAngle = Math.toRadians(20);
-    public static final double kHighGoalShooterRPM = 2640;
+    public static final double kHighGoalHoodAngle = Math.toRadians(17);
+    public static final double kHighGoalShooterRPM = 2550;
 
     // Intake
     public static final double kIntakeCollectSpeed = 0.85;

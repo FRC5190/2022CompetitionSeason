@@ -88,6 +88,8 @@ public class Climber extends SubsystemBase {
     // Initialize orchestra to play music.
     orchestra_ = new Orchestra(List.of(left_leader_, right_leader_));
     orchestra_.loadMusic("imperial_march.chrp");
+
+    zero();
   }
 
   /**
@@ -425,6 +427,6 @@ public class Climber extends SubsystemBase {
 
     public static final double kMaxVelocity = Units.inchesToMeters(0.1);
     public static final double kMaxAcceleration = Units.inchesToMeters(0.1);
-    public static final double kErrorTolerance = Units.inchesToMeters(1.0);
+    public static final double kErrorTolerance = Units.inchesToMeters(1.51);
   }
 }

@@ -160,6 +160,8 @@ public class Robot extends TimedRobot {
     turret_.setBrakeMode(true);
     hood_.setBrakeMode(true);
 
+    climber_.enableSoftLimits(false);
+
     // Cancel autonomous program.
     if (autonomous_command_ != null)
       autonomous_command_.cancel();
@@ -242,8 +244,9 @@ public class Robot extends TimedRobot {
         .whenPressed(() -> {
           climb_mode_ = true;
           clear_buttons_ = true;
-          new RunCommand(() -> turret_.setGoal(Math.toRadians(270), 0), turret_).schedule();
+          new RunCommand(() -> turret_.setGoal(Math.toRadians(90), 0), turret_).schedule();
           new RunCommand(() -> hood_.setPosition(Hood.Constants.kMinAngle), hood_).schedule();
+          intake_.setPivot(false);
         });
 
     // Intake with Left Trigger.

@@ -36,7 +36,7 @@ public class ClimbAutomatic extends SequentialCommandGroup {
 
         // Part 2: climb to mid rung: pull the right arm all the way down. When the left arm is
         // all the way up, un-pivot it.
-        new ClimbToPosition(climber, Constants.kMaxHeight, Constants.kClimbHeight),
+        new ClimbToPosition(climber, Constants.kMaxHeight, Constants.kClimbHeight - Units.inchesToMeters(1)),
         new WaitCommand(0.75),
         new InstantCommand(() -> climber.setPivot(false, false)),
         wait2(),
@@ -48,11 +48,8 @@ public class ClimbAutomatic extends SequentialCommandGroup {
         // un-pivot it.
         new ClimbToPosition(climber, Constants.kSafeL3PivotHeight, Constants.kClimbHeight),
         new WaitCommand(3),
-        new ClimbToPosition(climber, Constants.kClimbHeight, Constants.kClimbHeight),
-        wait2(),
-        new WaitUntilCommand(advance_button),
-        unwait(),
         new InstantCommand(() -> climber.setPivot(false, true)),
+        new ClimbToPosition(climber, Constants.kClimbHeight, Constants.kClimbHeight),
         new ClimbToPosition(climber, Constants.kClimbHeight, Constants.kMaxHeight),
         wait2(),
         new WaitUntilCommand(advance_button),
@@ -90,7 +87,7 @@ public class ClimbAutomatic extends SequentialCommandGroup {
     public static final double kMaxHeight = Climber.Constants.kMaxHeight;
     public static final double kClimbHeight = Units.inchesToMeters(0);
     public static final double kReadyForL2Height = Units.inchesToMeters(24);
-    public static final double kSafeL3PivotHeight = kMaxHeight - Units.inchesToMeters(15);
+    public static final double kSafeL3PivotHeight = kMaxHeight - Units.inchesToMeters(18);
 
     // Celebration
     public static final double kOrchestraWaitTime = 15;
