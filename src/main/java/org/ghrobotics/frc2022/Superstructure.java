@@ -85,7 +85,7 @@ public class Superstructure {
     timer_ = new Timer();
 
     // Create ready-to-score supplier.
-    ready_to_score_ = () -> timer_.get() > 1;
+    ready_to_score_ = () -> timer_.get() > 1.5;
   }
 
   /**
@@ -129,7 +129,15 @@ public class Superstructure {
    * @return The command to intake balls and store in the feeder.
    */
   public Command intake() {
-    return new IntakeAutomatic(intake_, () -> true, () -> false, () -> false);
+    return new IntakeAutomatic(intake_, () -> true, () -> false, () -> true);
+  }
+
+  public Command tryUnjam() {
+      return new RunCommand(() -> {
+          intake_.setWallPercent(-0.75);
+          intake_.setFloorPercent(-0.75);
+          shooter_.setPercent(-0.5);
+      }, intake_, shooter_);
   }
 
   /**
@@ -340,8 +348,8 @@ public class Superstructure {
     public static final double kLowGoalShooterRPM = 1200;
 
     // High Goal Scoring
-    public static final double kHighGoalHoodAngle = Math.toRadians(17);
-    public static final double kHighGoalShooterRPM = 2550;
+    public static final double kHighGoalHoodAngle = Math.toRadians(13);
+    public static final double kHighGoalShooterRPM = 2600;
 
     // Intake
     public static final double kIntakeCollectSpeed = 0.85;

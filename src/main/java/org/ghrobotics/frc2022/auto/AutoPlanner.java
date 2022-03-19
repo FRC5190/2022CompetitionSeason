@@ -55,6 +55,24 @@ public class AutoPlanner {
       new Pose2d(7.602, 1.030, Rotation2d.fromDegrees(270)),
       false);
 
+  public static final Trajectory kBottomCargoToRTarmacFenderWall = createTrajectory(
+          new Pose2d(7.602, 1.030, Rotation2d.fromDegrees(270)),
+          new Pose2d(7.773, 2.903, Rotation2d.fromDegrees(249)),
+          true
+  );
+
+  public static final Trajectory kRTarmacFenderWallToMiddleCargo = createTrajectory(
+          new Pose2d(7.773, 2.903, Rotation2d.fromDegrees(249)),
+          new Pose2d(4.738, 3.254, Rotation2d.fromDegrees(140)),
+          false
+  );
+
+  public static final Trajectory kMiddleCargoToRTarmacFenderWall = createTrajectory(
+          new Pose2d(4.738, 3.074, Rotation2d.fromDegrees(140)),
+          new Pose2d(7.773, 2.903, Rotation2d.fromDegrees(249)),
+          true
+  );
+
   public static final Trajectory kBottomCargoToIntermediateA = createTrajectory(
       new Pose2d(7.602, 1.030, Rotation2d.fromDegrees(270)),
       new Pose2d(8.298, 1.256, Rotation2d.fromDegrees(182)),
@@ -62,7 +80,7 @@ public class AutoPlanner {
 
   public static final Trajectory kIntermediateAToMiddleCargo = createTrajectory(
       new Pose2d(8.298, 1.256, Rotation2d.fromDegrees(182)),
-      new Pose2d(5.387, 1.710, Rotation2d.fromDegrees(148)),
+      new Pose2d(5.387, 2.254, Rotation2d.fromDegrees(148)),
       false);
 
   public static final Trajectory kIntermediateAToMiddleCargoToHPCargo = createTrajectory(
@@ -80,6 +98,12 @@ public class AutoPlanner {
       new Pose2d(6.186, 5.233, Rotation2d.fromDegrees(135)),
       new Pose2d(5.306, 5.900, Rotation2d.fromDegrees(135)),
       false);
+
+  public static final Trajectory kTopCargoToLTarmacFender = createTrajectory(
+          new Pose2d(5.306, 5.900, Rotation2d.fromDegrees(135)),
+          new Pose2d(7.152, 4.622, Rotation2d.fromDegrees(-204)),
+          true
+  );
 
   public static final Trajectory kLTarmacMLCornerToTopStealCargo = createTrajectory(
       new Pose2d(6.186, 5.233, Rotation2d.fromDegrees(135)),

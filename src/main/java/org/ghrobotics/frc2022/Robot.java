@@ -18,12 +18,7 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.Button;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
-import org.ghrobotics.frc2022.auto.AutoPlanner;
-import org.ghrobotics.frc2022.auto.LTLCorner2Score;
-import org.ghrobotics.frc2022.auto.LTLCorner2Score2Eject;
-import org.ghrobotics.frc2022.auto.LTLCorner4Score;
-import org.ghrobotics.frc2022.auto.RTFender3Score;
-import org.ghrobotics.frc2022.auto.RTFender5Score;
+import org.ghrobotics.frc2022.auto.*;
 import org.ghrobotics.frc2022.commands.ClimbAutomatic;
 import org.ghrobotics.frc2022.commands.ClimbReset;
 import org.ghrobotics.frc2022.commands.ClimbTeleop;
@@ -153,7 +148,7 @@ public class Robot extends TimedRobot {
   public void teleopInit() {
     // Reset robot pose to fender location.
     // TODO: remove before competition
-    robot_state_.resetPosition(AutoPlanner.kRTarmacFenderWallToBottomCargo.getInitialPose());
+//    robot_state_.resetPosition(AutoPlanner.kRTarmacFenderWallToBottomCargo.getInitialPose());
 
     // Set brake mode on drivetrain, turret, and hood.
     drivetrain_.setBrakeMode(true);
@@ -203,6 +198,10 @@ public class Robot extends TimedRobot {
         new LTLCorner2Score(robot_state_, drivetrain_, superstructure_));
     auto_selector_.addOption("Left Tarmac Left Corner High Goal 4 Ball",
         new LTLCorner4Score(robot_state_, drivetrain_, superstructure_));
+    auto_selector_.addOption("Left Tarmac Left Corner Low Goal 2 Ball",
+            new LTLCorner2ScoreLow(robot_state_, drivetrain_, superstructure_));
+    auto_selector_.addOption("Right Tarmac Fender Low Goal 3 Ball",
+            new RTFender3ScoreLow(robot_state_, drivetrain_, superstructure_));
 
     auto_selector_.addOption("Left Tarmac Left Corner Steal",
         new LTLCorner2Score2Eject(robot_state_, drivetrain_, superstructure_));
@@ -244,7 +243,7 @@ public class Robot extends TimedRobot {
         .whenPressed(() -> {
           climb_mode_ = true;
           clear_buttons_ = true;
-          new RunCommand(() -> turret_.setGoal(Math.toRadians(90), 0), turret_).schedule();
+          new RunCommand(() -> turret_.setGoal(Math.toRadians(86), 0), turret_).schedule();
           new RunCommand(() -> hood_.setPosition(Hood.Constants.kMinAngle), hood_).schedule();
           intake_.setPivot(false);
         });
@@ -268,6 +267,9 @@ public class Robot extends TimedRobot {
     // Eject with back button.
     new JoystickButton(driver_controller_, XboxController.Button.kBack.value)
         .whenHeld(superstructure_.eject());
+
+    new JoystickButton(driver_controller_, XboxController.Button.kStart.value)
+            .whenHeld(superstructure_.tryUnjam());
 
     // Add field-relative turret hints with d-pad.
     new Button(() -> driver_controller_.getPOV() == 0)

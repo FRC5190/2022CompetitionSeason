@@ -75,6 +75,8 @@ public class Hood extends SubsystemBase {
     io_.position = Constants.kEncoderSlope * (encoder_.get() - Constants.kMinEncoderValue)
         + Constants.kMinAngle;
 
+    SmartDashboard.putNumber("Hood Enc Raw", encoder_.get());
+
     // Update robot state.
     robot_state_.updateHoodAngle(new Rotation2d(io_.position));
 
@@ -133,7 +135,7 @@ public class Hood extends SubsystemBase {
    */
   public void setPosition(double value) {
     output_type_ = OutputType.POSITION;
-    io_.demand = MathUtil.clamp(value, Constants.kMinAngle, Constants.kMaxAngle);
+    io_.demand = MathUtil.clamp(value, Math.toRadians(7), Constants.kMaxAngle);
     pid_controller_.setGoal(io_.demand);
   }
 
@@ -178,8 +180,8 @@ public class Hood extends SubsystemBase {
     public static final int kCurrentLimit = 20;
 
     // Hardware
-    public static final double kMinEncoderValue = 0.772;
-    public static final double kMaxEncoderValue = 0.535;
+    public static final double kMinEncoderValue = 0.56;
+    public static final double kMaxEncoderValue = 0.32;
     public static final double kMaxAngle = Units.degreesToRadians(42.4);
     public static final double kMinAngle = Units.degreesToRadians(2.6);
     public static final double kEncoderSlope =

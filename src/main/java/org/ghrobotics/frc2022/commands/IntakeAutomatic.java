@@ -54,7 +54,7 @@ public class IntakeAutomatic extends CommandBase {
       }
     } else {
       // If we aren't intaking, and want to stow the intake, do that.
-      intake_.setPivot(wants_stow_.getAsBoolean());
+      intake_.setPivot(!wants_stow_.getAsBoolean());
       intake_.setIntakePercent(0);
       intake_.setFloorPercent(0);
       intake_.setWallPercent(0);
@@ -67,6 +67,7 @@ public class IntakeAutomatic extends CommandBase {
       intake_.setWallPercent(Constants.kScoreFeederSpeed);
 
       // Run intake and intake speed for scoring.
+      intake_.setPivot(false);
       intake_.setIntakePercent(Constants.kScoreIntakeSpeed);
     }
   }
@@ -77,13 +78,13 @@ public class IntakeAutomatic extends CommandBase {
     intake_.setIntakePercent(0);
     intake_.setFloorPercent(0);
     intake_.setWallPercent(0);
-    intake_.setPivot(false);
+    intake_.setPivot(!wants_stow_.getAsBoolean());
   }
 
   public static class Constants {
     public static final double kCollectionIntakeSpeed = 1.0;
-    public static final double kScoreIntakeSpeed = 0.85;
-    public static final double kScoreFeederSpeed = 0.85;
+    public static final double kScoreIntakeSpeed = 0.5;
+    public static final double kScoreFeederSpeed = 0.55;
     public static final double kIndexFeederSpeed = 0.85;
   }
 }
