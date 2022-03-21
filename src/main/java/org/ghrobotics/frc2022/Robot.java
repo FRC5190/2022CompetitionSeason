@@ -149,7 +149,7 @@ public class Robot extends TimedRobot {
     // Reset robot pose to fender location.
     // TODO: remove before competition
 //    robot_state_.resetPosition(AutoPlanner.kRTarmacFenderWallToBottomCargo.getInitialPose());
-
+//
     // Set brake mode on drivetrain, turret, and hood.
     drivetrain_.setBrakeMode(true);
     turret_.setBrakeMode(true);

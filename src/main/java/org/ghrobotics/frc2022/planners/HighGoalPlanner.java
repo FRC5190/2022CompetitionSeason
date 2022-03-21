@@ -46,7 +46,7 @@ public class HighGoalPlanner {
         double exit_angle = Double.parseDouble(values[2]);
 
         // Populate tables.
-        shooter_speed_table.put(distance, Units.rotationsPerMinuteToRadiansPerSecond(rpm * 1.03));
+        shooter_speed_table.put(distance, Units.rotationsPerMinuteToRadiansPerSecond(rpm * 1.09));
         hood_angle_table_.put(distance, Math.toRadians(90 - exit_angle));
       }
 

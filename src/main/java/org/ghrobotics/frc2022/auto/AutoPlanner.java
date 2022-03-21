@@ -34,7 +34,7 @@ public class AutoPlanner {
 
   // Trajectory Constraints
   public static final double kMaxVelocity = 3.0;
-  public static final double kMaxCargoRegionVelocity = 0.75;
+  public static final double kMaxCargoRegionVelocity = 0.35;
   public static final double kMaxAcceleration = 1.5;
   public static final double kMaxCentripetalAcceleration = 1.5;
 

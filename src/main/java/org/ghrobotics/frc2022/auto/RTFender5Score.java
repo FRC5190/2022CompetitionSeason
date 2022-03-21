@@ -15,7 +15,7 @@ public class RTFender5Score extends SequentialCommandGroup {
                         Superstructure superstructure) {
     // Create routine.
     addCommands(
-        new WaitCommand(1.0),
+        new WaitCommand(0.5),
 
         // Reset odometry.
         new InstantCommand(() -> robot_state.resetPosition(
