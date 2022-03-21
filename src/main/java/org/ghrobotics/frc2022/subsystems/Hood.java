@@ -74,6 +74,7 @@ public class Hood extends SubsystemBase {
     // Read inputs.
     io_.position = Constants.kEncoderSlope * (encoder_.get() - Constants.kMinEncoderValue)
         + Constants.kMinAngle;
+    io_.supply_current = leader_.getOutputCurrent();
 
     SmartDashboard.putNumber("Hood Enc Raw", encoder_.get());
 
@@ -164,6 +165,7 @@ public class Hood extends SubsystemBase {
   public static class PeriodicIO {
     // Inputs
     double position;
+    double supply_current;
 
     // Outputs
     double demand;

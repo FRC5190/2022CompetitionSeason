@@ -83,6 +83,11 @@ public class Intake extends SubsystemBase {
     // Read inputs.
     io_.floor_sensor = floor_sensor_.getAverageVoltage() > Constants.kFeederFloorSensorVThreshold;
     io_.wall_sensor = wall_sensor_.getAverageVoltage() > Constants.kFeederWallSensorVThreshold;
+    io_.intake_supply_current = intake_leader_.getOutputCurrent();
+    io_.bridge_leader_supply_current = bridge_leader_.getOutputCurrent();
+    io_.bridge_follower_supply_current = bridge_follower_.getOutputCurrent();
+    io_.feeder_floor_supply_current = feeder_floor_leader_.getOutputCurrent();
+    io_.feeder_wall_supply_current = feeder_wall_leader_.getOutputCurrent();
 
     // Write outputs.
     if (io_.wants_pneumatics_update) {
@@ -156,6 +161,11 @@ public class Intake extends SubsystemBase {
     // Inputs
     boolean floor_sensor;
     boolean wall_sensor;
+    double intake_supply_current;
+    double bridge_leader_supply_current;
+    double bridge_follower_supply_current;
+    double feeder_floor_supply_current;
+    double feeder_wall_supply_current;
 
     // Outputs
     double intake_bridge_demand;

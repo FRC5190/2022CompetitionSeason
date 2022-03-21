@@ -92,6 +92,8 @@ public class Shooter extends SubsystemBase {
   public void periodic() {
     // Read inputs.
     io_.velocity = encoder_.getVelocity();
+    io_.leader_supply_current = leader_.getOutputCurrent();
+    io_.follower_supply_current = follower_.getOutputCurrent();
 
     // Write outputs.
     switch (output_type_) {
@@ -196,6 +198,8 @@ public class Shooter extends SubsystemBase {
   public static class PeriodicIO {
     // Inputs
     double velocity;
+    double leader_supply_current;
+    double follower_supply_current;
 
     // Outputs
     double demand;
