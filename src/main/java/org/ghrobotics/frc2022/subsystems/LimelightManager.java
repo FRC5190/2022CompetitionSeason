@@ -9,15 +9,11 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.ghrobotics.frc2022.RobotState;
-import org.ghrobotics.frc2022.vision.GoalTracker;
 import org.ghrobotics.frc2022.vision.Limelight;
 
 public class LimelightManager extends SubsystemBase {
   // Robot State
   private final RobotState robot_state_;
-
-  // Goal Tracker
-  private final GoalTracker goal_tracker_;
 
   // Limelight
   private final Limelight limelight_;
@@ -31,10 +27,9 @@ public class LimelightManager extends SubsystemBase {
    * subsystem should be created in the main Robot class and references to this instance should
    * be passed around the robot code.
    */
-  public LimelightManager(RobotState robot_state, GoalTracker goal_tracker) {
-    // Store reference to robot state and goal tracer.
+  public LimelightManager(RobotState robot_state) {
+    // Store reference to robot state.
     robot_state_ = robot_state;
-    goal_tracker_ = goal_tracker;
 
     // Initialize Limelight.
     limelight_ = new Limelight(Constants.kLimelightId);
@@ -108,16 +103,10 @@ public class LimelightManager extends SubsystemBase {
       Transform2d robot_to_goal = robot_to_turret.plus(turret_to_camera).plus(camera_to_goal)
           .plus(Constants.kGoalToGoalCenter);
 
-      // Calculate global target pose.
-      Pose2d global_target_pose = robot_pose.transformBy(robot_to_goal);
-
       // Calculate robot pose from vision measurements.
       Rotation2d goal_rotation = robot_pose.transformBy(robot_to_goal).getRotation();
       Pose2d vision_robot_pose = new Pose2d(Constants.kGoal, goal_rotation)
           .transformBy(robot_to_goal.inverse());
-
-      // Add to goal tracker.
-      goal_tracker_.addSamples(timestamp, global_target_pose);
 
       // Add to pose estimator.
       robot_state_.addVisionMeasurement(timestamp, vision_robot_pose);

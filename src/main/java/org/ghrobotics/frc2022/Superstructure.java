@@ -21,7 +21,6 @@ import org.ghrobotics.frc2022.subsystems.Intake;
 import org.ghrobotics.frc2022.subsystems.LimelightManager;
 import org.ghrobotics.frc2022.subsystems.Shooter;
 import org.ghrobotics.frc2022.subsystems.Turret;
-import org.ghrobotics.frc2022.vision.GoalTracker;
 
 public class Superstructure {
   // Subsystems
@@ -32,9 +31,6 @@ public class Superstructure {
 
   // High Goal Planner
   private final HighGoalPlanner high_goal_planner_;
-
-  // Goal Tracker
-  private final GoalTracker goal_tracker_;
 
   // Robot State
   private final RobotState robot_state_;
@@ -64,7 +60,7 @@ public class Superstructure {
    * @param intake  Reference to intake subsystem.
    */
   public Superstructure(Turret turret, Shooter shooter, Hood hood, Intake intake,
-                        GoalTracker goal_tracker, RobotState robot_state) {
+                        RobotState robot_state) {
     // Assign subsystem references.
     turret_ = turret;
     shooter_ = shooter;
@@ -74,9 +70,6 @@ public class Superstructure {
     // Initialize high goal planner.
     high_goal_planner_ = new HighGoalPlanner(Constants.kLowGoalShooterRPM,
         Constants.kLowGoalHoodAngle);
-
-    // Assign goal tracker.
-    goal_tracker_ = goal_tracker;
 
     // Assign robot state.
     robot_state_ = robot_state;
@@ -98,11 +91,7 @@ public class Superstructure {
     robot_speeds_ = robot_state_.getRobotSpeeds();
 
     // Get the goal position.
-    Translation2d goal;
-    if (Robot.kUsePoseEstimator)
-      goal = Constants.kGoal;
-    else
-      goal = goal_tracker_.getClosestTarget(robot_pose_).getTranslation();
+    Translation2d goal = Constants.kGoal;
 
     // Calculate turret pose.
     Pose2d turret_pose = robot_pose_.transformBy(
@@ -133,11 +122,11 @@ public class Superstructure {
   }
 
   public Command tryUnjam() {
-      return new RunCommand(() -> {
-          intake_.setWallPercent(-0.75);
-          intake_.setFloorPercent(-0.75);
-          shooter_.setPercent(-0.5);
-      }, intake_, shooter_);
+    return new RunCommand(() -> {
+      intake_.setWallPercent(-0.75);
+      intake_.setFloorPercent(-0.75);
+      shooter_.setPercent(-0.5);
+    }, intake_, shooter_);
   }
 
   /**
@@ -278,7 +267,8 @@ public class Superstructure {
         new RunCommand(() -> shooter_.setVelocity(
             SmartDashboard.getNumber(Constants.kTuningShooterRPMKey, 0)),
             shooter_),
-        new RunCommand(() -> hood_.setPosition(Math.toRadians(Double.parseDouble(DriverStation.getGameSpecificMessage()))),
+        new RunCommand(() -> hood_.setPosition(
+            Math.toRadians(Double.parseDouble(DriverStation.getGameSpecificMessage()))),
             hood_),
 //        new IntakeAutomatic(intake_, () -> true,
 //            () -> SmartDashboard.getBoolean(Constants.kTuningScoreKey, false), () -> false),
