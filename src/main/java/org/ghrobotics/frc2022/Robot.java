@@ -11,14 +11,20 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
-import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.RunCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.Button;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
-import org.ghrobotics.frc2022.auto.*;
+import org.ghrobotics.frc2022.auto.LTLCorner2Score;
+import org.ghrobotics.frc2022.auto.LTLCorner2Score2Eject;
+import org.ghrobotics.frc2022.auto.LTLCorner2ScoreLow;
+import org.ghrobotics.frc2022.auto.LTLCorner4Score;
+import org.ghrobotics.frc2022.auto.RTFender3Score;
+import org.ghrobotics.frc2022.auto.RTFender3ScoreLow;
+import org.ghrobotics.frc2022.auto.RTFender5Score;
 import org.ghrobotics.frc2022.commands.ClimbAutomatic;
 import org.ghrobotics.frc2022.commands.ClimbReset;
 import org.ghrobotics.frc2022.commands.ClimbTeleop;
@@ -32,8 +38,6 @@ import org.ghrobotics.frc2022.subsystems.LED;
 import org.ghrobotics.frc2022.subsystems.LimelightManager;
 import org.ghrobotics.frc2022.subsystems.Shooter;
 import org.ghrobotics.frc2022.subsystems.Turret;
-import org.ghrobotics.frc2022.vision.GoalTracker;
-
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -49,9 +53,6 @@ public class Robot extends TimedRobot {
   // Initialize robot state.
   private final RobotState robot_state_ = new RobotState();
 
-  // Initialize goal tracker.
-  private final GoalTracker goal_tracker_ = new GoalTracker();
-
   // Create subsystems.
   private final Drivetrain drivetrain_ = new Drivetrain(robot_state_);
   private final Turret turret_ = new Turret(robot_state_);
@@ -62,21 +63,21 @@ public class Robot extends TimedRobot {
   private final LED led_ = new LED();
 
   // Create Limelight Manager.
-  private final LimelightManager limelight_manager_ =
-      new LimelightManager(robot_state_, goal_tracker_);
+  private final LimelightManager limelight_manager_ = new LimelightManager(robot_state_);
 
   // Create Xbox controller for driver.
   private final XboxController driver_controller_ = new XboxController(0);
 
   // Create superstructure and associated commands.
   private final Superstructure superstructure_ = new Superstructure(
-      turret_, shooter_, hood_, intake_, goal_tracker_, robot_state_);
+      turret_, shooter_, hood_, intake_, robot_state_);
   private final Command score_low_goal_fender_ = superstructure_.scoreLowGoalFender();
   private final Command score_high_goal_fender_ = superstructure_.scoreHighGoalFender();
   private final Command score_high_goal_ = superstructure_.scoreHighGoal(
       () -> driver_controller_.getLeftTriggerAxis() > 0.1, () -> true);
   private final Command tune_shooter_ = superstructure_.tuneScoring();
-  private final ClimbAutomatic auto_climb = new ClimbAutomatic(climber_, driver_controller_::getAButton);
+  private final ClimbAutomatic auto_climb = new ClimbAutomatic(climber_,
+      driver_controller_::getAButton);
 
   // Create autonomous mode selector.
   private final SendableChooser<Command> auto_selector_ = new SendableChooser<>();
@@ -199,9 +200,9 @@ public class Robot extends TimedRobot {
     auto_selector_.addOption("Left Tarmac Left Corner High Goal 4 Ball",
         new LTLCorner4Score(robot_state_, drivetrain_, superstructure_));
     auto_selector_.addOption("Left Tarmac Left Corner Low Goal 2 Ball",
-            new LTLCorner2ScoreLow(robot_state_, drivetrain_, superstructure_));
+        new LTLCorner2ScoreLow(robot_state_, drivetrain_, superstructure_));
     auto_selector_.addOption("Right Tarmac Fender Low Goal 3 Ball",
-            new RTFender3ScoreLow(robot_state_, drivetrain_, superstructure_));
+        new RTFender3ScoreLow(robot_state_, drivetrain_, superstructure_));
 
     auto_selector_.addOption("Left Tarmac Left Corner Steal",
         new LTLCorner2Score2Eject(robot_state_, drivetrain_, superstructure_));
@@ -223,7 +224,8 @@ public class Robot extends TimedRobot {
     climber_.setDefaultCommand(new ClimbTeleop(climber_, driver_controller_, () -> climb_mode_));
 
     // Turret:
-    turret_.setDefaultCommand(new SequentialCommandGroup(new WaitCommand(1), superstructure_.trackGoalWithTurret()));
+    turret_.setDefaultCommand(
+        new SequentialCommandGroup(new WaitCommand(1), superstructure_.trackGoalWithTurret()));
 
     // Shooter:
     shooter_.setDefaultCommand(new RunCommand(() -> shooter_.setPercent(0), shooter_));
@@ -269,7 +271,7 @@ public class Robot extends TimedRobot {
         .whenHeld(superstructure_.eject());
 
     new JoystickButton(driver_controller_, XboxController.Button.kStart.value)
-            .whenHeld(superstructure_.tryUnjam());
+        .whenHeld(superstructure_.tryUnjam());
 
     // Add field-relative turret hints with d-pad.
     new Button(() -> driver_controller_.getPOV() == 0)
