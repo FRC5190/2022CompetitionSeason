@@ -94,6 +94,7 @@ public class Turret extends SubsystemBase {
     // Read inputs.
     io_.position = encoder_.getPosition();
     io_.velocity = encoder_.getVelocity();
+    io_.supply_current = leader_.getOutputCurrent();
     io_.hall_sensor = !hall_sensor_.get();
 
     // Zero the turret position if we want to.
@@ -214,6 +215,7 @@ public class Turret extends SubsystemBase {
 
   /**
    * Returns whether the turret is at the goal position and velocity.
+   *
    * @return Whether the turret is at the goal position and velocity.
    */
   public boolean atGoal() {
@@ -283,6 +285,7 @@ public class Turret extends SubsystemBase {
     // Inputs
     double position;
     double velocity;
+    double supply_current;
     boolean hall_sensor;
 
     // Outputs

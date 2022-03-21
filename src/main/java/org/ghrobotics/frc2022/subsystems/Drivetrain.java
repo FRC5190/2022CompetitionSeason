@@ -154,6 +154,11 @@ public class Drivetrain extends SubsystemBase {
     io_.angle = gyro_.getRotation2d();
     io_.angular_rate = -Math.toRadians(gyro_.getRate());
 
+    io_.l_leader_supply_current = left_leader_.getOutputCurrent();
+    io_.l_follower_supply_current = left_follower_.getOutputCurrent();
+    io_.r_leader_supply_current = right_leader_.getOutputCurrent();
+    io_.r_follower_supply_current = right_follower_.getOutputCurrent();
+
     // Update robot state with measurements.
     double avg_velocity = (io_.l_velocity + io_.r_velocity) / 2;
     robot_state_.updateRobotPose(
@@ -326,6 +331,11 @@ public class Drivetrain extends SubsystemBase {
     double r_velocity;
     Rotation2d angle = new Rotation2d();
     double angular_rate;
+
+    double l_leader_supply_current;
+    double l_follower_supply_current;
+    double r_leader_supply_current;
+    double r_follower_supply_current;
 
     // Outputs
     double l_demand;
