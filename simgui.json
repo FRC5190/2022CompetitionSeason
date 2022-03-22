@@ -1,4 +1,11 @@
 {
+  "HALProvider": {
+    "Other Devices": {
+      "window": {
+        "visible": false
+      }
+    }
+  },
   "NTProvider": {
     "types": {
       "/FMSInfo": "FMSInfo",
@@ -12,10 +19,44 @@
         }
       },
       "/SmartDashboard/Field": {
+        "Robot": {
+          "arrowColor": [
+            0.6432510018348694,
+            0.6504911184310913,
+            0.7518518567085266,
+            255.0
+          ],
+          "arrowSize": 37,
+          "length": 0.8600000143051147,
+          "width": 0.8600000143051147
+        },
+        "Turret": {
+          "arrowSize": 39,
+          "arrowWeight": 0.20000000298023224,
+          "color": [
+            0.6955718398094177,
+            0.10008231550455093,
+            0.8444444537162781,
+            255.0
+          ],
+          "length": 0.5,
+          "weight": 1.0,
+          "width": 0.5
+        },
+        "bottom": 900,
+        "height": 8.229599952697754,
+        "image": "/Users/prateekma/Documents/Dev/PathWeaver/src/main/resources/edu/wpi/first/pathweaver/2022-field.png",
+        "left": 74,
+        "right": 1774,
+        "top": 50,
+        "width": 16.459199905395508,
         "window": {
           "visible": true
         }
       }
     }
+  },
+  "NetworkTables View": {
+    "visible": false
   }
 }

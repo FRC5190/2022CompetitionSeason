@@ -18,13 +18,11 @@ import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.Button;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
-import org.ghrobotics.frc2022.auto.LTLCorner2Score;
-import org.ghrobotics.frc2022.auto.LTLCorner2Score2Eject;
-import org.ghrobotics.frc2022.auto.LTLCorner2ScoreLow;
-import org.ghrobotics.frc2022.auto.LTLCorner4Score;
-import org.ghrobotics.frc2022.auto.RTFender3Score;
-import org.ghrobotics.frc2022.auto.RTFender3ScoreLow;
-import org.ghrobotics.frc2022.auto.RTFender5Score;
+import org.ghrobotics.frc2022.auto.HighLeft2;
+import org.ghrobotics.frc2022.auto.HighLeft2Steal2;
+import org.ghrobotics.frc2022.auto.HighLeft4;
+import org.ghrobotics.frc2022.auto.HighRight3;
+import org.ghrobotics.frc2022.auto.HighRight3Steal1;
 import org.ghrobotics.frc2022.commands.ClimbAutomatic;
 import org.ghrobotics.frc2022.commands.ClimbReset;
 import org.ghrobotics.frc2022.commands.ClimbTeleop;
@@ -195,22 +193,17 @@ public class Robot extends TimedRobot {
    * Creates auto modes and adds them to the selector.
    */
   private void setupAuto() {
-    auto_selector_.addOption("Left Tarmac Left Corner High Goal 2 Ball",
-        new LTLCorner2Score(robot_state_, drivetrain_, superstructure_));
-    auto_selector_.addOption("Left Tarmac Left Corner High Goal 4 Ball",
-        new LTLCorner4Score(robot_state_, drivetrain_, superstructure_));
-    auto_selector_.addOption("Left Tarmac Left Corner Low Goal 2 Ball",
-        new LTLCorner2ScoreLow(robot_state_, drivetrain_, superstructure_));
-    auto_selector_.addOption("Right Tarmac Fender Low Goal 3 Ball",
-        new RTFender3ScoreLow(robot_state_, drivetrain_, superstructure_));
+    auto_selector_.addOption("High Left 2",
+        new HighLeft2(robot_state_, drivetrain_, superstructure_));
+    auto_selector_.addOption("High Left 2 Steal 2",
+        new HighLeft2Steal2(robot_state_, drivetrain_, superstructure_));
+    auto_selector_.addOption("High Left 4",
+        new HighLeft4(robot_state_, drivetrain_, superstructure_));
 
-    auto_selector_.addOption("Left Tarmac Left Corner Steal",
-        new LTLCorner2Score2Eject(robot_state_, drivetrain_, superstructure_));
-
-    auto_selector_.addOption("Right Tarmac Fender High Goal 5 Ball",
-        new RTFender5Score(robot_state_, drivetrain_, superstructure_));
-    auto_selector_.addOption("Right Tarmac Fender High Goal 3 Ball",
-        new RTFender3Score(robot_state_, drivetrain_, superstructure_));
+    auto_selector_.addOption("High Right 3",
+        new HighRight3(robot_state_, drivetrain_, superstructure_));
+    auto_selector_.addOption("High Right 3 Steal 1",
+        new HighRight3Steal1(robot_state_, drivetrain_, superstructure_));
   }
 
   /**
