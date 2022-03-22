@@ -48,6 +48,9 @@ public class Robot extends TimedRobot {
   public static final boolean kUsePoseEstimator = true;
   public static final boolean kUsePoseEstimatorInAuto = false;
 
+  // Create Xbox controller for driver.
+  private final XboxController driver_controller_ = new XboxController(0);
+
   // Initialize robot state.
   private final RobotState robot_state_ = new RobotState();
 
@@ -59,21 +62,16 @@ public class Robot extends TimedRobot {
   private final Intake intake_ = new Intake();
   private final Climber climber_ = new Climber();
   private final LED led_ = new LED();
-
-  // Create Limelight Manager.
   private final LimelightManager limelight_manager_ = new LimelightManager(robot_state_);
 
-  // Create Xbox controller for driver.
-  private final XboxController driver_controller_ = new XboxController(0);
-
   // Create superstructure and associated commands.
-  private final Superstructure superstructure_ = new Superstructure(
-      turret_, shooter_, hood_, intake_, robot_state_);
-  private final Command score_low_goal_fender_ = superstructure_.scoreLowGoalFender();
-  private final Command score_high_goal_fender_ = superstructure_.scoreHighGoalFender();
-  private final Command score_high_goal_ = superstructure_.scoreHighGoal(
-      () -> driver_controller_.getLeftTriggerAxis() > 0.1, () -> true);
-  private final Command tune_shooter_ = superstructure_.tuneScoring();
+  private final Superstructure superstructure_ = new Superstructure(turret_, shooter_, hood_,
+      intake_, robot_state_);
+
+  private final Command score_lg_fender_ = superstructure_.scoreLowGoalFender();
+  private final Command score_hg_fender_ = superstructure_.scoreHighGoalFender();
+  private final Command score_hg_ = superstructure_.scoreHighGoal();
+
   private final ClimbAutomatic auto_climb = new ClimbAutomatic(climber_,
       driver_controller_::getAButton);
 
@@ -233,60 +231,39 @@ public class Robot extends TimedRobot {
    * already configured in the respective subsystem default commands.
    */
   private void setupTeleopControls() {
-    // Go into climb mode with B button.
-    new JoystickButton(driver_controller_, XboxController.Button.kB.value)
-        .whenPressed(() -> {
-          climb_mode_ = true;
-          clear_buttons_ = true;
-          new RunCommand(() -> turret_.setGoal(Math.toRadians(86), 0), turret_).schedule();
-          new RunCommand(() -> hood_.setPosition(Hood.Constants.kMinAngle), hood_).schedule();
-          intake_.setPivot(false);
-        });
+    // A: low goal fender preset
+    new Button(driver_controller_::getAButton).whenHeld(score_lg_fender_);
 
-    // Intake with Left Trigger.
+    // B: climb mode toggle
+    new Button(driver_controller_::getAButton).whenPressed(() -> {
+      climb_mode_ = true;
+      clear_buttons_ = true;
+      new RunCommand(() -> turret_.setGoal(Math.toRadians(86), 0), turret_).schedule();
+      new RunCommand(() -> hood_.setPosition(Hood.Constants.kMinAngle), hood_).schedule();
+      intake_.setPivot(false);
+    });
+
+    // X: drivetrain cheesy drive quick turn (in command)
+
+    // Y: high goal fender preset
+    new Button(driver_controller_::getYButton).whenHeld(score_hg_fender_);
+
+    // LS: drivetrain movement (in command)
+
+    // RS: none
+
+    // LB: toggle intake pivot
+    new Button(driver_controller_::getLeftBumper)
+        .whenPressed(() -> intake_.setPivot(!intake_.getPivot()));
+
+    // RB: none
+
+    // LT: intake
     new Button(() -> driver_controller_.getLeftTriggerAxis() > 0.1)
         .whenHeld(superstructure_.intake());
 
-    // Toggle intake pivot with LB.
-    new JoystickButton(driver_controller_, XboxController.Button.kLeftBumper.value)
-        .whenPressed(() -> intake_.setPivot(!intake_.getPivot()));
-
-    // Shoot low goal from fender with Left Bumper.
-    new JoystickButton(driver_controller_, XboxController.Button.kLeftBumper.value)
-        .whenHeld(score_low_goal_fender_);
-
-    // Shoot high goal from fender with Right Bumper.
-    new JoystickButton(driver_controller_, XboxController.Button.kRightBumper.value)
-        .whenHeld(score_high_goal_fender_);
-
-    // Shoot high goal with Right Trigger.
-    new Button(() -> driver_controller_.getRightTriggerAxis() > 0.1)
-        .whenHeld(score_high_goal_);
-
-    // Eject with back button.
-    new JoystickButton(driver_controller_, XboxController.Button.kBack.value)
-        .whenHeld(superstructure_.eject());
-
-    new JoystickButton(driver_controller_, XboxController.Button.kStart.value)
-        .whenHeld(superstructure_.tryUnjam());
-
-    // Add field-relative turret hints with d-pad.
-    new Button(() -> driver_controller_.getPOV() == 0)
-        .whenHeld(new RunCommand(
-            () -> turret_.setGoal(0 - robot_state_.getRobotPose().getRotation().getRadians(), 0),
-            turret_));
-    new Button(() -> driver_controller_.getPOV() == 90)
-        .whenHeld(new RunCommand(() -> turret_.setGoal(
-            Math.toRadians(90) - robot_state_.getRobotPose().getRotation().getRadians(), 0),
-            turret_));
-    new Button(() -> driver_controller_.getPOV() == 180)
-        .whenHeld(new RunCommand(() -> turret_.setGoal(
-            Math.toRadians(180) - robot_state_.getRobotPose().getRotation().getRadians(), 0),
-            turret_));
-    new Button(() -> driver_controller_.getPOV() == 270)
-        .whenHeld(new RunCommand(() -> turret_.setGoal(
-            Math.toRadians(270) - robot_state_.getRobotPose().getRotation().getRadians(), 0),
-            turret_));
+    // RT: score
+    new Button(() -> driver_controller_.getRightTriggerAxis() > 0.1).whenHeld(score_hg_);
   }
 
   /**
@@ -294,20 +271,37 @@ public class Robot extends TimedRobot {
    * already configured in the respective subsystem default commands.
    */
   private void setupEndgameControls() {
-    // Go out of climb mode with B button.
-    new JoystickButton(driver_controller_, XboxController.Button.kB.value)
-        .whenPressed(() -> {
-          climb_mode_ = false;
-          clear_buttons_ = true;
-          turret_.getDefaultCommand().schedule();
-          hood_.getDefaultCommand().schedule();
-        });
+    // A: toggle right arm (in command)
 
-    // Reset climber when Back is pressed.
+    // B: climb mode toggle
+    new JoystickButton(driver_controller_, XboxController.Button.kB.value).whenPressed(() -> {
+      climb_mode_ = false;
+      clear_buttons_ = true;
+      turret_.getDefaultCommand().schedule();
+      hood_.getDefaultCommand().schedule();
+    });
+
+    // X: drivetrain cheesy drive quick turn (in command)
+
+    // Y: toggle left arm (in command)
+
+    // LS: drivetrain movement (in command)
+
+    // RS: none
+
+    // LB: left arm up (in command)
+
+    // RB: right arm up (in command)
+
+    // LT: left arm down (in command)
+
+    // RT: right arm down (in command)
+
+    // Back: reset and zero climber
     new JoystickButton(driver_controller_, XboxController.Button.kBack.value)
         .whenHeld(climb_reset_cmd_);
 
-    // Toggle automatic climb with Start button.
+    // Start: toggle automatic climb
     new JoystickButton(driver_controller_, XboxController.Button.kStart.value)
         .toggleWhenPressed(auto_climb);
   }
@@ -341,11 +335,11 @@ public class Robot extends TimedRobot {
     else if (isDisabled())
       led_.setOutput(LED.OutputType.RAINBOW);
 
-    else if (tune_shooter_.isScheduled() || score_low_goal_fender_.isScheduled() ||
-        score_high_goal_fender_.isScheduled())
+    else if (score_lg_fender_.isScheduled() ||
+        score_hg_fender_.isScheduled())
       led_.setOutput(LED.StandardLEDOutput.MANUAL_SCORING);
 
-    else if (score_high_goal_.isScheduled())
+    else if (score_hg_.isScheduled())
       led_.setOutput(LED.StandardLEDOutput.AUTOMATIC_SCORING);
 
     else
