@@ -247,6 +247,10 @@ public class Robot extends TimedRobot {
     new Button(() -> driver_controller_.getLeftTriggerAxis() > 0.1)
         .whenHeld(superstructure_.intake());
 
+    // Toggle intake pivot with LB.
+    new JoystickButton(driver_controller_, XboxController.Button.kLeftBumper.value)
+        .whenPressed(() -> intake_.setPivot(!intake_.getPivot()));
+
     // Shoot low goal from fender with Left Bumper.
     new JoystickButton(driver_controller_, XboxController.Button.kLeftBumper.value)
         .whenHeld(score_low_goal_fender_);
