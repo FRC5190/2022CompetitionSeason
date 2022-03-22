@@ -296,7 +296,17 @@ public class Superstructure {
    */
   public Command trackGoalWithHood() {
     return new RunCommand(
-        () -> hood_.setPosition(high_goal_planner_.getHoodAngle(turret_to_goal_distance_)), hood_);
+        () -> {
+          // Check whether we are out of the safe hangar zone.
+          if (robot_pose_.getX() > Arena.kSafeHangarTLCorner.getX() &&
+              robot_pose_.getY() < Arena.kSafeHangarTLCorner.getY() &&
+              robot_pose_.getX() < Arena.kSafeHangarBRCorner.getX() &&
+              robot_pose_.getY() > Arena.kSafeHangarBRCorner.getY()) {
+            hood_.setPosition(Hood.Constants.kMinAngle);
+          } else {
+            hood_.setPosition(high_goal_planner_.getHoodAngle(turret_to_goal_distance_));
+          }
+        }, hood_);
   }
 
   /**
