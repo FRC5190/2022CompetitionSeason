@@ -147,6 +147,32 @@ public class RobotState {
   }
 
   /**
+   * Resets the robot position assuming that the robot is currently at (or close to) the fender.
+   * Because the robot's gyro is very accurate, it uses it to determine which of the four
+   * possible fender locations the robot is at.
+   */
+  public void resetPositionFromFender() {
+    // Get the current robot pose.
+    Pose2d robot_pose = getRobotPose();
+
+    // Find the pose to reset to (by taking the minimum of the difference in current angle with
+    // the 4 fender poses).
+    Pose2d min_pose = Constants.kFenderPoses[0];
+    double min_angle = 2 * Math.PI;
+
+    for (Pose2d p : Constants.kFenderPoses) {
+      double angle = p.getRotation().minus(robot_pose.getRotation()).getRadians();
+      if (angle < min_angle) {
+        min_angle = angle;
+        min_pose = p;
+      }
+    }
+
+    // Reset pose.
+    resetPosition(min_pose);
+  }
+
+  /**
    * Returns the robot speeds at the current time.
    *
    * @return The robot speeds at the current time.
@@ -234,5 +260,13 @@ public class RobotState {
 
     // Buffer
     public static final double kBufferLifetime = 1.25;
+
+    // Fender Poses
+    public static final Pose2d[] kFenderPoses = new Pose2d[]{
+        new Pose2d(7.759, 2.862, Rotation2d.fromDegrees(249)),
+        new Pose2d(6.983, 4.664, Rotation2d.fromDegrees(158)),
+        new Pose2d(9.549, 3.663, Rotation2d.fromDegrees(340)),
+        new Pose2d(8.736, 5.428, Rotation2d.fromDegrees(71))
+    };
   }
 }

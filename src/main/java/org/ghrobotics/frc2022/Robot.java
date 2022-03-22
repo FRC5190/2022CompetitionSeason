@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
@@ -143,10 +144,6 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopInit() {
-    // Reset robot pose to fender location.
-    // TODO: remove before competition
-//    robot_state_.resetPosition(AutoPlanner.kRTarmacFenderWallToBottomCargo.getInitialPose());
-//
     // Set brake mode on drivetrain, turret, and hood.
     drivetrain_.setBrakeMode(true);
     turret_.setBrakeMode(true);
@@ -232,7 +229,9 @@ public class Robot extends TimedRobot {
    */
   private void setupTeleopControls() {
     // A: low goal fender preset
-    new Button(driver_controller_::getAButton).whenHeld(score_lg_fender_);
+    new Button(driver_controller_::getAButton)
+        .whenHeld(score_lg_fender_
+            .alongWith(new InstantCommand(robot_state_::resetPositionFromFender)));
 
     // B: climb mode toggle
     new Button(driver_controller_::getAButton).whenPressed(() -> {
@@ -246,7 +245,9 @@ public class Robot extends TimedRobot {
     // X: drivetrain cheesy drive quick turn (in command)
 
     // Y: high goal fender preset
-    new Button(driver_controller_::getYButton).whenHeld(score_hg_fender_);
+    new Button(driver_controller_::getYButton)
+        .whenHeld(score_hg_fender_
+            .alongWith(new InstantCommand(robot_state_::resetPositionFromFender)));
 
     // LS: drivetrain movement (in command)
 
