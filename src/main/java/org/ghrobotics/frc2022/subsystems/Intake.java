@@ -157,6 +157,15 @@ public class Intake extends SubsystemBase {
     io_.pivot_value = value;
   }
 
+  /**
+   * Returns whether the pivot is engaged or not.
+   *
+   * @return Whether the pivot is engaged or not (true when intake is down).
+   */
+  public boolean getPivot() {
+    return io_.pivot_value;
+  }
+
   public static class PeriodicIO {
     // Inputs
     boolean floor_sensor;
