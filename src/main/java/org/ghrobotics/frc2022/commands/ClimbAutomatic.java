@@ -1,8 +1,8 @@
 package org.ghrobotics.frc2022.commands;
 
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
@@ -30,18 +30,19 @@ public class ClimbAutomatic extends SequentialCommandGroup {
                 Math.abs(climber.getRightPosition() - Constants.kReadyForL2Height) <
                     Climber.Constants.kErrorTolerance),
 
-        wait2(),
+        setWaiting(),
         new WaitUntilCommand(advance_button),
-        unwait(),
+        setUnwaiting(),
 
         // Part 2: climb to mid rung: pull the right arm all the way down. When the left arm is
         // all the way up, un-pivot it.
-        new ClimbToPosition(climber, Constants.kMaxHeight, Constants.kClimbHeight - Units.inchesToMeters(1)),
+        new ClimbToPosition(climber, Constants.kMaxHeight,
+            Constants.kClimbHeight - Units.inchesToMeters(1)),
         new WaitCommand(0.75),
         new InstantCommand(() -> climber.setPivot(false, false)),
-        wait2(),
+        setWaiting(),
         new WaitUntilCommand(advance_button),
-        unwait(),
+        setUnwaiting(),
 
         // Part 3: climb to high rung: pull the left all arm the way down. When 8 inches from the
         // top, pivot right arm and extend to max height. Once the right arm reaches max height,
@@ -51,13 +52,13 @@ public class ClimbAutomatic extends SequentialCommandGroup {
         new InstantCommand(() -> climber.setPivot(false, true)),
         new ClimbToPosition(climber, Constants.kClimbHeight, Constants.kClimbHeight),
         new ClimbToPosition(climber, Constants.kClimbHeight, Constants.kMaxHeight),
-        wait2(),
+        setWaiting(),
         new WaitUntilCommand(advance_button),
-        unwait(),
+        setUnwaiting(),
         new InstantCommand(() -> climber.setPivot(false, false)),
-        wait2(),
+        setWaiting(),
         new WaitUntilCommand(advance_button),
-        unwait(),
+        setUnwaiting(),
 
         // Part 4: climb to traversal rung: pull the right arm all the way down.
         new ClimbToPosition(climber, 0, Constants.kMaxHeight - Units.inchesToMeters(4)),
@@ -74,12 +75,35 @@ public class ClimbAutomatic extends SequentialCommandGroup {
     addRequirements(climber);
   }
 
-  private Command wait2() {
-    return new InstantCommand(() -> { waiting_ = true; });
+  /**
+   * Returns whether the command is waiting for driver input.
+   *
+   * @return Whether the command is waiting for driver input.
+   */
+  public boolean isWaiting() {
+    return waiting_;
   }
 
-  private Command unwait() {
-    return new InstantCommand(() -> { waiting_ = false; });
+  /**
+   * Returns the command to set the waiting flag to true.
+   *
+   * @return The command to set the waiting flag to true.
+   */
+  private Command setWaiting() {
+    return new InstantCommand(() -> {
+      waiting_ = true;
+    });
+  }
+
+  /**
+   * Returns the command to set the waiting flag to false.
+   *
+   * @return The command to set the waiting flag to false.
+   */
+  private Command setUnwaiting() {
+    return new InstantCommand(() -> {
+      waiting_ = false;
+    });
   }
 
   public static class Constants {

@@ -73,16 +73,14 @@ public class Robot extends TimedRobot {
   private final Command score_hg_fender_ = superstructure_.scoreHighGoalFender();
   private final Command score_hg_ = superstructure_.scoreHighGoal();
 
-  private final ClimbAutomatic auto_climb = new ClimbAutomatic(climber_,
-      driver_controller_::getAButton);
+  // Create climber commands and tracker for climb mode.
+  private final Command climb_auto_ = new ClimbAutomatic(climber_, driver_controller_::getAButton);
+  private final Command climb_reset_ = new ClimbReset(climber_);
+  private boolean climb_mode_ = false;
 
   // Create autonomous mode selector.
   private final SendableChooser<Command> auto_selector_ = new SendableChooser<>();
   private Command autonomous_command_ = null;
-
-  // Keeps track of whether we are in climb mode / climb reset.
-  private final Command climb_reset_cmd_ = new ClimbReset(climber_);
-  private boolean climb_mode_ = false;
 
   // Keeps track of whether we need to clear buttons.
   private boolean clear_buttons_ = false;
@@ -117,6 +115,9 @@ public class Robot extends TimedRobot {
     // Setup teleop controls.
     setupTeleopControls();
 
+    // Update alliance color every second (just in case we lose comms or power).
+    addPeriodic(() -> robot_state_.setAlliance(DriverStation.getAlliance()), 1);
+
     // Start command to zero the turret.
     new TurretZero(turret_, driver_controller_::getBackButton).schedule();
   }
@@ -135,6 +136,9 @@ public class Robot extends TimedRobot {
     drivetrain_.setBrakeMode(true);
     turret_.setBrakeMode(true);
     hood_.setBrakeMode(true);
+
+    // Set alliance color (guaranteed to be accurate here).
+    robot_state_.setAlliance(DriverStation.getAlliance());
 
     // Start autonomous program.
     autonomous_command_ = auto_selector_.getSelected();
@@ -300,11 +304,11 @@ public class Robot extends TimedRobot {
 
     // Back: reset and zero climber
     new JoystickButton(driver_controller_, XboxController.Button.kBack.value)
-        .whenHeld(climb_reset_cmd_);
+        .whenHeld(climb_reset_);
 
     // Start: toggle automatic climb
     new JoystickButton(driver_controller_, XboxController.Button.kStart.value)
-        .toggleWhenPressed(auto_climb);
+        .toggleWhenPressed(climb_auto_);
   }
 
   /**
@@ -312,36 +316,37 @@ public class Robot extends TimedRobot {
    * climb mode, scoring, ball in intake).
    */
   private void updateLEDs() {
-    if (climb_reset_cmd_.isScheduled())
-      led_.setOutput(LED.StandardLEDOutput.CLIMB_RESETTING);
-
-    else if (auto_climb.isScheduled() && auto_climb.waiting_)
-      led_.setOutput(LED.StandardLEDOutput.CLIMB_AUTO_WAIT);
-
-    else if (auto_climb.isScheduled())
-      led_.setOutput(LED.StandardLEDOutput.CLIMB_AUTO);
+    if (climb_auto_.isScheduled()) {
+      if (((ClimbAutomatic) climb_auto_).isWaiting())
+        led_.setOutput(LED.OutputType.CLIMB_MODE_AUTOMATIC_WAITING);
+      else
+        led_.setOutput(LED.OutputType.CLIMB_MODE_AUTOMATIC);
+    } else if (climb_reset_.isScheduled())
+      led_.setOutput(LED.StandardLEDOutput.CLIMB_MODE_RESET);
 
     else if (climb_mode_)
-      led_.setOutput(LED.StandardLEDOutput.CLIMBING);
+      led_.setOutput(LED.StandardLEDOutput.CLIMB_MODE);
 
     else if (turret_.getStatus() == Turret.Status.NO_ZERO)
-      led_.setOutput(LED.StandardLEDOutput.NO_TURRET_ZERO);
+      led_.setOutput(LED.StandardLEDOutput.TURRET_NO_ZERO);
 
     else if (turret_.getStatus() == Turret.Status.ZEROING)
       led_.setOutput(LED.StandardLEDOutput.TURRET_ZEROING);
 
     else if (!limelight_manager_.isLimelightAlive())
-      led_.setOutput(LED.StandardLEDOutput.NO_LIMELIGHT);
-
-    else if (isDisabled())
-      led_.setOutput(LED.OutputType.RAINBOW);
-
-    else if (score_lg_fender_.isScheduled() ||
-        score_hg_fender_.isScheduled())
-      led_.setOutput(LED.StandardLEDOutput.MANUAL_SCORING);
+      led_.setOutput(LED.OutputType.LIMELIGHT_ERROR);
 
     else if (score_hg_.isScheduled())
-      led_.setOutput(LED.StandardLEDOutput.AUTOMATIC_SCORING);
+      led_.setOutput(LED.StandardLEDOutput.SCORING_AUTOMATIC);
+
+    else if (score_hg_fender_.isScheduled() || score_lg_fender_.isScheduled())
+      led_.setOutput(LED.StandardLEDOutput.SCORING_PRESET);
+
+    else if (robot_state_.getBallCount() == 2)
+      led_.setOutput(LED.StandardLEDOutput.ROBOT_STATE_TWO_BALL);
+
+    else if (robot_state_.getBallCount() == 1)
+      led_.setOutput(LED.StandardLEDOutput.ROBOT_STATE_ONE_BALL);
 
     else
       led_.setOutput(LED.StandardLEDOutput.BLANK);

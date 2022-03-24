@@ -14,6 +14,10 @@ public class LED extends SubsystemBase {
   // Keeps track of rainbow pattern.
   int rainbow_first_pixel_hue_ = 0;
 
+  // Keeps track of snake pattern.
+  int snake_first_index_ = 0;
+  int snake_multiplier_ = 1;
+
   // IO
   private OutputType output_type_ = OutputType.RAINBOW;
   private StandardLEDOutput standard_led_output_;
@@ -54,8 +58,19 @@ public class LED extends SubsystemBase {
         break;
 
       case RAINBOW:
-        // Calculate and fill buffer with rainbow.
         setRainbow();
+        break;
+
+      case CLIMB_MODE_AUTOMATIC:
+        setSnake(Color.kOrange);
+        break;
+
+      case CLIMB_MODE_AUTOMATIC_WAITING:
+        setSnake(Color.kPurple);
+        break;
+
+      case LIMELIGHT_ERROR:
+        setSnake(Color.kRed);
         break;
     }
 
@@ -104,31 +119,53 @@ public class LED extends SubsystemBase {
     rainbow_first_pixel_hue_ %= 180;
   }
 
+  /**
+   * Calculates a moving snake pattern and sets the LED buffer.
+   *
+   * @param color The color to use for the snake pattern.
+   */
+  private void setSnake(Color color) {
+    // Update snake multiplier.
+    if (snake_first_index_ == 0)
+      snake_multiplier_ = 1;
+    if (snake_first_index_ == Constants.kBufferSize - Constants.kSnakeOnLEDs)
+      snake_first_index_ = -1;
+
+    // Set all LEDs to black.
+    for (int i = 0; i < Constants.kBufferSize; i++)
+      led_buffer_.setRGB(i, 0, 0, 0);
+
+    // Set snake pattern LEDs to color.
+    for (int i = 0; i < Constants.kSnakeOnLEDs; i++)
+      led_buffer_.setLED(snake_first_index_ + i, color);
+
+    // Increment first index.
+    snake_first_index_ += snake_multiplier_;
+  }
+
   public enum OutputType {
-    STANDARD, RAINBOW
+    STANDARD, RAINBOW, CLIMB_MODE_AUTOMATIC, CLIMB_MODE_AUTOMATIC_WAITING, LIMELIGHT_ERROR
   }
 
   public enum StandardLEDOutput {
-    // Blank:
+    // Blank
     BLANK(Color.kBlack, 1.0, 0.0),
 
-    // Climb Indicators:
-    CLIMBING(Color.kOrange, 0.75, 0.75),
-    CLIMB_RESETTING(Color.kOrange, 0.1, 0.1),
-    CLIMB_AUTO(Color.kBlue, 0.5, 0.5),
-    CLIMB_AUTO_WAIT(Color.kPurple, 0.25, 0.25),
+    // Climb Mode
+    CLIMB_MODE(Color.kOrange, 0.75, 0.75),
+    CLIMB_MODE_RESET(Color.kOrange, 0.1, 0.1),
 
-    // Turret Zero Indicators:
-    NO_TURRET_ZERO(Color.kRed, 0.5, 0.5),
-    TURRET_ZEROING(Color.kHotPink, 0.075, 0.075),
+    // Turret
+    TURRET_NO_ZERO(Color.kRed, 0.5, 0.5),
+    TURRET_ZEROING(Color.kGreen, 0.075, 0.075),
 
-    // Limelight Indicators:
-    NO_LIMELIGHT(Color.kPurple, 0.5, 0.5),
+    // Robot State
+    ROBOT_STATE_ONE_BALL(Color.kDeepPink, 1.0, 0.0),
+    ROBOT_STATE_TWO_BALL(Color.kDeepPink, 0.5, 0.5),
 
-    // Superstructure Indicators:
-    AUTOMATIC_SCORING(Color.kGreen, 0.075, 0.075),
-    MANUAL_SCORING(Color.kBlue, 0.075, 0.075);
-
+    // Score
+    SCORING_PRESET(Color.kBlue, 0.075, 0.075),
+    SCORING_AUTOMATIC(Color.kGreen, 0.075, 0.075);
 
     // Stores the color and on percentage for the current output.
     Color c;
@@ -152,5 +189,7 @@ public class LED extends SubsystemBase {
   public static class Constants {
     public static final int kPortId = 0;
     public static final int kBufferSize = 24;
+
+    public static final int kSnakeOnLEDs = 3;
   }
 }
