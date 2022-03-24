@@ -55,6 +55,12 @@ public class ClimbReset extends CommandBase {
     // Pivot both arms out.
     climber_.setPivot(true, true);
 
+    // Reset current-tracking (in case we are not running this for the first time).
+    left_reset_complete_ = false;
+    right_reset_complete_ = false;
+    left_climb_current_filter_.reset();
+    right_climb_current_filter_.reset();
+
     // Start timer.
     timer_.start();
   }
