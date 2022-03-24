@@ -37,6 +37,12 @@ public class RobotState {
   // Last Vision Pose
   private Pose2d last_vision_pose_ = new Pose2d();
 
+  // Alliance Color
+  private DriverStation.Alliance alliance_;
+
+  // Ball Count
+  private int ball_count_ = 0;
+
   /**
    * Constructs a "robot state" instance. This keeps track of various states on the robot,
    * including robot pose, turret angle, and hood angle across time.
@@ -173,6 +179,15 @@ public class RobotState {
   }
 
   /**
+   * Sets the alliance color of the robot.
+   *
+   * @param alliance The alliance color of the robot.
+   */
+  public void setAlliance(DriverStation.Alliance alliance) {
+    alliance_ = alliance;
+  }
+
+  /**
    * Returns the robot speeds at the current time.
    *
    * @return The robot speeds at the current time.
@@ -245,6 +260,24 @@ public class RobotState {
    */
   public Rotation2d getHoodAngle() {
     return getHoodAngle(Timer.getFPGATimestamp());
+  }
+
+  /**
+   * Returns the number of balls in the robot.
+   *
+   * @return The number of balls in the robot.
+   */
+  public int getBallCount() {
+    return ball_count_;
+  }
+
+  /**
+   * Returns the alliance that the robot is on.
+   *
+   * @return The alliance that the robot is on.
+   */
+  public DriverStation.Alliance getAlliance() {
+    return alliance_;
   }
 
   public static class Constants {
