@@ -19,10 +19,6 @@ public class Intake extends SubsystemBase {
   // Pneumatics
   private final DoubleSolenoid pivot_;
 
-  // Sensors
-  private final AnalogInput floor_sensor_;
-  private final AnalogInput wall_sensor_;
-
   // IO
   private final PeriodicIO io_ = new PeriodicIO();
 
@@ -68,10 +64,6 @@ public class Intake extends SubsystemBase {
     // Initialize pneumatics.
     pivot_ = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, Constants.kPivotForwardId,
         Constants.kPivotReverseId);
-
-    // Initialize sensors.
-    floor_sensor_ = new AnalogInput(Constants.kFeederFloorSensorId);
-    wall_sensor_ = new AnalogInput(Constants.kFeederWallSensorId);
   }
 
   /**
@@ -81,8 +73,6 @@ public class Intake extends SubsystemBase {
   @Override
   public void periodic() {
     // Read inputs.
-    io_.floor_sensor = floor_sensor_.getAverageVoltage() > Constants.kFeederFloorSensorVThreshold;
-    io_.wall_sensor = wall_sensor_.getAverageVoltage() > Constants.kFeederWallSensorVThreshold;
     io_.intake_supply_current = intake_leader_.getOutputCurrent();
     io_.bridge_leader_supply_current = bridge_leader_.getOutputCurrent();
     io_.bridge_follower_supply_current = bridge_follower_.getOutputCurrent();
@@ -138,25 +128,6 @@ public class Intake extends SubsystemBase {
   }
 
   /**
-   * Returns the state of the intake photoelectric sensor.
-   *
-   * @return The state of the intake photoelectric sensor; true if triggered.
-   */
-  public boolean getIntakeSensor() {
-    return io_.floor_sensor;
-  }
-
-  /**
-   * Returns the state of the exit photoelectric sensor.
-   *
-   * @return The state of the exit photoelectric sensor; true if triggered.
-   */
-  public boolean getExitSensor() {
-    return io_.wall_sensor;
-  }
-
-
-  /**
    * Sets the intake pivot.
    *
    * @param value The pivot value; true if the intake should be extended.
@@ -177,8 +148,6 @@ public class Intake extends SubsystemBase {
 
   public static class PeriodicIO {
     // Inputs
-    boolean floor_sensor;
-    boolean wall_sensor;
     double intake_supply_current;
     double bridge_leader_supply_current;
     double bridge_follower_supply_current;
@@ -205,10 +174,6 @@ public class Intake extends SubsystemBase {
     // Pneumatics
     public static final int kPivotForwardId = 5;
     public static final int kPivotReverseId = 6;
-
-    // Sensors
-    public static final int kFeederFloorSensorId = 2;
-    public static final int kFeederWallSensorId = 3;
 
     // Current Limits
     public static final int kIntakeCurrentLimit = 80;
