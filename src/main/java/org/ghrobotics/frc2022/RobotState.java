@@ -11,6 +11,7 @@ import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N5;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
+import java.util.Objects;
 import org.ghrobotics.lib.estimator.PoseEstimator;
 
 public class RobotState {
@@ -38,10 +39,7 @@ public class RobotState {
   private Pose2d last_vision_pose_ = new Pose2d();
 
   // Alliance Color
-  private DriverStation.Alliance alliance_;
-
-  // Ball Count
-  private int ball_count_ = 0;
+  private DriverStation.Alliance alliance_ = DriverStation.Alliance.Invalid;
 
   /**
    * Constructs a "robot state" instance. This keeps track of various states on the robot,
@@ -184,7 +182,7 @@ public class RobotState {
    * @param alliance The alliance color of the robot.
    */
   public void setAlliance(DriverStation.Alliance alliance) {
-    alliance_ = alliance;
+    alliance_ = Objects.requireNonNullElse(alliance, DriverStation.Alliance.Invalid);
   }
 
   /**
@@ -260,15 +258,6 @@ public class RobotState {
    */
   public Rotation2d getHoodAngle() {
     return getHoodAngle(Timer.getFPGATimestamp());
-  }
-
-  /**
-   * Returns the number of balls in the robot.
-   *
-   * @return The number of balls in the robot.
-   */
-  public int getBallCount() {
-    return ball_count_;
   }
 
   /**

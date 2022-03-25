@@ -78,10 +78,9 @@ public class HighRight3Steal1 extends SequentialCommandGroup {
         new ParallelRaceGroup(
             new DriveTrajectory(drivetrain, robot_state, path4),
             superstructure.intake()
-        ),
+        )
 
         // Eject.
-        superstructure.eject().withTimeout(2)
     );
   }
 }

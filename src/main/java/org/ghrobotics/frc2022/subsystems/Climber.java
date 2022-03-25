@@ -7,9 +7,10 @@ import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.ctre.phoenix.music.Orchestra;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.AnalogInput;
+import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.Solenoid;
-import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.List;
 
@@ -22,6 +23,9 @@ public class Climber extends SubsystemBase {
   private final Solenoid brake_;
   private final DoubleSolenoid left_pivot_;
   private final DoubleSolenoid right_pivot_;
+
+  // Sensors
+  private final AnalogInput pressure_sensor_;
 
   // Control
   private final SimpleMotorFeedforward left_feedforward_;
@@ -58,10 +62,13 @@ public class Climber extends SubsystemBase {
 
     // Initialize pneumatics.
     brake_ = new Solenoid(PneumaticsModuleType.CTREPCM, Constants.kBrakeId);
-    left_pivot_ = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, Constants.kLeftPivotForwardId, 
+    left_pivot_ = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, Constants.kLeftPivotForwardId,
         Constants.kLeftPivotReverseId);
-    right_pivot_ = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, Constants.kRightPivotForwardId, 
+    right_pivot_ = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, Constants.kRightPivotForwardId,
         Constants.kRightPivotReverseId);
+
+    // Initialize pressure sensor.
+    pressure_sensor_ = new AnalogInput(Constants.kPressureSensorId);
 
     // Initialize feedback.
     left_leader_.configMotionCruiseVelocity(toCTREVelocity(Constants.kMaxVelocity));
@@ -103,6 +110,7 @@ public class Climber extends SubsystemBase {
     io_.r_position = fromCTREPosition(right_leader_.getSelectedSensorPosition());
     io_.l_supply_current = left_leader_.getSupplyCurrent();
     io_.r_supply_current = right_leader_.getSupplyCurrent();
+    io_.pressure = 250 * (pressure_sensor_.getAverageVoltage() / 5.0) - 25;
 
     // Zero
     if (io_.wants_zero) {
@@ -119,8 +127,10 @@ public class Climber extends SubsystemBase {
 
       // Set solenoid values.
       brake_.set(!io_.brake_value); // brake is wired backward
-      left_pivot_.set(io_.l_pivot_value ? DoubleSolenoid.Value.kForward :  DoubleSolenoid.Value.kReverse);
-      right_pivot_.set(io_.r_pivot_value ? DoubleSolenoid.Value.kForward :  DoubleSolenoid.Value.kReverse);
+      left_pivot_.set(
+          io_.l_pivot_value ? DoubleSolenoid.Value.kForward : DoubleSolenoid.Value.kReverse);
+      right_pivot_.set(
+          io_.r_pivot_value ? DoubleSolenoid.Value.kForward : DoubleSolenoid.Value.kReverse);
     }
 
     // Set motor outputs.
@@ -285,21 +295,12 @@ public class Climber extends SubsystemBase {
   }
 
   /**
-   * Returns whether the left reverse limit switch is closed.
+   * Returns the pressure in the system.
    *
-   * @return Whether the left reverse limit switch is closed.
+   * @return The pressure in the system in psi.
    */
-  public boolean getLeftReverseLimitSwitchClosed() {
-    return io_.l_rev_limit_switch;
-  }
-
-  /**
-   * Returns whether the right reverse limit switch is closed.
-   *
-   * @return Whether the right reverse limit switch is closed.
-   */
-  public boolean getRightReverseLimitSwitchClosed() {
-    return io_.r_rev_limit_switch;
+  public double getPressure() {
+    return io_.pressure;
   }
 
   /**
@@ -379,8 +380,7 @@ public class Climber extends SubsystemBase {
     double r_position;
     double l_supply_current;
     double r_supply_current;
-    boolean l_rev_limit_switch;
-    boolean r_rev_limit_switch;
+    double pressure;
 
     // Outputs
     double l_demand;
@@ -407,8 +407,7 @@ public class Climber extends SubsystemBase {
     public static final int kRightPivotReverseId = 4;
 
     // Sensors
-    public static final int kLeftRevLimitSwitchId = 8;
-    public static final int kRightRevLimitSwitchId = 9;
+    public static final int kPressureSensorId = 0;
 
     // Hardware
     public static final double kMaxHeightNativeUnits = 153000;

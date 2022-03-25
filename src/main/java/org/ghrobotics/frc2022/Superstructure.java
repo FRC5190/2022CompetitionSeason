@@ -9,6 +9,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
@@ -16,6 +17,7 @@ import edu.wpi.first.wpilibj2.command.RunCommand;
 import java.util.function.BooleanSupplier;
 import org.ghrobotics.frc2022.commands.IntakeAutomatic;
 import org.ghrobotics.frc2022.planners.HighGoalPlanner;
+import org.ghrobotics.frc2022.subsystems.CargoTracker;
 import org.ghrobotics.frc2022.subsystems.Hood;
 import org.ghrobotics.frc2022.subsystems.Intake;
 import org.ghrobotics.frc2022.subsystems.LimelightManager;
@@ -32,7 +34,8 @@ public class Superstructure {
   // High Goal Planner
   private final HighGoalPlanner high_goal_planner_;
 
-  // Robot State
+  // Cargo Tracker and Robot State
+  private final CargoTracker cargo_tracker_;
   private final RobotState robot_state_;
 
   // Goal
@@ -44,7 +47,6 @@ public class Superstructure {
   private Translation2d turret_to_goal_;
   private double turret_to_goal_distance_;
   private double turret_to_goal_angle_;
-  private double turret_eject_angle_;
 
   // Timer
   private final Timer timer_;
@@ -60,7 +62,7 @@ public class Superstructure {
    * @param intake  Reference to intake subsystem.
    */
   public Superstructure(Turret turret, Shooter shooter, Hood hood, Intake intake,
-                        RobotState robot_state) {
+                        CargoTracker cargo_tracker, RobotState robot_state) {
     // Assign subsystem references.
     turret_ = turret;
     shooter_ = shooter;
@@ -71,7 +73,8 @@ public class Superstructure {
     high_goal_planner_ = new HighGoalPlanner(Constants.kLowGoalShooterRPM,
         Constants.kLowGoalHoodAngle);
 
-    // Assign robot state.
+    // Assign cargo tracker and robot state.
+    cargo_tracker_ = cargo_tracker;
     robot_state_ = robot_state;
 
     // Initialize timer.
@@ -90,8 +93,20 @@ public class Superstructure {
     robot_pose_ = robot_state_.getRobotPose();
     robot_speeds_ = robot_state_.getRobotSpeeds();
 
-    // Get the goal position.
-    Translation2d goal = Constants.kGoal;
+    // Calculate whether we are shooting toward the goal or not.
+    DriverStation.Alliance alliance = robot_state_.getAlliance();
+    Color next_ball_color = cargo_tracker_.getNextBall();
+
+    Translation2d goal;
+
+    if (alliance == DriverStation.Alliance.Invalid ||
+        next_ball_color == null ||
+        (alliance == DriverStation.Alliance.Red && next_ball_color.red > 0.95) ||
+        (alliance == DriverStation.Alliance.Blue && next_ball_color.blue > 0.95)) {
+      goal = Arena.kGoal;
+    } else {
+      goal = Arena.kHangar;
+    }
 
     // Calculate turret pose.
     Pose2d turret_pose = robot_pose_.transformBy(
@@ -100,12 +115,6 @@ public class Superstructure {
 
     // Calculate translation to goal.
     turret_to_goal_ = new Pose2d(goal, new Rotation2d()).relativeTo(turret_pose).getTranslation();
-
-    // Calculate turret angle to eject ball.
-    Translation2d turret_to_eject_location = new Pose2d(Constants.kEjectLocation,
-        new Rotation2d()).relativeTo(turret_pose).getTranslation();
-    turret_eject_angle_ = Math.atan2(turret_to_eject_location.getY(),
-        turret_to_eject_location.getX());
 
     // Calculate distance and angle to goal.
     turret_to_goal_distance_ = turret_to_goal_.getNorm();
@@ -119,14 +128,6 @@ public class Superstructure {
    */
   public Command intake() {
     return new IntakeAutomatic(intake_, () -> true, () -> false, () -> true);
-  }
-
-  public Command tryUnjam() {
-    return new RunCommand(() -> {
-      intake_.setWallPercent(-0.75);
-      intake_.setFloorPercent(-0.75);
-      shooter_.setPercent(-0.5);
-    }, intake_, shooter_);
   }
 
   /**
@@ -224,7 +225,7 @@ public class Superstructure {
           hood_.setPosition(hood_angle);
         }, turret_, shooter_, hood_),
         new IntakeAutomatic(intake_, require_intake, score, () -> true)
-    );
+    ).withInterrupt(() -> cargo_tracker_.getCargoCount() == 0);
   }
 
   /**
@@ -234,21 +235,6 @@ public class Superstructure {
    */
   public Command scoreHighGoal() {
     return scoreHighGoal(() -> false, () -> true);
-  }
-
-  /**
-   * Returns the command to eject a ball in the opposite direction from the goal.
-   *
-   * @return The command to eject a ball in the opposite direction from the goal.
-   */
-  public Command eject() {
-    return new ParallelCommandGroup(
-        startTimer(),
-        new RunCommand(() -> hood_.setPosition(Constants.kLowGoalHoodAngle), hood_),
-        new RunCommand(() -> shooter_.setRPM(Constants.kLowGoalShooterRPM), shooter_),
-        new RunCommand(() -> turret_.setGoal(turret_eject_angle_, 0), turret_),
-        new IntakeAutomatic(intake_, () -> false, ready_to_score_, () -> true)
-    );
   }
 
   /**
@@ -325,6 +311,15 @@ public class Superstructure {
    */
   public double getRobotToGoalAngle() {
     return turret_to_goal_angle_;
+  }
+
+  /**
+   * Returns the number of cargo in the superstructure.
+   *
+   * @return The number of cargo in the superstructure.
+   */
+  public int getCargoCount() {
+    return cargo_tracker_.getCargoCount();
   }
 
   private Command startTimer() {

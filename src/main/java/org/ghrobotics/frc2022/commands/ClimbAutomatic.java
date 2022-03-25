@@ -47,10 +47,7 @@ public class ClimbAutomatic extends SequentialCommandGroup {
         // Part 3: climb to high rung: pull the left all arm the way down. When 8 inches from the
         // top, pivot right arm and extend to max height. Once the right arm reaches max height,
         // un-pivot it.
-        new ClimbToPosition(climber, Constants.kSafeL3PivotHeight, Constants.kClimbHeight),
-        new WaitCommand(3),
         new InstantCommand(() -> climber.setPivot(false, true)),
-        new ClimbToPosition(climber, Constants.kClimbHeight, Constants.kClimbHeight),
         new ClimbToPosition(climber, Constants.kClimbHeight, Constants.kMaxHeight),
         setWaiting(),
         new WaitUntilCommand(advance_button),
