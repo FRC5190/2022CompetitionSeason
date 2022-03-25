@@ -5,6 +5,7 @@ import com.ctre.phoenix.sensors.WPI_PigeonIMU;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxPIDController;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.RamseteController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -52,6 +53,9 @@ public class Drivetrain extends SubsystemBase {
   private final SimDeviceSim left_leader_sim_;
   private final SimDeviceSim right_leader_sim_;
   private final BasePigeonSimCollection gyro_sim_;
+
+  // Output Limit
+  private boolean limit_output_ = false;
 
   // IO
   private OutputType output_type_ = OutputType.PERCENT;
@@ -169,8 +173,12 @@ public class Drivetrain extends SubsystemBase {
     switch (output_type_) {
       case PERCENT:
         // Send the percent output values directly to the motor controller.
-        left_leader_.set(io_.l_demand);
-        right_leader_.set(io_.r_demand);
+        left_leader_.set(limit_output_ ?
+            MathUtil.clamp(io_.l_demand, -Constants.kOutputLimit, Constants.kOutputLimit) :
+            io_.l_demand);
+        right_leader_.set(limit_output_ ?
+            MathUtil.clamp(io_.r_demand, -Constants.kOutputLimit, Constants.kOutputLimit) :
+            io_.r_demand);
 
         // Set simulated inputs.
         if (RobotBase.isSimulation()) {
@@ -263,6 +271,16 @@ public class Drivetrain extends SubsystemBase {
     output_type_ = OutputType.VELOCITY;
     io_.l_demand = l;
     io_.r_demand = r;
+  }
+
+  /**
+   * Limits the output of the drivetrain to a constant value. This should be used when shooting
+   * while moving to make it more accurate.
+   *
+   * @param value Whether to limit output or not.
+   */
+  public void limitOutput(boolean value) {
+    limit_output_ = value;
   }
 
   /**
@@ -368,5 +386,8 @@ public class Drivetrain extends SubsystemBase {
     public static double kRightKv = 2.3732;
     public static double kRightKa = 0.14528;
     public static double kRightKp = 0.00010892;
+
+    // Output Limit
+    public static final double kOutputLimit = 0.3;
   }
 }

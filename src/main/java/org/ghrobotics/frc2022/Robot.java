@@ -171,6 +171,9 @@ public class Robot extends TimedRobot {
     superstructure_.periodic();
     superstructure_.setTuning(score_tune_.isScheduled());
 
+    // Limit drivetrain output if scoring.
+    drivetrain_.limitOutput(score_hg_.isScheduled());
+
     // Update telemetry.
     telemetry_.periodic();
 
