@@ -62,7 +62,6 @@ public class HighLeft2Steal2 extends SequentialCommandGroup {
         ),
 
         // Eject
-        superstructure.eject().withTimeout(2),
 
         // Follow trajectory while intaking.
         new ParallelRaceGroup(
@@ -77,10 +76,9 @@ public class HighLeft2Steal2 extends SequentialCommandGroup {
         new ParallelRaceGroup(
             new DriveTrajectory(drivetrain, robot_state, path3),
             superstructure.intake()
-        ),
+        )
 
         // Eject
-        superstructure.eject().withTimeout(2)
     );
   }
 }

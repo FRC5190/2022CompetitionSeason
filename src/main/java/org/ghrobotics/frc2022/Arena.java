@@ -15,4 +15,11 @@ public class Arena {
   // Safe Hangar Zone
   public static Translation2d kSafeHangarTLCorner = kHangarTLCorner.plus(new Translation2d(-1, 1));
   public static Translation2d kSafeHangarBRCorner = kHangarBRCorner.plus(new Translation2d(1, -1));
+
+  // POINTS
+  // Hangar
+  public static Translation2d kHangar = new Translation2d(1.64, 6.75);
+
+  // Goal
+  public static Translation2d kGoal = new Translation2d(8.23, 4.11);
 }

@@ -29,6 +29,7 @@ import org.ghrobotics.frc2022.commands.ClimbReset;
 import org.ghrobotics.frc2022.commands.ClimbTeleop;
 import org.ghrobotics.frc2022.commands.DriveTeleop;
 import org.ghrobotics.frc2022.commands.TurretZero;
+import org.ghrobotics.frc2022.subsystems.CargoTracker;
 import org.ghrobotics.frc2022.subsystems.Climber;
 import org.ghrobotics.frc2022.subsystems.Drivetrain;
 import org.ghrobotics.frc2022.subsystems.Hood;
@@ -63,11 +64,12 @@ public class Robot extends TimedRobot {
   private final Intake intake_ = new Intake();
   private final Climber climber_ = new Climber();
   private final LED led_ = new LED();
+  private final CargoTracker cargo_tracker_ = new CargoTracker(intake_, shooter_);
   private final LimelightManager limelight_manager_ = new LimelightManager(robot_state_);
 
   // Create superstructure and associated commands.
   private final Superstructure superstructure_ = new Superstructure(turret_, shooter_, hood_,
-      intake_, robot_state_);
+      intake_, cargo_tracker_, robot_state_);
 
   private final Command score_lg_fender_ = superstructure_.scoreLowGoalFender();
   private final Command score_hg_fender_ = superstructure_.scoreHighGoalFender();
@@ -232,13 +234,10 @@ public class Robot extends TimedRobot {
    * already configured in the respective subsystem default commands.
    */
   private void setupTeleopControls() {
-    // A: low goal fender preset
-    new Button(driver_controller_::getAButton)
-        .whenHeld(score_lg_fender_
-            .alongWith(new InstantCommand(robot_state_::resetPositionFromFender)));
+    // A: none
 
     // B: climb mode toggle
-    new Button(driver_controller_::getAButton).whenPressed(() -> {
+    new Button(driver_controller_::getBButton).whenPressed(() -> {
       climb_mode_ = true;
       clear_buttons_ = true;
       new RunCommand(() -> turret_.setGoal(Math.toRadians(86), 0), turret_).schedule();
@@ -248,20 +247,21 @@ public class Robot extends TimedRobot {
 
     // X: drivetrain cheesy drive quick turn (in command)
 
-    // Y: high goal fender preset
-    new Button(driver_controller_::getYButton)
-        .whenHeld(score_hg_fender_
-            .alongWith(new InstantCommand(robot_state_::resetPositionFromFender)));
+    // Y: none
 
     // LS: drivetrain movement (in command)
 
     // RS: none
 
-    // LB: toggle intake pivot
-    new Button(driver_controller_::getLeftBumper)
-        .whenPressed(() -> intake_.setPivot(!intake_.getPivot()));
+    // LB: low goal fender preset
+    new Button(driver_controller_::getAButton)
+        .whenHeld(score_lg_fender_
+            .alongWith(new InstantCommand(robot_state_::resetPositionFromFender)));
 
-    // RB: none
+    // RB: high goal fender preset
+    new Button(driver_controller_::getYButton)
+        .whenHeld(score_hg_fender_
+            .alongWith(new InstantCommand(robot_state_::resetPositionFromFender)));
 
     // LT: intake
     new Button(() -> driver_controller_.getLeftTriggerAxis() > 0.1)
@@ -318,9 +318,9 @@ public class Robot extends TimedRobot {
   private void updateLEDs() {
     if (climb_auto_.isScheduled()) {
       if (((ClimbAutomatic) climb_auto_).isWaiting())
-        led_.setOutput(LED.OutputType.CLIMB_MODE_AUTOMATIC_WAITING);
+        led_.setOutput(LED.StandardLEDOutput.CLIMB_MODE_AUTOMATIC_WAITING);
       else
-        led_.setOutput(LED.OutputType.CLIMB_MODE_AUTOMATIC);
+        led_.setOutput(LED.StandardLEDOutput.CLIMB_MODE_AUTOMATIC);
     } else if (climb_reset_.isScheduled())
       led_.setOutput(LED.StandardLEDOutput.CLIMB_MODE_RESET);
 
@@ -336,16 +336,19 @@ public class Robot extends TimedRobot {
     else if (!limelight_manager_.isLimelightAlive())
       led_.setOutput(LED.OutputType.LIMELIGHT_ERROR);
 
+    else if (isDisabled())
+      led_.setOutput(LED.OutputType.RAINBOW);
+
     else if (score_hg_.isScheduled())
       led_.setOutput(LED.StandardLEDOutput.SCORING_AUTOMATIC);
 
     else if (score_hg_fender_.isScheduled() || score_lg_fender_.isScheduled())
       led_.setOutput(LED.StandardLEDOutput.SCORING_PRESET);
 
-    else if (robot_state_.getBallCount() == 2)
+    else if (cargo_tracker_.getCargoCount() == 2)
       led_.setOutput(LED.StandardLEDOutput.ROBOT_STATE_TWO_BALL);
 
-    else if (robot_state_.getBallCount() == 1)
+    else if (cargo_tracker_.getCargoCount() == 1)
       led_.setOutput(LED.StandardLEDOutput.ROBOT_STATE_ONE_BALL);
 
     else

@@ -128,7 +128,7 @@ public class LED extends SubsystemBase {
     // Update snake multiplier.
     if (snake_first_index_ == 0)
       snake_multiplier_ = 1;
-    if (snake_first_index_ == Constants.kBufferSize - Constants.kSnakeOnLEDs)
+    if (snake_first_index_ == Constants.kBufferSize - Constants.kSnakeOnLEDs - 1)
       snake_first_index_ = -1;
 
     // Set all LEDs to black.
@@ -154,6 +154,8 @@ public class LED extends SubsystemBase {
     // Climb Mode
     CLIMB_MODE(Color.kOrange, 0.75, 0.75),
     CLIMB_MODE_RESET(Color.kOrange, 0.1, 0.1),
+    CLIMB_MODE_AUTOMATIC(Color.kBlue, 0.1, 0.1),
+    CLIMB_MODE_AUTOMATIC_WAITING(Color.kDeepPink, 0.1, 0.1),
 
     // Turret
     TURRET_NO_ZERO(Color.kRed, 0.5, 0.5),

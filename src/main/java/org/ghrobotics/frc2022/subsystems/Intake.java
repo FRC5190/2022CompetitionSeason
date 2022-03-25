@@ -129,6 +129,15 @@ public class Intake extends SubsystemBase {
   }
 
   /**
+   * Returns the % output of the intake and bridge.
+   *
+   * @return The % output of the intake and bridge in [-1, 1].
+   */
+  public double getIntakePercent() {
+    return io_.intake_bridge_demand;
+  }
+
+  /**
    * Returns the state of the intake photoelectric sensor.
    *
    * @return The state of the intake photoelectric sensor; true if triggered.

@@ -153,10 +153,8 @@ public class Telemetry {
         .withPosition(0, 1);
     climber_layout.addNumber("R Current (A)", climber::getRightSupplyCurrent)
         .withPosition(1, 1);
-    climber_layout.addBoolean("L Lim Switch", climber::getLeftReverseLimitSwitchClosed)
+    climber_layout.addNumber("Pressure (psi)", climber::getPressure)
         .withPosition(0, 2);
-    climber_layout.addBoolean("R Lim Switch", climber::getRightReverseLimitSwitchClosed)
-        .withPosition(1, 2);
     climber_layout.addBoolean("Climb Mode", climb_mode_)
         .withPosition(2, 0);
 
@@ -176,6 +174,7 @@ public class Telemetry {
         () -> Units.metersToFeet(superstructure_.getRobotToGoalDistance()));
     superstructure_layout.addNumber("Goal Angle",
         () -> Math.toDegrees(superstructure_.getRobotToGoalAngle()));
+    superstructure_layout.addNumber("Cargo", superstructure::getCargoCount);
   }
 
   public void periodic() {
