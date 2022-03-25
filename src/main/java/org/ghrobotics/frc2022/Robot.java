@@ -324,9 +324,9 @@ public class Robot extends TimedRobot {
   private void updateLEDs() {
     if (climb_auto_.isScheduled()) {
       if (((ClimbAutomatic) climb_auto_).isWaiting())
-        led_.setOutput(LED.StandardLEDOutput.CLIMB_MODE_AUTOMATIC_WAITING);
+        led_.setOutput(LED.OutputType.CLIMB_MODE_AUTOMATIC_WAITING);
       else
-        led_.setOutput(LED.StandardLEDOutput.CLIMB_MODE_AUTOMATIC);
+        led_.setOutput(LED.OutputType.CLIMB_MODE_AUTOMATIC);
     } else if (climb_reset_.isScheduled())
       led_.setOutput(LED.StandardLEDOutput.CLIMB_MODE_RESET);
 
