@@ -164,6 +164,7 @@ public class LED extends SubsystemBase {
     ROBOT_STATE_TWO_BALL(Color.kDeepPink, 0.5, 0.5),
 
     // Score
+    SCORING_TUNING(Color.kGreen, 0.5, 0.5),
     SCORING_PRESET(Color.kBlue, 0.075, 0.075),
     SCORING_AUTOMATIC(Color.kGreen, 0.075, 0.075);
 

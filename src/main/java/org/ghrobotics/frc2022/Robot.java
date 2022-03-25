@@ -343,6 +343,9 @@ public class Robot extends TimedRobot {
     else if (isDisabled())
       led_.setOutput(LED.OutputType.RAINBOW);
 
+    else if (score_tune_.isScheduled())
+      led_.setOutput(LED.StandardLEDOutput.SCORING_TUNING);
+
     else if (score_hg_.isScheduled())
       led_.setOutput(LED.StandardLEDOutput.SCORING_AUTOMATIC);
 
