@@ -10,66 +10,52 @@ import java.util.function.BooleanSupplier;
 import org.ghrobotics.frc2022.subsystems.Climber;
 
 public class ClimbAutomatic extends SequentialCommandGroup {
+  // Reference to subsystem and advance button.
+  private final Climber climber_;
+  private final BooleanSupplier advance_step_;
 
-  public boolean waiting_ = false;
+  // Keeps track of whether we are waiting for the driver.
+  private boolean waiting_ = false;
 
-  /**
-   * Automatically climbs to the traversal rung.
-   *
-   * @param climber        Reference to climber subsystem.
-   * @param advance_button Supplier to advance state when necessary.
-   */
-  public ClimbAutomatic(Climber climber, BooleanSupplier advance_button) {
-    // Create the automatic climb routine.
+  public ClimbAutomatic(Climber climber, BooleanSupplier advance_step) {
+    // Assign member variables.
+    climber_ = climber;
+    advance_step_ = advance_step;
+
+    // Create the routine.
     addCommands(
-        // Part 1: move the arms to be ready for mid rung climb.
-        new InstantCommand(() -> climber.setPivot(true, true)),
-        new InstantCommand(() -> climber.setPivot(true, false)),
-        new ClimbToPosition(climber, Constants.kMaxHeight, Constants.kReadyForL2Height)
-            .withInterrupt(() ->
-                Math.abs(climber.getRightPosition() - Constants.kReadyForL2Height) <
-                    Climber.Constants.kErrorTolerance),
+        // Reset the waiting flag to false (in case we are running this command multiple times).
+        new InstantCommand(() -> waiting_ = false),
 
-        setWaiting(),
-        new WaitUntilCommand(advance_button),
-        setUnwaiting(),
+        /* PART 1: PREPARE TO CLIMB L2 */
+        piv(true, true),
+        pos(25.75, 24.00),
+        piv(true, false),
+        waitForAdvance(),
 
-        // Part 2: climb to mid rung: pull the right arm all the way down. When the left arm is
-        // all the way up, un-pivot it.
-        new ClimbToPosition(climber, Constants.kMaxHeight,
-            Constants.kClimbHeight - Units.inchesToMeters(1)),
-        new WaitCommand(0.75),
-        new InstantCommand(() -> climber.setPivot(false, false)),
-        setWaiting(),
-        new WaitUntilCommand(advance_button),
-        setUnwaiting(),
+        /* PART 2: CLIMB L2 AND PREPARE TO CLIMB L3 */
+        pos(25.75, -1.50),
+        piv(false, false),
+        waitForAdvance(),
 
-        // Part 3: climb to high rung: pull the left all arm the way down. When 8 inches from the
-        // top, pivot right arm and extend to max height. Once the right arm reaches max height,
-        // un-pivot it.
-        new InstantCommand(() -> climber.setPivot(false, true)),
-        new ClimbToPosition(climber, Constants.kClimbHeight, Constants.kMaxHeight),
-        setWaiting(),
-        new WaitUntilCommand(advance_button),
-        setUnwaiting(),
-        new InstantCommand(() -> climber.setPivot(false, false)),
-        setWaiting(),
-        new WaitUntilCommand(advance_button),
-        setUnwaiting(),
+        /* PART 3: CLIMB L3 AND PREPARE TO CLIMB L4 */
+        piv(false, true),
+        pos(00.00, 25.75),
+        waitForAdvance(),
 
-        // Part 4: climb to traversal rung: pull the right arm all the way down.
-        new ClimbToPosition(climber, 0, Constants.kMaxHeight - Units.inchesToMeters(4)),
-        new InstantCommand(() -> climber.setBrake(true)),
-        new InstantCommand(() -> climber.setLeftPercent(0)),
-        new InstantCommand(() -> climber.setRightPercent(0)),
+        /* PART 4: CLIMB L4 */
+        piv(false, false),
+        pos(00.00, 20.00),
 
-        // Celebrate.
+        /* PART 5: CLEAN UP */
+        new InstantCommand(() -> climber_.setBrake(true)),
+        new InstantCommand(() -> {
+          climber_.setLeftPercent(0);
+          climber_.setRightPercent(0);
+        }),
         new InstantCommand(climber::setOrchestra),
         new WaitCommand(10000)
     );
-
-    // Set subsystem requirements.
-    addRequirements(climber);
   }
 
   /**
@@ -82,35 +68,37 @@ public class ClimbAutomatic extends SequentialCommandGroup {
   }
 
   /**
-   * Returns the command to set the waiting flag to true.
+   * Returns the command to take the climber arms to the provided positions.
    *
-   * @return The command to set the waiting flag to true.
+   * @param l The left arm setpoint in inches.
+   * @param r The right arm setpoint in inches.
+   * @return The command to take the climber arms to the provided positions.
    */
-  private Command setWaiting() {
-    return new InstantCommand(() -> {
-      waiting_ = true;
-    });
+  private Command pos(double l, double r) {
+    return new ClimbToPosition(climber_, Units.inchesToMeters(l), Units.inchesToMeters(r));
   }
 
   /**
-   * Returns the command to set the waiting flag to false.
+   * Returns the command to pivot the climber arms.
    *
-   * @return The command to set the waiting flag to false.
+   * @param l The pivot value for the left arm.
+   * @param r The pivot value for the right arm.
+   * @return The command to pivot the climber arms.
    */
-  private Command setUnwaiting() {
-    return new InstantCommand(() -> {
-      waiting_ = false;
-    });
+  private Command piv(boolean l, boolean r) {
+    return new InstantCommand(() -> climber_.setPivot(l, r), climber_);
   }
 
-  public static class Constants {
-    // Heights
-    public static final double kMaxHeight = Climber.Constants.kMaxHeight;
-    public static final double kClimbHeight = Units.inchesToMeters(0);
-    public static final double kReadyForL2Height = Units.inchesToMeters(24);
-    public static final double kSafeL3PivotHeight = kMaxHeight - Units.inchesToMeters(18);
-
-    // Celebration
-    public static final double kOrchestraWaitTime = 15;
+  /**
+   * Returns the command to wait for the driver to advance step.
+   *
+   * @return The command to wait for the driver to advance step.
+   */
+  private Command waitForAdvance() {
+    return new SequentialCommandGroup(
+        new InstantCommand(() -> waiting_ = true),
+        new WaitUntilCommand(advance_step_),
+        new InstantCommand(() -> waiting_ = false)
+    );
   }
 }
