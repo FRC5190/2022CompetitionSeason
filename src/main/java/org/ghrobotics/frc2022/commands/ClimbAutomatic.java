@@ -45,7 +45,7 @@ public class ClimbAutomatic extends SequentialCommandGroup {
 
         /* PART 4: CLIMB L4 */
         piv(false, false),
-        pos(00.00, 20.00),
+        pos(00.00, 22.00),
 
         /* PART 5: CLEAN UP */
         new InstantCommand(() -> climber_.setBrake(true)),
