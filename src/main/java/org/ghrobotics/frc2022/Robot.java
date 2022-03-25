@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
@@ -71,6 +72,7 @@ public class Robot extends TimedRobot {
   private final Superstructure superstructure_ = new Superstructure(turret_, shooter_, hood_,
       intake_, cargo_tracker_, robot_state_);
 
+  private final Command score_tune_ = superstructure_.tuneScoring();
   private final Command score_lg_fender_ = superstructure_.scoreLowGoalFender();
   private final Command score_hg_fender_ = superstructure_.scoreHighGoalFender();
   private final Command score_hg_ = superstructure_.scoreHighGoal();
@@ -169,6 +171,7 @@ public class Robot extends TimedRobot {
 
     // Update superstructure.
     superstructure_.periodic();
+    superstructure_.setTuning(score_tune_.isScheduled());
 
     // Update telemetry.
     telemetry_.periodic();
@@ -269,6 +272,9 @@ public class Robot extends TimedRobot {
 
     // RT: score
     new Button(() -> driver_controller_.getRightTriggerAxis() > 0.1).whenPressed(score_hg_);
+
+    // Back: tuning
+    new Button(driver_controller_::getBackButton).toggleWhenPressed(score_tune_);
   }
 
   /**

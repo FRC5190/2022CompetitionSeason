@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import java.util.function.BooleanSupplier;
 import org.ghrobotics.frc2022.commands.IntakeAutomatic;
 import org.ghrobotics.frc2022.planners.HighGoalPlanner;
@@ -47,6 +48,12 @@ public class Superstructure {
   private Translation2d turret_to_goal_;
   private double turret_to_goal_distance_;
   private double turret_to_goal_angle_;
+
+  private boolean turret_eject_;
+  private double turret_to_eject_angle_;
+
+  // Tuning Mode
+  private boolean tuning_;
 
   // Timer
   private final Timer timer_;
@@ -94,20 +101,16 @@ public class Superstructure {
     robot_pose_ = robot_state_.getRobotPose();
     robot_speeds_ = robot_state_.getRobotSpeeds();
 
-    // Calculate whether we are shooting toward the goal or not.
+    // Get the current alliance color and the color of the next ball to shoot.
     DriverStation.Alliance alliance = robot_state_.getAlliance();
-    Color next_ball_color = cargo_tracker_.getNextBall();
+    Color next_cargo_color = cargo_tracker_.getNextBall();
 
-    Translation2d goal;
-
-    if (alliance == DriverStation.Alliance.Invalid ||
-        next_ball_color == null ||
-        (alliance == DriverStation.Alliance.Red && next_ball_color.red > 0.95) ||
-        (alliance == DriverStation.Alliance.Blue && next_ball_color.blue > 0.95)) {
-      goal = Arena.kGoal;
-    } else {
-      goal = Arena.kHangar;
-    }
+    // If the alliance is invalid or there is no next ball or the alliance color matches the
+    // color of the next ball, do not eject.
+    turret_eject_ = !(alliance == DriverStation.Alliance.Invalid ||
+        next_cargo_color == null ||
+        alliance == DriverStation.Alliance.Red && next_cargo_color.red > 0.9 ||
+        alliance == DriverStation.Alliance.Blue && next_cargo_color.blue > 0.9);
 
     // Calculate turret pose.
     Pose2d turret_pose = robot_pose_.transformBy(
@@ -115,11 +118,27 @@ public class Superstructure {
             new Rotation2d()));
 
     // Calculate translation to goal.
-    turret_to_goal_ = new Pose2d(goal, new Rotation2d()).relativeTo(turret_pose).getTranslation();
+    turret_to_goal_ = new Pose2d(Arena.kGoal, new Rotation2d())
+        .relativeTo(turret_pose).getTranslation();
 
     // Calculate distance and angle to goal.
     turret_to_goal_distance_ = turret_to_goal_.getNorm();
     turret_to_goal_angle_ = Math.atan2(turret_to_goal_.getY(), turret_to_goal_.getX());
+
+    // Calculate turret angle to eject.
+    Translation2d turret_to_hangar = new Pose2d(Arena.kHangar, new Rotation2d())
+        .relativeTo(turret_pose).getTranslation();
+    turret_to_eject_angle_ = Math.atan2(turret_to_hangar.getY(), turret_to_hangar.getX());
+
+    // Add debug values to SmartDashboard (if not in tuning mode).
+    if (!tuning_) {
+      SmartDashboard.putNumber(Constants.kTuningShooterRPMKey,
+          Units.radiansPerSecondToRotationsPerMinute(
+              high_goal_planner_.getShooterSpeed(turret_to_goal_distance_)));
+      SmartDashboard.putNumber(Constants.kTuningHoodAngleKey,
+          Math.toDegrees(
+              high_goal_planner_.getHoodAngle(turret_to_goal_distance_)));
+    }
   }
 
   /**
@@ -221,9 +240,18 @@ public class Superstructure {
               Shooter.Constants.kWheelRadius * 2;
 
           // Set goals to subsystems.
-          turret_.setGoal(turret_theta, turret_omega);
-          shooter_.setVelocity(shooter_speed);
-          hood_.setPosition(hood_angle);
+          if (turret_eject_) {
+            // If we have the wrong colored ball coming up, point toward hangar and use low goal
+            // speeds and angles.
+            turret_.setGoal(turret_to_eject_angle_, 0);
+            shooter_.setRPM(Constants.kLowGoalShooterRPM);
+            hood_.setPosition(Constants.kLowGoalHoodAngle);
+          } else {
+            // If we don't need to eject the ball, use calculations from above.
+            turret_.setGoal(turret_theta, turret_omega);
+            shooter_.setVelocity(shooter_speed);
+            hood_.setPosition(hood_angle);
+          }
         }, turret_, shooter_, hood_),
         new IntakeAutomatic(intake_, cargo_tracker_, require_intake, score)
     ).withInterrupt(() -> cargo_tracker_.getCargoCount() == 0);
@@ -251,14 +279,11 @@ public class Superstructure {
     //  - track goal with turret
     //  - run intake and feeder
     return new ParallelCommandGroup(
-        new RunCommand(() -> shooter_.setVelocity(
-            SmartDashboard.getNumber(Constants.kTuningShooterRPMKey, 0)),
-            shooter_),
+        new RunCommand(() -> shooter_.setRPM(
+            SmartDashboard.getNumber(Constants.kTuningShooterRPMKey, 0)), shooter_),
         new RunCommand(() -> hood_.setPosition(
-            Math.toRadians(Double.parseDouble(DriverStation.getGameSpecificMessage()))),
-            hood_),
-//        new IntakeAutomatic(intake_, () -> true,
-//            () -> SmartDashboard.getBoolean(Constants.kTuningScoreKey, false), () -> false),
+            Math.toRadians(SmartDashboard.getNumber(Constants.kTuningHoodAngleKey, 0))), hood_),
+        new IntakeAutomatic(intake_, cargo_tracker_, () -> true, () -> true),
         trackGoalWithTurret()
     );
   }
@@ -297,6 +322,15 @@ public class Superstructure {
   }
 
   /**
+   * Sets whether we are currently tuning the superstructure.
+   *
+   * @param value Whether we are currently tuning the superstructure.
+   */
+  public void setTuning(boolean value) {
+    tuning_ = value;
+  }
+
+  /**
    * Returns the distance from the robot to goal.
    *
    * @return The distance from the robot to goal.
@@ -323,6 +357,11 @@ public class Superstructure {
     return cargo_tracker_.getCargoCount();
   }
 
+  /**
+   * Returns the command to start a timer from the time the button was pressed.
+   *
+   * @return The command to start a timer from the time the button was pressed.
+   */
   private Command startTimer() {
     return new InstantCommand(() -> {
       // Stop, reset, and start timer.
@@ -333,12 +372,6 @@ public class Superstructure {
   }
 
   public static class Constants {
-    // Goal
-    public static final Translation2d kGoal = new Translation2d(
-        Units.feetToMeters(27), Units.feetToMeters(13.5));
-    public static final Translation2d kEjectLocation = new Translation2d(
-        0, Units.feetToMeters(27));
-
     // Low Goal Scoring
     public static final double kLowGoalHoodAngle = Math.toRadians(42);
     public static final double kLowGoalShooterRPM = 1200;
@@ -346,9 +379,6 @@ public class Superstructure {
     // High Goal Scoring
     public static final double kHighGoalHoodAngle = Math.toRadians(13);
     public static final double kHighGoalShooterRPM = 2600;
-
-    // Intake
-    public static final double kIntakeCollectSpeed = 0.85;
 
     // Tuning Entries
     public static final String kTuningShooterRPMKey = "Shooter Speed (rpm)";
