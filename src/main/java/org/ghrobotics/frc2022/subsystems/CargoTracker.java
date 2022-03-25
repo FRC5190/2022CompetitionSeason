@@ -2,7 +2,6 @@ package org.ghrobotics.frc2022.subsystems;
 
 import com.revrobotics.ColorMatch;
 import edu.wpi.first.math.filter.Debouncer;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.ghrobotics.lib.sensor.PicoColorSensor;
@@ -120,6 +119,24 @@ public class CargoTracker extends SubsystemBase {
 
     cargo_[0] = cargo[0];
     cargo_[1] = cargo[1];
+  }
+
+  /**
+   * Returns whether there is a ball at the lower sensor.
+   *
+   * @return Whether there is a ball at the lower sensor.
+   */
+  public boolean getBallAtLower() {
+    return ball_at_lower_;
+  }
+
+  /**
+   * Returns whether there is a ball at the upper sensor.
+   *
+   * @return Whether there is a ball at the upper sensor.
+   */
+  public boolean getBallAtUpper() {
+    return ball_at_upper_;
   }
 
   /**

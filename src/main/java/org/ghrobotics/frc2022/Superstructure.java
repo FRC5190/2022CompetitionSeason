@@ -127,7 +127,7 @@ public class Superstructure {
    * @return The command to intake balls and store in the feeder.
    */
   public Command intake() {
-    return new IntakeAutomatic(intake_, () -> true, () -> false, () -> true);
+    return new IntakeAutomatic(intake_, cargo_tracker_, () -> true, () -> false);
   }
 
   /**
@@ -145,7 +145,7 @@ public class Superstructure {
         new RunCommand(() -> turret_.setGoal(Math.toRadians(180), 0), turret_),
         new RunCommand(() -> shooter_.setRPM(Constants.kLowGoalShooterRPM), shooter_),
         new RunCommand(() -> hood_.setPosition(Constants.kLowGoalHoodAngle), hood_),
-        new IntakeAutomatic(intake_, () -> false, ready_to_score_, () -> true)
+        new IntakeAutomatic(intake_, cargo_tracker_, () -> false, ready_to_score_)
     );
   }
 
@@ -164,7 +164,7 @@ public class Superstructure {
         new RunCommand(() -> turret_.setGoal(Math.toRadians(180), 0), turret_),
         new RunCommand(() -> shooter_.setRPM(Constants.kHighGoalShooterRPM), shooter_),
         new RunCommand(() -> hood_.setPosition(Constants.kHighGoalHoodAngle), hood_),
-        new IntakeAutomatic(intake_, () -> false, ready_to_score_, () -> true)
+        new IntakeAutomatic(intake_, cargo_tracker_, () -> false, ready_to_score_)
     );
   }
 
@@ -224,7 +224,7 @@ public class Superstructure {
           shooter_.setVelocity(shooter_speed);
           hood_.setPosition(hood_angle);
         }, turret_, shooter_, hood_),
-        new IntakeAutomatic(intake_, require_intake, score, () -> true)
+        new IntakeAutomatic(intake_, cargo_tracker_, require_intake, score)
     ).withInterrupt(() -> cargo_tracker_.getCargoCount() == 0);
   }
 
