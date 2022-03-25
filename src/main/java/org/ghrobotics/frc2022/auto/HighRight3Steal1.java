@@ -59,7 +59,7 @@ public class HighRight3Steal1 extends SequentialCommandGroup {
         new InstantCommand(() -> robot_state.resetPosition(path1.getInitialPose())),
 
         // Score.
-        superstructure.scoreHighGoal().withTimeout(3),
+        superstructure.scoreHighGoal(),
 
         // Follow trajectories while intaking.
         new ParallelRaceGroup(
@@ -72,15 +72,16 @@ public class HighRight3Steal1 extends SequentialCommandGroup {
         ),
 
         // Score
-        superstructure.scoreHighGoal().withTimeout(3.5),
+        superstructure.scoreHighGoal(),
 
         // Follow trajectory while intaking.
         new ParallelRaceGroup(
             new DriveTrajectory(drivetrain, robot_state, path4),
             superstructure.intake()
-        )
+        ),
 
         // Eject.
+        superstructure.scoreHighGoal()
     );
   }
 }

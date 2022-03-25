@@ -49,7 +49,7 @@ public class HighRight3 extends SequentialCommandGroup {
         new InstantCommand(() -> robot_state.resetPosition(path1.getInitialPose())),
 
         // Score.
-        superstructure.scoreHighGoal().withTimeout(3),
+        superstructure.scoreHighGoal(),
 
         // Follow trajectories while intaking.
         new ParallelRaceGroup(
@@ -62,7 +62,7 @@ public class HighRight3 extends SequentialCommandGroup {
         ),
 
         // Score
-        superstructure.scoreHighGoal().withTimeout(3.5)
+        superstructure.scoreHighGoal()
     );
   }
 }
