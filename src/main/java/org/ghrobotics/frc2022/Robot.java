@@ -254,12 +254,12 @@ public class Robot extends TimedRobot {
     // RS: none
 
     // LB: low goal fender preset
-    new Button(driver_controller_::getAButton)
+    new Button(driver_controller_::getLeftBumper)
         .whenHeld(score_lg_fender_
             .alongWith(new InstantCommand(robot_state_::resetPositionFromFender)));
 
     // RB: high goal fender preset
-    new Button(driver_controller_::getYButton)
+    new Button(driver_controller_::getRightBumper)
         .whenHeld(score_hg_fender_
             .alongWith(new InstantCommand(robot_state_::resetPositionFromFender)));
 
@@ -268,7 +268,7 @@ public class Robot extends TimedRobot {
         .whenHeld(superstructure_.intake());
 
     // RT: score
-    new Button(() -> driver_controller_.getRightTriggerAxis() > 0.1).whenHeld(score_hg_);
+    new Button(() -> driver_controller_.getRightTriggerAxis() > 0.1).whenPressed(score_hg_);
   }
 
   /**

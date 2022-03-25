@@ -70,8 +70,8 @@ public class Superstructure {
     intake_ = intake;
 
     // Initialize high goal planner.
-    high_goal_planner_ = new HighGoalPlanner(Constants.kLowGoalShooterRPM,
-        Constants.kLowGoalHoodAngle);
+    high_goal_planner_ = new HighGoalPlanner(Constants.kHighGoalShooterRPM,
+        Constants.kHighGoalHoodAngle);
 
     // Assign cargo tracker and robot state.
     cargo_tracker_ = cargo_tracker;
@@ -81,7 +81,8 @@ public class Superstructure {
     timer_ = new Timer();
 
     // Create ready-to-score supplier.
-    ready_to_score_ = () -> timer_.get() > 1.5;
+    ready_to_score_ = () -> (shooter_.atGoal() && turret_.atGoal() && hood_.atGoal()) ||
+        timer_.get() > 2.5;
   }
 
   /**
