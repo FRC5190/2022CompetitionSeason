@@ -2,6 +2,7 @@ package org.ghrobotics.frc2022.subsystems;
 
 import com.revrobotics.ColorMatch;
 import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.ghrobotics.lib.sensor.PicoColorSensor;
@@ -55,8 +56,8 @@ public class CargoTracker extends SubsystemBase {
     color_match_.addColorMatch(Constants.kBlue);
 
     // Initialize debouncers.
-    lower_sensor_debouncer_ = new Debouncer(Constants.kDebounceTime, DebounceType.kRising);
-    upper_sensor_debouncer_ = new Debouncer(Constants.kDebounceTime, DebounceType.kRising);
+    lower_sensor_debouncer_ = new Debouncer(Constants.kDebounceTime, DebounceType.kBoth);
+    upper_sensor_debouncer_ = new Debouncer(Constants.kDebounceTime, DebounceType.kBoth);
 
     // Initialize cargo tracker state.
     cargo_ = new Color[]{null, null};
@@ -76,36 +77,38 @@ public class CargoTracker extends SubsystemBase {
 
     // Calculate whether there is a ball in front of any sensor.
     ball_at_lower_ = lower_sensor_debouncer_
-        .calculate(io_.lower_sensor_prox > Constants.kProximityThreshold);
-    ball_at_upper_ = upper_sensor_debouncer_
-        .calculate(io_.upper_sensor_prox > Constants.kProximityThreshold);
+        .calculate(io_.lower_sensor_prox > Constants.kLowerProximityThreshold);
+    ball_at_upper_ = io_.upper_sensor_prox > Constants.kUpperProximityThreshold;
 
-    // If there are balls, get the color of the ball.
-    lower_color_ = ball_at_lower_ ?
-        color_match_.matchClosestColor(toColor(io_.lower_sensor)).color : null;
-    upper_color_ = ball_at_upper_ ?
-        color_match_.matchClosestColor(toColor(io_.upper_sensor)).color : null;
-
-    // The only way for cargo to enter is through the lower sensor. If there was previously no
-    // ball but there is a ball now, it entered. We just make sure that this isn't a bad sensor
-    // reading by also making sure that the intake is running.
-    if (!prev_ball_at_lower && ball_at_lower_ && intake_.getIntakePercent() > 0)
-      cargo_[getCargoCount()] = lower_color_;
-
-    // If there is a ball sitting at the upper sensor AND cargo_[0] exists, update its color value
-    // for reinforcement.
-    if (cargo_[0] != null && ball_at_upper_)
-      cargo_[0] = upper_color_;
-
-    // The only way for cargo to exit is through the upper sensor. If the ball was previously at
-    // the upper sensor but is no longer there, the ball must have exited through the shooter. We
-    // just make sure that this isn't a bad sensor reading by also making sure that the shooter
-    // has a positive velocity.
-    if (prev_ball_at_upper && !ball_at_upper_ && shooter_.getVelocity() > 0) {
-      // Shift everything to the left.
-      cargo_[0] = cargo_[1];
-      cargo_[1] = null;
-    }
+//    SmartDashboard.putNumber("Lower Sensor Prox", io_.lower_sensor_prox);
+//    SmartDashboard.putNumber("Upper Sensor Prox", io_.upper_sensor_prox);
+//
+//    // If there are balls, get the color of the ball.
+//    lower_color_ = ball_at_lower_ ?
+//        color_match_.matchClosestColor(toColor(io_.lower_sensor)).color : null;
+//    upper_color_ = ball_at_upper_ ?
+//        color_match_.matchClosestColor(toColor(io_.upper_sensor)).color : null;
+//
+//    // The only way for cargo to enter is through the lower sensor. If there was previously no
+//    // ball but there is a ball now, it entered. We just make sure that this isn't a bad sensor
+//    // reading by also making sure that the intake is running.
+//    if (!prev_ball_at_lower && ball_at_lower_ && intake_.getIntakePercent() > 0)
+//      cargo_[Math.min(1, getCargoCount())] = lower_color_;
+//
+//    // If there is a ball sitting at the upper sensor AND cargo_[0] exists, update its color value
+//    // for reinforcement.
+//    if (cargo_[0] != null && ball_at_upper_)
+//      cargo_[0] = upper_color_;
+//
+//    // The only way for cargo to exit is through the upper sensor. If the ball was previously at
+//    // the upper sensor but is no longer there, the ball must have exited through the shooter. We
+//    // just make sure that this isn't a bad sensor reading by also making sure that the shooter
+//    // has a positive velocity.
+//    if (prev_ball_at_upper && !ball_at_upper_ && shooter_.getVelocity() > 0) {
+//      // Shift everything to the left.
+//      cargo_[0] = cargo_[1];
+//      cargo_[1] = null;
+//    }
   }
 
   /**
@@ -187,9 +190,10 @@ public class CargoTracker extends SubsystemBase {
     public static final Color kBlue = new Color(0, 0, 1);
 
     // Debouncer
-    public static final double kDebounceTime = 0.2;
+    public static final double kDebounceTime = 0.09;
 
     // Thresholds
-    public static final int kProximityThreshold = 300;
+    public static final int kUpperProximityThreshold = 125;
+    public static final int kLowerProximityThreshold = 275;
   }
 }

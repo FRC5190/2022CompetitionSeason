@@ -6,15 +6,12 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import java.util.function.BooleanSupplier;
 import org.ghrobotics.frc2022.commands.IntakeAutomatic;
 import org.ghrobotics.frc2022.planners.HighGoalPlanner;
@@ -101,17 +98,6 @@ public class Superstructure {
     robot_pose_ = robot_state_.getRobotPose();
     robot_speeds_ = robot_state_.getRobotSpeeds();
 
-    // Get the current alliance color and the color of the next ball to shoot.
-    DriverStation.Alliance alliance = robot_state_.getAlliance();
-    Color next_cargo_color = cargo_tracker_.getNextBall();
-
-    // If the alliance is invalid or there is no next ball or the alliance color matches the
-    // color of the next ball, do not eject.
-    turret_eject_ = !(alliance == DriverStation.Alliance.Invalid ||
-        next_cargo_color == null ||
-        alliance == DriverStation.Alliance.Red && next_cargo_color.red > 0.9 ||
-        alliance == DriverStation.Alliance.Blue && next_cargo_color.blue > 0.9);
-
     // Calculate turret pose.
     Pose2d turret_pose = robot_pose_.transformBy(
         new Transform2d(new Translation2d(LimelightManager.Constants.kRobotToTurretDistance, 0),
@@ -188,6 +174,26 @@ public class Superstructure {
     );
   }
 
+
+  /**
+   * Returns the command to eject cargo into our hangar.
+   *
+   * @return The command to eject cargo into our hangar.
+   */
+  public Command eject() {
+    // The following commands run in parallel:
+    //  - set turret to face eject
+    //  - set shooter speed and hood angle to preset values
+    //  - wait for spin up and score
+    return new ParallelCommandGroup(
+        startTimer(),
+        new RunCommand(() -> turret_.setGoal(turret_to_eject_angle_, 0), turret_),
+        new RunCommand(() -> shooter_.setRPM(Constants.kLowGoalShooterRPM), shooter_),
+        new RunCommand(() -> hood_.setPosition(Constants.kLowGoalHoodAngle), hood_),
+        new IntakeAutomatic(intake_, cargo_tracker_, () -> false, ready_to_score_)
+    );
+  }
+
   /**
    * Returns the command to score cargo into the high goal.
    *
@@ -239,22 +245,13 @@ public class Superstructure {
           shooter_speed = (adjusted_distance / t) / Math.sin(hood_angle) /
               Shooter.Constants.kWheelRadius * 2;
 
-          // Set goals to subsystems.
-          if (turret_eject_) {
-            // If we have the wrong colored ball coming up, point toward hangar and use low goal
-            // speeds and angles.
-            turret_.setGoal(turret_to_eject_angle_, 0);
-            shooter_.setRPM(Constants.kLowGoalShooterRPM);
-            hood_.setPosition(Constants.kLowGoalHoodAngle);
-          } else {
-            // If we don't need to eject the ball, use calculations from above.
-            turret_.setGoal(turret_theta, turret_omega);
-            shooter_.setVelocity(shooter_speed);
-            hood_.setPosition(hood_angle);
-          }
+          // Use calculations from above and set goal.
+          turret_.setGoal(turret_theta, turret_omega);
+          shooter_.setVelocity(shooter_speed);
+          hood_.setPosition(hood_angle);
         }, turret_, shooter_, hood_),
         new IntakeAutomatic(intake_, cargo_tracker_, require_intake, score)
-    ).withInterrupt(() -> cargo_tracker_.getCargoCount() == 0);
+    );
   }
 
   /**
@@ -279,11 +276,12 @@ public class Superstructure {
     //  - track goal with turret
     //  - run intake and feeder
     return new ParallelCommandGroup(
+        startTimer(),
         new RunCommand(() -> shooter_.setRPM(
             SmartDashboard.getNumber(Constants.kTuningShooterRPMKey, 0)), shooter_),
         new RunCommand(() -> hood_.setPosition(
             Math.toRadians(SmartDashboard.getNumber(Constants.kTuningHoodAngleKey, 0))), hood_),
-        new IntakeAutomatic(intake_, cargo_tracker_, () -> true, () -> true),
+//        new IntakeAutomatic(intake_, cargo_tracker_, () -> true, ready_to_score_),
         trackGoalWithTurret()
     );
   }

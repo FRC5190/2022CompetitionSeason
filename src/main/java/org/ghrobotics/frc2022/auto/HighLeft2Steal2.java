@@ -7,6 +7,7 @@ import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelRaceGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import java.util.List;
 import org.ghrobotics.frc2022.RobotState;
 import org.ghrobotics.frc2022.Superstructure;
@@ -52,8 +53,11 @@ public class HighLeft2Steal2 extends SequentialCommandGroup {
         // Reset odometry.
         new InstantCommand(() -> robot_state.resetPosition(path1.getInitialPose())),
 
+        // Wait for climb arms to pivot.
+        new WaitCommand(0.5),
+
         // Score
-        superstructure.scoreHighGoal(),
+        superstructure.scoreHighGoal().withTimeout(2),
 
         // Follow trajectory while intaking.
         new ParallelRaceGroup(
@@ -62,7 +66,7 @@ public class HighLeft2Steal2 extends SequentialCommandGroup {
         ),
 
         // Eject
-        superstructure.scoreHighGoal(),
+        superstructure.eject().withTimeout(2),
 
         // Follow trajectory while intaking.
         new ParallelRaceGroup(
@@ -71,7 +75,7 @@ public class HighLeft2Steal2 extends SequentialCommandGroup {
         ),
 
         // Score
-        superstructure.scoreHighGoal(),
+        superstructure.scoreHighGoal().withTimeout(2),
 
         // Follow trajectory while intaking.
         new ParallelRaceGroup(
@@ -80,7 +84,7 @@ public class HighLeft2Steal2 extends SequentialCommandGroup {
         ),
 
         // Eject
-        superstructure.scoreHighGoal()
+        superstructure.eject().withTimeout(2)
     );
   }
 }

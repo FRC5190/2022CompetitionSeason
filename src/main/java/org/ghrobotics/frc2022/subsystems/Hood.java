@@ -197,7 +197,7 @@ public class Hood extends SubsystemBase {
     public static final double kP = 5.0;
     public static final double kMaxVelocity = 2 * Math.PI;
     public static final double kMaxAcceleration = 2 * Math.PI;
-    public static final double kTolerance = Math.toRadians(2);
+    public static final double kTolerance = Math.toRadians(7);
   }
 }
 

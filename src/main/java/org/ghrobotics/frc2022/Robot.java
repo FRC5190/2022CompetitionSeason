@@ -24,6 +24,7 @@ import org.ghrobotics.frc2022.auto.HighLeft2Steal2;
 import org.ghrobotics.frc2022.auto.HighLeft4;
 import org.ghrobotics.frc2022.auto.HighRight3;
 import org.ghrobotics.frc2022.auto.HighRight3Steal1;
+import org.ghrobotics.frc2022.auto.HighRight5;
 import org.ghrobotics.frc2022.commands.ClimbAutomatic;
 import org.ghrobotics.frc2022.commands.ClimbReset;
 import org.ghrobotics.frc2022.commands.ClimbTeleop;
@@ -140,12 +141,14 @@ public class Robot extends TimedRobot {
     hood_.setBrakeMode(true);
 
     // Set alliance color (guaranteed to be accurate here).
-    robot_state_.setAlliance(DriverStation.getAlliance());
+    DriverStation.Alliance alliance = DriverStation.getAlliance();
+    robot_state_.setAlliance(alliance);
 
     // Start autonomous program.
     autonomous_command_ = auto_selector_.getSelected();
-    if (autonomous_command_ != null)
+    if (autonomous_command_ != null) {
       autonomous_command_.schedule();
+    }
   }
 
   @Override
@@ -209,6 +212,8 @@ public class Robot extends TimedRobot {
         new HighRight3(robot_state_, drivetrain_, superstructure_));
     auto_selector_.addOption("High Right 3 Steal 1",
         new HighRight3Steal1(robot_state_, drivetrain_, superstructure_));
+    auto_selector_.addOption("High Right 5",
+        new HighRight5(robot_state_, drivetrain_, superstructure_));
   }
 
   /**
@@ -272,10 +277,10 @@ public class Robot extends TimedRobot {
         .whenHeld(superstructure_.intake());
 
     // RT: score
-    new Button(() -> driver_controller_.getRightTriggerAxis() > 0.1).whenPressed(score_hg_);
+    new Button(() -> driver_controller_.getRightTriggerAxis() > 0.1).whenHeld(score_hg_);
 
-    // Back: tuning
-    new Button(driver_controller_::getBackButton).toggleWhenPressed(score_tune_);
+    // Back: eject
+    new Button(driver_controller_::getBackButton).whenHeld(superstructure_.eject());
   }
 
   /**

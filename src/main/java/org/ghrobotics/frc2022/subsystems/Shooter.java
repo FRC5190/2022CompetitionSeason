@@ -6,6 +6,7 @@ import com.ctre.phoenix.sensors.SensorTimeBase;
 import com.ctre.phoenix.sensors.SensorVelocityMeasPeriod;
 import com.revrobotics.CANSparkMax;
 import edu.wpi.first.math.controller.BangBangController;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
@@ -118,7 +119,7 @@ public class Shooter extends SubsystemBase {
 
         // We multiply by 0.9 to avoid overshoot. Divide by 12 to change voltage to percent.
         // See: https://docs.wpilib.org/en/stable/docs/software/advanced-controls/controllers/bang-bang.html#combining-bang-bang-control-with-feedforward
-        leader_.setVoltage(feedback * 12 + 0.9 * feedforward);
+        leader_.setVoltage(feedback * 3 + 0.9 * feedforward);
         break;
     }
   }
@@ -223,9 +224,9 @@ public class Shooter extends SubsystemBase {
     public static final double kWheelRadius = 0.0508;
 
     // Control
-    public static final double kS = 0.64101;
-    public static final double kV = 0.013676;
-    public static final double kA = 0.0029748;
+    public static final double kS = 0.27687;
+    public static final double kV = 0.011204;
+    public static final double kA = 0.0023133;
     public static final double kErrorTolerance = Units.rotationsPerMinuteToRadiansPerSecond(250);
   }
 }

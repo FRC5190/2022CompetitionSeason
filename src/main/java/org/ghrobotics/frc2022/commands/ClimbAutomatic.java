@@ -39,7 +39,9 @@ public class ClimbAutomatic extends SequentialCommandGroup {
         waitForAdvance(),
 
         /* PART 3: CLIMB L3 AND PREPARE TO CLIMB L4 */
+        pos(10.00, 10.00),
         piv(false, true),
+        new WaitCommand(2),
         pos(00.00, 25.75),
         waitForAdvance(),
 

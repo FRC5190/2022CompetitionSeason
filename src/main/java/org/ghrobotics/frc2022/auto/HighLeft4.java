@@ -58,7 +58,7 @@ public class HighLeft4 extends SequentialCommandGroup {
         ),
 
         // Score
-        superstructure.scoreHighGoal(),
+        superstructure.scoreHighGoal().withTimeout(3),
 
         // Follow trajectory while intaking.
         new ParallelRaceGroup(
@@ -70,7 +70,7 @@ public class HighLeft4 extends SequentialCommandGroup {
         new DriveTrajectory(drivetrain, robot_state, path3),
 
         // Score
-        superstructure.scoreHighGoal()
+        superstructure.scoreHighGoal().withTimeout(3)
     );
   }
 }

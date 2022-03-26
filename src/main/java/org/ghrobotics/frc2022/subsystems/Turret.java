@@ -319,7 +319,7 @@ public class Turret extends SubsystemBase {
     public static final double kD = 0.4;
     public static final double kMaxVelocity = 4 * Math.PI;
     public static final double kMaxAcceleration = 3 * Math.PI;
-    public static final double kPositionTolerance = Math.toRadians(2);
-    public static final double kVelocityTolerance = Math.toRadians(10);
+    public static final double kPositionTolerance = Math.toRadians(3);
+    public static final double kVelocityTolerance = Math.toRadians(40);
   }
 }
