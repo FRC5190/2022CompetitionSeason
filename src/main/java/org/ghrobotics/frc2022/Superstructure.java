@@ -6,12 +6,15 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
+
+import java.sql.DriverAction;
 import java.util.function.BooleanSupplier;
 import org.ghrobotics.frc2022.commands.IntakeAutomatic;
 import org.ghrobotics.frc2022.planners.HighGoalPlanner;
@@ -85,8 +88,8 @@ public class Superstructure {
     timer_ = new Timer();
 
     // Create ready-to-score supplier.
-    ready_to_score_ = () -> (shooter_.atGoal() && turret_.atGoal() && hood_.atGoal()) ||
-        timer_.get() > 2.5;
+    ready_to_score_ = () -> (shooter_.atGoal()) ||
+        timer_.get() > (3.5);
   }
 
   /**
@@ -110,7 +113,6 @@ public class Superstructure {
     // Calculate distance and angle to goal.
     turret_to_goal_distance_ = turret_to_goal_.getNorm();
     turret_to_goal_angle_ = Math.atan2(turret_to_goal_.getY(), turret_to_goal_.getX());
-
     // Calculate turret angle to eject.
     Translation2d turret_to_hangar = new Pose2d(Arena.kHangar, new Rotation2d())
         .relativeTo(turret_pose).getTranslation();
@@ -375,10 +377,10 @@ public class Superstructure {
     public static final double kLowGoalShooterRPM = 1200;
 
     // High Goal Scoring
-    public static final double kHighGoalHoodAngle = Math.toRadians(13);
+    public static final double kHighGoalHoodAngle = Math.toRadians(10);
     public static final double kHighGoalShooterRPM = 2600;
 
-    // Tuning Entries
+    // Tuning Entr
     public static final String kTuningShooterRPMKey = "Shooter Speed (rpm)";
     public static final String kTuningHoodAngleKey = "Hood Angle (deg)";
     public static final String kTuningScoreKey = "Score";

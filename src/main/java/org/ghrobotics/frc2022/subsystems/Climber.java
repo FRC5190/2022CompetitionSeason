@@ -3,6 +3,7 @@ package org.ghrobotics.frc2022.subsystems;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.DemandType;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
+import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.ctre.phoenix.music.Orchestra;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
@@ -51,6 +52,7 @@ public class Climber extends SubsystemBase {
     left_leader_.setNeutralMode(NeutralMode.Brake);
     left_leader_.configVoltageCompSaturation(12);
     left_leader_.enableVoltageCompensation(true);
+    left_leader_.configSupplyCurrentLimit(new SupplyCurrentLimitConfiguration(true, 40, 60, 1));
     left_leader_.setInverted(false);
 
     right_leader_ = new WPI_TalonFX(Constants.kRightLeaderId);
@@ -58,6 +60,7 @@ public class Climber extends SubsystemBase {
     right_leader_.setNeutralMode(NeutralMode.Brake);
     right_leader_.configVoltageCompSaturation(12);
     right_leader_.enableVoltageCompensation(true);
+    right_leader_.configSupplyCurrentLimit(new SupplyCurrentLimitConfiguration(true, 40, 60, 1));
     right_leader_.setInverted(true);
 
     // Initialize pneumatics.
@@ -181,10 +184,10 @@ public class Climber extends SubsystemBase {
    * @param value Whether the soft limits should be enforced.
    */
   public void enableSoftLimits(boolean value) {
-    left_leader_.configForwardSoftLimitEnable(value);
-    left_leader_.configReverseSoftLimitEnable(value);
-    right_leader_.configForwardSoftLimitEnable(value);
-    right_leader_.configReverseSoftLimitEnable(value);
+    left_leader_.configForwardSoftLimitEnable(false);
+    left_leader_.configReverseSoftLimitEnable(false);
+    right_leader_.configForwardSoftLimitEnable(false);
+    right_leader_.configReverseSoftLimitEnable(false);
   }
 
   /**

@@ -77,6 +77,7 @@ public class HighRight5 extends SequentialCommandGroup {
                 new DriveTrajectory(drivetrain, robot_state, path2),
                 new DriveTrajectory(drivetrain, robot_state, path3)
             ),
+            superstructure.trackGoalWithTurret(),
             superstructure.intake()
         ),
 

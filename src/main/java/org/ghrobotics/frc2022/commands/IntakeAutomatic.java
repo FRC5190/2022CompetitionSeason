@@ -81,7 +81,7 @@ public class IntakeAutomatic extends CommandBase {
   public static class Constants {
     public static final double kCollectionIntakeSpeed = 1.0;
     public static final double kScoreIntakeSpeed = 0.5;
-    public static final double kScoreFeederSpeed = 0.85;
+    public static final double kScoreFeederSpeed = 0.89;
     public static final double kIndexFeederSpeed = 0.55;
   }
 }

@@ -57,7 +57,7 @@ public class HighLeft2Steal2 extends SequentialCommandGroup {
         new WaitCommand(0.5),
 
         // Score
-        superstructure.scoreHighGoal().withTimeout(2),
+        superstructure.scoreHighGoal().withTimeout(3),
 
         // Follow trajectory while intaking.
         new ParallelRaceGroup(
@@ -66,7 +66,7 @@ public class HighLeft2Steal2 extends SequentialCommandGroup {
         ),
 
         // Eject
-        superstructure.eject().withTimeout(2),
+        superstructure.eject().withTimeout(2.5),
 
         // Follow trajectory while intaking.
         new ParallelRaceGroup(
@@ -75,7 +75,7 @@ public class HighLeft2Steal2 extends SequentialCommandGroup {
         ),
 
         // Score
-        superstructure.scoreHighGoal().withTimeout(2),
+        superstructure.scoreHighGoal().withTimeout(3),
 
         // Follow trajectory while intaking.
         new ParallelRaceGroup(

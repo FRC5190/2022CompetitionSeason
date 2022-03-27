@@ -41,7 +41,7 @@ public class HighLeft2 extends SequentialCommandGroup {
         ),
 
         // Score
-        superstructure.scoreHighGoal().withTimeout(3.5)
+        superstructure.scoreHighGoal().withTimeout(5)
     );
   }
 }

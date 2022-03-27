@@ -14,6 +14,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.simulation.FlywheelSim;
 import edu.wpi.first.wpilibj.simulation.SimDeviceSim;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import static com.revrobotics.CANSparkMax.IdleMode;
 import static com.revrobotics.CANSparkMax.MotorType;
@@ -51,14 +52,14 @@ public class Shooter extends SubsystemBase {
     leader_.restoreFactoryDefaults();
     leader_.setIdleMode(IdleMode.kCoast);
     leader_.enableVoltageCompensation(12);
-    leader_.setSmartCurrentLimit(Constants.kCurrentLimit);
+//    leader_.setSmartCurrentLimit(Constants.kCurrentLimit);
     leader_.setInverted(true);
 
     follower_ = new CANSparkMax(Constants.kFollowerId, MotorType.kBrushless);
     follower_.restoreFactoryDefaults();
     follower_.setIdleMode(IdleMode.kCoast);
     follower_.enableVoltageCompensation(12);
-    follower_.setSmartCurrentLimit(Constants.kCurrentLimit);
+//    follower_.setSmartCurrentLimit(Constants.kCurrentLimit);
     follower_.follow(leader_, true);
 
     // Initialize encoder.
@@ -95,6 +96,9 @@ public class Shooter extends SubsystemBase {
     io_.velocity = encoder_.getVelocity();
     io_.leader_supply_current = leader_.getOutputCurrent();
     io_.follower_supply_current = follower_.getOutputCurrent();
+
+    SmartDashboard.putNumber("Shooter L", io_.leader_supply_current);
+    SmartDashboard.putNumber("Shooter F", io_.follower_supply_current);
 
     // Write outputs.
     switch (output_type_) {

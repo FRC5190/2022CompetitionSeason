@@ -62,7 +62,8 @@ public class HighRight3 extends SequentialCommandGroup {
                 new DriveTrajectory(drivetrain, robot_state, path2),
                 new DriveTrajectory(drivetrain, robot_state, path3)
             ),
-            superstructure.intake()
+            superstructure.intake(),
+            superstructure.trackGoalWithTurret()
         ),
 
         // Score
