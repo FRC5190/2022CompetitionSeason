@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.Solenoid;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.List;
 
@@ -114,6 +115,8 @@ public class Climber extends SubsystemBase {
     io_.l_supply_current = left_leader_.getSupplyCurrent();
     io_.r_supply_current = right_leader_.getSupplyCurrent();
     io_.pressure = 250 * (pressure_sensor_.getAverageVoltage() / 5.0) - 25;
+
+    SmartDashboard.putNumber("L Climb Enc", left_leader_.getSelectedSensorPosition());
 
     // Zero
     if (io_.wants_zero) {
@@ -403,6 +406,7 @@ public class Climber extends SubsystemBase {
     public static final int kRightLeaderId = 15;
 
     // Pneumatics
+
     public static final int kBrakeId = 0;
     public static final int kLeftPivotForwardId = 1;
     public static final int kLeftPivotReverseId = 2;
@@ -413,7 +417,7 @@ public class Climber extends SubsystemBase {
     public static final int kPressureSensorId = 0;
 
     // Hardware
-    public static final double kMaxHeightNativeUnits = 153000;
+    public static final double kMaxHeightNativeUnits = 151543;
     public static final double kMaxHeight = Units.inchesToMeters(25.75);
 
     // Control

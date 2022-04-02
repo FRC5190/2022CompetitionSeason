@@ -136,7 +136,7 @@ public class Hood extends SubsystemBase {
    */
   public void setPosition(double value) {
     output_type_ = OutputType.POSITION;
-    io_.demand = MathUtil.clamp(value, Math.toRadians(7), Constants.kMaxAngle);
+    io_.demand = MathUtil.clamp(value, Constants.kMinAngle + Math.toRadians(0.5), Constants.kMaxAngle);
     pid_controller_.setGoal(io_.demand);
   }
 
@@ -182,10 +182,10 @@ public class Hood extends SubsystemBase {
     public static final int kCurrentLimit = 20;
 
     // Hardware
-    public static final double kMinEncoderValue = 0.56;
-    public static final double kMaxEncoderValue = 0.32;
+    public static final double kMinEncoderValue = 0.495;
+    public static final double kMaxEncoderValue = 0.265;
     public static final double kMaxAngle = Units.degreesToRadians(42.4);
-    public static final double kMinAngle = Units.degreesToRadians(2.6);
+    public static final double kMinAngle = Units.degreesToRadians(5.0);
     public static final double kEncoderSlope =
         (kMaxAngle - kMinAngle) / (kMaxEncoderValue - kMinEncoderValue);
 
@@ -200,4 +200,3 @@ public class Hood extends SubsystemBase {
     public static final double kTolerance = Math.toRadians(7);
   }
 }
-

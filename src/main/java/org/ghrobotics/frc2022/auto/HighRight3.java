@@ -27,6 +27,7 @@ public class HighRight3 extends SequentialCommandGroup {
   private final Trajectory path1;
   private final Trajectory path2;
   private final Trajectory path3;
+  private final Trajectory path4;
 
   public HighRight3(RobotState robot_state, Drivetrain drivetrain, Superstructure superstructure) {
     // Create trajectories.
@@ -45,6 +46,12 @@ public class HighRight3 extends SequentialCommandGroup {
         new Pose2d(5.196, 1.992, Rotation2d.fromDegrees(132)),
         AutoConfig.kForwardConfig);
 
+    path4 = TrajectoryGenerator.generateTrajectory(
+        new Pose2d(5.196, 1.992, Rotation2d.fromDegrees(132)), List.of(),
+        new Pose2d(6.400, 1.800, Rotation2d.fromDegrees(180)),
+        AutoConfig.kReverseConfig
+    );
+
     addCommands(
         // Reset odometry.
         new InstantCommand(() -> robot_state.resetPosition(path1.getInitialPose())),
@@ -60,7 +67,8 @@ public class HighRight3 extends SequentialCommandGroup {
             new SequentialCommandGroup(
                 new DriveTrajectory(drivetrain, robot_state, path1),
                 new DriveTrajectory(drivetrain, robot_state, path2),
-                new DriveTrajectory(drivetrain, robot_state, path3)
+                new DriveTrajectory(drivetrain, robot_state, path3),
+                new DriveTrajectory(drivetrain, robot_state, path4)
             ),
             superstructure.intake(),
             superstructure.trackGoalWithTurret()

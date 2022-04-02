@@ -29,12 +29,12 @@ public class ClimbAutomatic extends SequentialCommandGroup {
 
         /* PART 1: PREPARE TO CLIMB L2 */
         piv(true, true),
-        pos(25.00, 24.00),
+        pos(25.50, 24.00),
         piv(true, false),
         waitForAdvance(),
 
         /* PART 2: CLIMB L2 AND PREPARE TO CLIMB L3 */
-        pos(25.00, -1.50),
+        pos(25.50, -1.50),
         piv(false, false),
         waitForAdvance(),
 
@@ -42,7 +42,7 @@ public class ClimbAutomatic extends SequentialCommandGroup {
         pos(10.00, 7.00),
         piv(false, true),
         new WaitCommand(2),
-        pos(-1.00, 25.00),
+        pos(-1.00, 25.50),
         waitForAdvance(),
 
         /* PART 4: CLIMB L4 */

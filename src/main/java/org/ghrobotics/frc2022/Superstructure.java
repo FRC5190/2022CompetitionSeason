@@ -377,7 +377,7 @@ public class Superstructure {
     public static final double kLowGoalShooterRPM = 1200;
 
     // High Goal Scoring
-    public static final double kHighGoalHoodAngle = Math.toRadians(10);
+    public static final double kHighGoalHoodAngle = Math.toRadians(8.5);
     public static final double kHighGoalShooterRPM = 2600;
 
     // Tuning Entr

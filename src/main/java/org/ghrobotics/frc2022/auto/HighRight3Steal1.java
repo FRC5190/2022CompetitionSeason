@@ -85,7 +85,7 @@ public class HighRight3Steal1 extends SequentialCommandGroup {
         ),
 
         // Eject.
-        superstructure.eject().withTimeout(2)
+        superstructure.eject().withTimeout(4)
     );
   }
 }
