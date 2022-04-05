@@ -15,30 +15,25 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
-import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.Button;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
-import org.ghrobotics.frc2022.auto.HighLeft2;
-import org.ghrobotics.frc2022.auto.HighLeft2Steal2;
-import org.ghrobotics.frc2022.auto.HighLeft4;
-import org.ghrobotics.frc2022.auto.HighRight3;
-import org.ghrobotics.frc2022.auto.HighRight3Steal1;
-import org.ghrobotics.frc2022.auto.HighRight5;
 import org.ghrobotics.frc2022.commands.ClimbAutomatic;
 import org.ghrobotics.frc2022.commands.ClimbReset;
 import org.ghrobotics.frc2022.commands.ClimbTeleop;
 import org.ghrobotics.frc2022.commands.DriveTeleop;
 import org.ghrobotics.frc2022.commands.TurretZero;
-import org.ghrobotics.frc2022.subsystems.CargoTracker;
+import org.ghrobotics.frc2022.planners.SuperstructurePlanner;
 import org.ghrobotics.frc2022.subsystems.Climber;
 import org.ghrobotics.frc2022.subsystems.Drivetrain;
+import org.ghrobotics.frc2022.subsystems.Feeder;
 import org.ghrobotics.frc2022.subsystems.Hood;
 import org.ghrobotics.frc2022.subsystems.Intake;
 import org.ghrobotics.frc2022.subsystems.LED;
 import org.ghrobotics.frc2022.subsystems.LimelightManager;
+import org.ghrobotics.frc2022.subsystems.PressureSensor;
 import org.ghrobotics.frc2022.subsystems.Shooter;
 import org.ghrobotics.frc2022.subsystems.Turret;
+import org.ghrobotics.lib.telemetry.MissionControl;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -62,20 +57,18 @@ public class Robot extends TimedRobot {
   private final Turret turret_ = new Turret(robot_state_);
   private final Shooter shooter_ = new Shooter();
   private final Hood hood_ = new Hood(robot_state_);
+  private final Feeder feeder_ = new Feeder();
   private final Intake intake_ = new Intake();
   private final Climber climber_ = new Climber();
   private final LED led_ = new LED();
-  private final CargoTracker cargo_tracker_ = new CargoTracker(intake_, shooter_);
   private final LimelightManager limelight_manager_ = new LimelightManager(robot_state_);
 
-  // Create superstructure and associated commands.
-  private final Superstructure superstructure_ = new Superstructure(turret_, shooter_, hood_,
-      intake_, cargo_tracker_, robot_state_);
+  // Create sensor subsystems.
+  private final PressureSensor pressure_sensor_ = new PressureSensor();
 
-  private final Command score_tune_ = superstructure_.tuneScoring();
-  private final Command score_lg_fender_ = superstructure_.scoreLowGoalFender();
-  private final Command score_hg_fender_ = superstructure_.scoreHighGoalFender();
-  private final Command score_hg_ = superstructure_.scoreHighGoal();
+  // Create superstructure planner.
+  private final SuperstructurePlanner superstructure_planner_ =
+      new SuperstructurePlanner(robot_state_, turret_, shooter_, hood_, feeder_, intake_);
 
   // Create climber commands and tracker for climb mode.
   private final Command climb_auto_ = new ClimbAutomatic(climber_, driver_controller_::getAButton);
@@ -92,7 +85,7 @@ public class Robot extends TimedRobot {
   // Create telemetry.
   private final Telemetry telemetry_ = new Telemetry(
       robot_state_, drivetrain_, turret_, shooter_, hood_, intake_, climber_,
-      superstructure_, cargo_tracker_, auto_selector_, () -> climb_mode_);
+      auto_selector_, () -> climb_mode_);
 
   @Override
   public void robotInit() {
@@ -170,15 +163,12 @@ public class Robot extends TimedRobot {
     // Run command scheduler.
     CommandScheduler.getInstance().run();
 
-    // Update superstructure.
-    superstructure_.periodic();
-    superstructure_.setTuning(score_tune_.isScheduled());
-
-    // Limit drivetrain output if scoring.
-    drivetrain_.limitOutput(score_hg_.isScheduled());
+    // Update superstructure planner.
+    superstructure_planner_.update();
 
     // Update telemetry.
     telemetry_.periodic();
+    MissionControl.update();
 
     // Check if we need to clear buttons.
     if (clear_buttons_) {
@@ -201,19 +191,19 @@ public class Robot extends TimedRobot {
    * Creates auto modes and adds them to the selector.
    */
   private void setupAuto() {
-    auto_selector_.addOption("High Left 2",
-        new HighLeft2(robot_state_, drivetrain_, superstructure_));
-    auto_selector_.addOption("High Left 2 Steal 2",
-        new HighLeft2Steal2(robot_state_, drivetrain_, superstructure_));
-    auto_selector_.addOption("High Left 4",
-        new HighLeft4(robot_state_, drivetrain_, superstructure_));
-
-    auto_selector_.addOption("High Right 3",
-        new HighRight3(robot_state_, drivetrain_, superstructure_));
-    auto_selector_.addOption("High Right 3 Steal 1",
-        new HighRight3Steal1(robot_state_, drivetrain_, superstructure_));
-    auto_selector_.addOption("High Right 5",
-        new HighRight5(robot_state_, drivetrain_, superstructure_));
+//    auto_selector_.addOption("High Left 2",
+//        new HighLeft2(robot_state_, drivetrain_, superstructure_));
+//    auto_selector_.addOption("High Left 2 Steal 2",
+//        new HighLeft2Steal2(robot_state_, drivetrain_, superstructure_));
+//    auto_selector_.addOption("High Left 4",
+//        new HighLeft4(robot_state_, drivetrain_, superstructure_));
+//
+//    auto_selector_.addOption("High Right 3",
+//        new HighRight3(robot_state_, drivetrain_, superstructure_));
+//    auto_selector_.addOption("High Right 3 Steal 1",
+//        new HighRight3Steal1(robot_state_, drivetrain_, superstructure_));
+//    auto_selector_.addOption("High Right 5",
+//        new HighRight5(robot_state_, drivetrain_, superstructure_));
   }
 
   /**
@@ -225,17 +215,6 @@ public class Robot extends TimedRobot {
 
     // Climber:
     climber_.setDefaultCommand(new ClimbTeleop(climber_, driver_controller_, () -> climb_mode_));
-
-    // Turret:
-    turret_.setDefaultCommand(
-        new SequentialCommandGroup(new WaitCommand(1), superstructure_.trackGoalWithTurret()));
-
-    // Shooter:
-    shooter_.setDefaultCommand(new RunCommand(() -> shooter_.setPercent(0), shooter_));
-
-    // Hood:
-    hood_.setDefaultCommand(superstructure_.trackGoalWithHood());
-
   }
 
   /**
@@ -249,9 +228,7 @@ public class Robot extends TimedRobot {
     new Button(driver_controller_::getBButton).whenPressed(() -> {
       climb_mode_ = true;
       clear_buttons_ = true;
-      new RunCommand(() -> turret_.setGoal(Math.toRadians(86), 0), turret_).schedule();
-      new RunCommand(() -> hood_.setPosition(Hood.Constants.kMinAngle), hood_).schedule();
-      intake_.setPivot(false);
+      superstructure_planner_.climb();
     });
 
     // X: drivetrain cheesy drive quick turn (in command)
@@ -264,23 +241,24 @@ public class Robot extends TimedRobot {
 
     // LB: low goal fender preset
     new Button(driver_controller_::getLeftBumper)
-        .whenHeld(score_lg_fender_)
-        .whenPressed(new InstantCommand(robot_state_::resetPositionFromFender));
+        .whenPressed(superstructure_planner_::scoreFenderLowGoal)
+        .whenPressed(new InstantCommand(robot_state_::resetPositionFromFender))
+        .whenReleased(superstructure_planner_::defaultState);
 
     // RB: high goal fender preset
     new Button(driver_controller_::getRightBumper)
-        .whenHeld(score_hg_fender_)
-        .whenPressed(new InstantCommand(robot_state_::resetPositionFromFender));
+        .whenPressed(superstructure_planner_::scoreFenderHighGoal)
+        .whenPressed(new InstantCommand(robot_state_::resetPositionFromFender))
+        .whenReleased(superstructure_planner_::defaultState);
 
     // LT: intake
-    new Button(() -> driver_controller_.getLeftTriggerAxis() > 0.1)
-        .whenHeld(superstructure_.intake());
+//    new Button(() -> driver_controller_.getLeftTriggerAxis() > 0.1)
+//        .whenHeld(superstructure_.intake());
 
     // RT: score
-    new Button(() -> driver_controller_.getRightTriggerAxis() > 0.1).whenHeld(score_hg_);
-
-    // Back: eject
-    new Button(driver_controller_::getBackButton).whenHeld(superstructure_.eject());
+    new Button(() -> driver_controller_.getRightTriggerAxis() > 0.1)
+        .whenPressed(superstructure_planner_::scoreHighGoal)
+        .whenReleased(superstructure_planner_::defaultState);
   }
 
   /**
@@ -294,8 +272,7 @@ public class Robot extends TimedRobot {
     new JoystickButton(driver_controller_, XboxController.Button.kB.value).whenPressed(() -> {
       climb_mode_ = false;
       clear_buttons_ = true;
-      turret_.getDefaultCommand().schedule();
-      hood_.getDefaultCommand().schedule();
+      superstructure_planner_.defaultState();
     });
 
     // X: drivetrain cheesy drive quick turn (in command)
@@ -350,21 +327,6 @@ public class Robot extends TimedRobot {
 
     else if (isDisabled())
       led_.setOutput(LED.OutputType.RAINBOW);
-
-    else if (score_tune_.isScheduled())
-      led_.setOutput(LED.StandardLEDOutput.SCORING_TUNING);
-
-    else if (score_hg_.isScheduled())
-      led_.setOutput(LED.StandardLEDOutput.SCORING_AUTOMATIC);
-
-    else if (score_hg_fender_.isScheduled() || score_lg_fender_.isScheduled())
-      led_.setOutput(LED.StandardLEDOutput.SCORING_PRESET);
-
-    else if (cargo_tracker_.getCargoCount() == 2)
-      led_.setOutput(LED.StandardLEDOutput.ROBOT_STATE_TWO_BALL);
-
-    else if (cargo_tracker_.getCargoCount() == 1)
-      led_.setOutput(LED.StandardLEDOutput.ROBOT_STATE_ONE_BALL);
 
     else
       led_.setOutput(LED.StandardLEDOutput.BLANK);

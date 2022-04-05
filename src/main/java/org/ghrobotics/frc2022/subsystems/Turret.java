@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.simulation.SimDeviceSim;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.ghrobotics.frc2022.RobotState;
+import org.ghrobotics.lib.telemetry.MissionControl;
 import static com.revrobotics.CANSparkMax.IdleMode;
 import static com.revrobotics.CANSparkMax.MotorType;
 
@@ -83,6 +84,12 @@ public class Turret extends SubsystemBase {
     // Initialize simulation objects.
     physics_sim_ = new DCMotorSim(DCMotor.getNEO(1), Constants.kGearRatio, Constants.kMOI);
     leader_sim_ = new SimDeviceSim("SPARK MAX [" + Constants.kLeaderId + "]");
+
+    // Add telemetry.
+    MissionControl.addDouble("turret/position", () -> io_.position);
+    MissionControl.addDouble("turret/velocity", () -> io_.velocity);
+    MissionControl.addDouble("turret/supply_current", () -> io_.supply_current);
+    MissionControl.addBoolean("turret/ready", () -> status_ == Status.READY);
   }
 
   /**

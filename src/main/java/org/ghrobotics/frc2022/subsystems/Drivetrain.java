@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj.simulation.DifferentialDrivetrainSim;
 import edu.wpi.first.wpilibj.simulation.SimDeviceSim;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.ghrobotics.frc2022.RobotState;
+import org.ghrobotics.lib.telemetry.MissionControl;
 import static com.revrobotics.CANSparkMax.ControlType;
 import static com.revrobotics.CANSparkMax.IdleMode;
 import static com.revrobotics.CANSparkMaxLowLevel.MotorType;
@@ -142,6 +143,16 @@ public class Drivetrain extends SubsystemBase {
     left_leader_sim_ = new SimDeviceSim("SPARK MAX [" + Constants.kLeftLeaderId + "]");
     right_leader_sim_ = new SimDeviceSim("SPARK MAX [" + Constants.kRightLeaderId + "]");
     gyro_sim_ = gyro_.getSimCollection();
+
+    // Add telemetry.
+    MissionControl.addDouble("drivetrain/l_position", () -> io_.l_position);
+    MissionControl.addDouble("drivetrain/r_position", () -> io_.r_position);
+    MissionControl.addDouble("drivetrain/l_velocity", () -> io_.l_velocity);
+    MissionControl.addDouble("drivetrain/r_velocity", () -> io_.r_velocity);
+    MissionControl.addDouble("drivetrain/ll_supply_current", () -> io_.l_leader_supply_current);
+    MissionControl.addDouble("drivetrain/lf_supply_current", () -> io_.l_follower_supply_current);
+    MissionControl.addDouble("drivetrain/rl_supply_current", () -> io_.r_leader_supply_current);
+    MissionControl.addDouble("drivetrain/rf_supply_current", () -> io_.r_follower_supply_current);
   }
 
   /**

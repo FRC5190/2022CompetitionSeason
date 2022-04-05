@@ -13,7 +13,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import java.util.function.BooleanSupplier;
-import org.ghrobotics.frc2022.subsystems.CargoTracker;
 import org.ghrobotics.frc2022.subsystems.Climber;
 import org.ghrobotics.frc2022.subsystems.Drivetrain;
 import org.ghrobotics.frc2022.subsystems.Hood;
@@ -36,8 +35,6 @@ public class Telemetry {
   private final Intake intake_;
   private final Climber climber_;
 
-  private final Superstructure superstructure_;
-
   // Sendable Chooser
   private final SendableChooser<Command> auto_selector_;
 
@@ -51,21 +48,18 @@ public class Telemetry {
    * Handles reporting of telemetry to the drivers / programmers, including autonomous mode
    * chooser via Shuffleboard.
    *
-   * @param robot_state    Reference to robot state.
-   * @param drivetrain     Reference to drivetrain subsystem.
-   * @param turret         Reference to turret subsystem.
-   * @param shooter        Reference to shooter subsystem.
-   * @param hood           Reference to hood subsystem.
-   * @param intake         Reference to intake subsystem.
-   * @param climber        Reference to climber subsystem.
-   * @param superstructure Reference to superstructure.
-   * @param cargo_tracker  Reference to cargo tracker.
-   * @param auto_selector  Reference to autonomous mode selector.
-   * @param climb_mode     Supplier for climb mode.
+   * @param robot_state   Reference to robot state.
+   * @param drivetrain    Reference to drivetrain subsystem.
+   * @param turret        Reference to turret subsystem.
+   * @param shooter       Reference to shooter subsystem.
+   * @param hood          Reference to hood subsystem.
+   * @param intake        Reference to intake subsystem.
+   * @param climber       Reference to climber subsystem.
+   * @param auto_selector Reference to autonomous mode selector.
+   * @param climb_mode    Supplier for climb mode.
    */
   public Telemetry(RobotState robot_state, Drivetrain drivetrain, Turret turret, Shooter shooter,
                    Hood hood, Intake intake, Climber climber,
-                   Superstructure superstructure, CargoTracker cargo_tracker,
                    SendableChooser<Command> auto_selector, BooleanSupplier climb_mode) {
     // Create Shuffleboard tab to show all robot information.
     tab_ = Shuffleboard.getTab("Apex");
@@ -80,9 +74,6 @@ public class Telemetry {
     hood_ = hood;
     intake_ = intake;
     climber_ = climber;
-
-    // Assign superstructure.
-    superstructure_ = superstructure;
 
     // Assign auto selector.
     auto_selector_ = auto_selector;
@@ -159,24 +150,6 @@ public class Telemetry {
         .withPosition(0, 2);
     climber_layout.addBoolean("Climb Mode", climb_mode_)
         .withPosition(2, 0);
-
-    // Add intake information.
-    ShuffleboardLayout intake_layout = tab_.getLayout("Intake", BuiltInLayouts.kGrid)
-        .withSize(1, 2)
-        .withPosition(6, 2);
-    intake_layout.addBoolean("Lower Sensor", cargo_tracker::getBallAtLower);
-    intake_layout.addBoolean("Upper Sensor", cargo_tracker::getBallAtUpper);
-
-    // Add superstructure information.
-    ShuffleboardLayout superstructure_layout = tab_.getLayout("Superstructure",
-            BuiltInLayouts.kGrid)
-        .withSize(2, 2)
-        .withPosition(7, 0);
-    superstructure_layout.addNumber("Goal Distance",
-        () -> Units.metersToFeet(superstructure_.getRobotToGoalDistance()));
-    superstructure_layout.addNumber("Goal Angle",
-        () -> Math.toDegrees(superstructure_.getRobotToGoalAngle()));
-    superstructure_layout.addNumber("Cargo", superstructure::getCargoCount);
   }
 
   public void periodic() {

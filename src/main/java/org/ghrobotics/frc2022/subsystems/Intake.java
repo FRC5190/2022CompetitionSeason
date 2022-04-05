@@ -1,7 +1,6 @@
 package org.ghrobotics.frc2022.subsystems;
 
 import com.revrobotics.CANSparkMax;
-import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -13,8 +12,6 @@ public class Intake extends SubsystemBase {
   private final CANSparkMax intake_leader_;
   private final CANSparkMax bridge_leader_;
   private final CANSparkMax bridge_follower_;
-  private final CANSparkMax feeder_floor_leader_;
-  private final CANSparkMax feeder_wall_leader_;
 
   // Pneumatics
   private final DoubleSolenoid pivot_;
@@ -33,12 +30,14 @@ public class Intake extends SubsystemBase {
     intake_leader_.restoreFactoryDefaults();
     intake_leader_.setIdleMode(IdleMode.kCoast);
     intake_leader_.enableVoltageCompensation(12);
+    intake_leader_.setSmartCurrentLimit(Constants.kIntakeCurrentLimit);
     intake_leader_.setInverted(true);
 
     bridge_leader_ = new CANSparkMax(Constants.kBridgeLeaderId, MotorType.kBrushless);
     bridge_leader_.restoreFactoryDefaults();
     bridge_leader_.setIdleMode(IdleMode.kCoast);
     bridge_leader_.enableVoltageCompensation(12);
+    bridge_leader_.setSmartCurrentLimit(Constants.kBridgeCurrentLimit);
     bridge_leader_.setInverted(false);
 
     bridge_follower_ = new CANSparkMax(Constants.kBridgeFollowerId, MotorType.kBrushless);
@@ -46,20 +45,6 @@ public class Intake extends SubsystemBase {
     bridge_follower_.setIdleMode(IdleMode.kCoast);
     bridge_follower_.enableVoltageCompensation(12);
     bridge_follower_.follow(bridge_leader_, true);
-
-    feeder_floor_leader_ = new CANSparkMax(Constants.kFeederFloorId, MotorType.kBrushless);
-    feeder_floor_leader_.restoreFactoryDefaults();
-    feeder_floor_leader_.setIdleMode(IdleMode.kBrake);
-    feeder_floor_leader_.enableVoltageCompensation(12);
-    feeder_floor_leader_.setSmartCurrentLimit(Constants.kFeederCurrentLimit);
-    feeder_floor_leader_.setInverted(false);
-
-    feeder_wall_leader_ = new CANSparkMax(Constants.kFeederWallId, MotorType.kBrushless);
-    feeder_wall_leader_.restoreFactoryDefaults();
-    feeder_wall_leader_.setIdleMode(IdleMode.kBrake);
-    feeder_wall_leader_.enableVoltageCompensation(12);
-    feeder_wall_leader_.setSmartCurrentLimit(Constants.kFeederCurrentLimit);
-    feeder_wall_leader_.setInverted(true);
 
     // Initialize pneumatics.
     pivot_ = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, Constants.kPivotForwardId,
@@ -76,8 +61,6 @@ public class Intake extends SubsystemBase {
     io_.intake_supply_current = intake_leader_.getOutputCurrent();
     io_.bridge_leader_supply_current = bridge_leader_.getOutputCurrent();
     io_.bridge_follower_supply_current = bridge_follower_.getOutputCurrent();
-    io_.feeder_floor_supply_current = feeder_floor_leader_.getOutputCurrent();
-    io_.feeder_wall_supply_current = feeder_wall_leader_.getOutputCurrent();
 
     // Write outputs.
     if (io_.wants_pneumatics_update) {
@@ -87,8 +70,6 @@ public class Intake extends SubsystemBase {
 
     intake_leader_.set(io_.intake_bridge_demand);
     bridge_leader_.set(io_.intake_bridge_demand);
-    feeder_floor_leader_.set(io_.feeder_floor_demand);
-    feeder_wall_leader_.set(io_.feeder_wall_demand);
   }
 
   /**
@@ -96,35 +77,8 @@ public class Intake extends SubsystemBase {
    *
    * @param value The % output in [-1, 1].
    */
-  public void setIntakePercent(double value) {
+  public void setPercent(double value) {
     io_.intake_bridge_demand = value;
-  }
-
-  /**
-   * Sets the % output on the feeder floor.
-   *
-   * @param value The % output in [-1, 1].
-   */
-  public void setFloorPercent(double value) {
-    io_.feeder_floor_demand = value;
-  }
-
-  /**
-   * Sets the % output on the feeder wall.
-   *
-   * @param value The % output in [-1, 1].
-   */
-  public void setWallPercent(double value) {
-    io_.feeder_wall_demand = value;
-  }
-
-  /**
-   * Returns the % output of the intake and bridge.
-   *
-   * @return The % output of the intake and bridge in [-1, 1].
-   */
-  public double getIntakePercent() {
-    return io_.intake_bridge_demand;
   }
 
   /**
@@ -137,27 +91,14 @@ public class Intake extends SubsystemBase {
     io_.pivot_value = value;
   }
 
-  /**
-   * Returns whether the pivot is engaged or not.
-   *
-   * @return Whether the pivot is engaged or not (true when intake is down).
-   */
-  public boolean getPivot() {
-    return io_.pivot_value;
-  }
-
   public static class PeriodicIO {
     // Inputs
     double intake_supply_current;
     double bridge_leader_supply_current;
     double bridge_follower_supply_current;
-    double feeder_floor_supply_current;
-    double feeder_wall_supply_current;
 
     // Outputs
     double intake_bridge_demand;
-    double feeder_floor_demand;
-    double feeder_wall_demand;
 
     boolean pivot_value = false;
     boolean wants_pneumatics_update = true;
@@ -168,8 +109,6 @@ public class Intake extends SubsystemBase {
     public static final int kIntakeLeaderId = 9;
     public static final int kBridgeLeaderId = 10;
     public static final int kBridgeFollowerId = 11;
-    public static final int kFeederFloorId = 12;
-    public static final int kFeederWallId = 13;
 
     // Pneumatics
     public static final int kPivotForwardId = 5;
@@ -178,10 +117,5 @@ public class Intake extends SubsystemBase {
     // Current Limits
     public static final int kIntakeCurrentLimit = 80;
     public static final int kBridgeCurrentLimit = 20;
-    public static final int kFeederCurrentLimit = 25;
-
-    // Thresholds
-    public static final double kFeederFloorSensorVThreshold = 1.28;
-    public static final double kFeederWallSensorVThreshold = 2.7;
   }
 }

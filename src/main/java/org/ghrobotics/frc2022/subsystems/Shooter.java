@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj.simulation.FlywheelSim;
 import edu.wpi.first.wpilibj.simulation.SimDeviceSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import org.ghrobotics.lib.telemetry.MissionControl;
 import static com.revrobotics.CANSparkMax.IdleMode;
 import static com.revrobotics.CANSparkMax.MotorType;
 
@@ -52,14 +53,14 @@ public class Shooter extends SubsystemBase {
     leader_.restoreFactoryDefaults();
     leader_.setIdleMode(IdleMode.kCoast);
     leader_.enableVoltageCompensation(12);
-//    leader_.setSmartCurrentLimit(Constants.kCurrentLimit);
+    leader_.setSmartCurrentLimit(Constants.kCurrentLimit);
     leader_.setInverted(true);
 
     follower_ = new CANSparkMax(Constants.kFollowerId, MotorType.kBrushless);
     follower_.restoreFactoryDefaults();
     follower_.setIdleMode(IdleMode.kCoast);
     follower_.enableVoltageCompensation(12);
-//    follower_.setSmartCurrentLimit(Constants.kCurrentLimit);
+    follower_.setSmartCurrentLimit(Constants.kCurrentLimit);
     follower_.follow(leader_, true);
 
     // Initialize encoder.
@@ -84,6 +85,11 @@ public class Shooter extends SubsystemBase {
         DCMotor.getNEO(2), Constants.kGearRatio);
     leader_sim_ = new SimDeviceSim("SPARK MAX [" + Constants.kLeaderId + "]");
     encoder_sim_ = encoder_.getSimCollection();
+
+    // Add telemetry.
+    MissionControl.addDouble("shooter/velocity", () -> io_.velocity);
+    MissionControl.addDouble("shooter/l_supply_current", () -> io_.leader_supply_current);
+    MissionControl.addDouble("shooter/f_supply_current", () -> io_.follower_supply_current);
   }
 
   /**

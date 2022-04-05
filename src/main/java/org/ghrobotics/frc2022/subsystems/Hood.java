@@ -11,6 +11,7 @@ import edu.wpi.first.wpilibj.AnalogEncoder;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.ghrobotics.frc2022.RobotState;
+import org.ghrobotics.lib.telemetry.MissionControl;
 import static com.revrobotics.CANSparkMax.IdleMode;
 import static com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
@@ -63,6 +64,10 @@ public class Hood extends SubsystemBase {
 
     // Initialize feedforward.
     feedforward_ = new ArmFeedforward(Constants.kS, Constants.kG, Constants.kV, Constants.kA);
+
+    // Add telemetry.
+    MissionControl.addDouble("hood/position", () -> io_.position);
+    MissionControl.addDouble("hood/supply_current", () -> io_.supply_current);
   }
 
   /**

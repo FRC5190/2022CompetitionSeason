@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.List;
+import org.ghrobotics.lib.telemetry.MissionControl;
 
 public class Climber extends SubsystemBase {
   // Motor Controllers
@@ -100,6 +101,13 @@ public class Climber extends SubsystemBase {
     orchestra_ = new Orchestra(List.of(left_leader_, right_leader_));
     orchestra_.loadMusic("imperial_march.chrp");
 
+    // Add telemetry.
+    MissionControl.addDouble("climber/l_position", () -> io_.l_position);
+    MissionControl.addDouble("climber/r_position", () -> io_.r_position);
+    MissionControl.addDouble("climber/l_supply_current", () -> io_.l_supply_current);
+    MissionControl.addDouble("climber/r_supply_current", () -> io_.r_supply_current);
+
+    // Zero encoders.
     zero();
   }
 
@@ -414,7 +422,7 @@ public class Climber extends SubsystemBase {
     public static final int kRightPivotReverseId = 4;
 
     // Sensors
-    public static final int kPressureSensorId = 0;
+    public static final int kPressureSensorId = 3;
 
     // Hardware
     public static final double kMaxHeightNativeUnits = 151543;

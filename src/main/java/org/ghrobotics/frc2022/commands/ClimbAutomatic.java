@@ -3,6 +3,7 @@ package org.ghrobotics.frc2022.commands;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
@@ -30,24 +31,29 @@ public class ClimbAutomatic extends SequentialCommandGroup {
         /* PART 1: PREPARE TO CLIMB L2 */
         piv(true, true),
         pos(25.50, 24.00),
-        piv(true, false),
+        piv(false, false),
         waitForAdvance(),
 
         /* PART 2: CLIMB L2 AND PREPARE TO CLIMB L3 */
+        piv(false, true),
         pos(25.50, -1.50),
-        piv(false, false),
+        piv(true, true),
         waitForAdvance(),
 
         /* PART 3: CLIMB L3 AND PREPARE TO CLIMB L4 */
-        pos(10.00, 7.00),
-        piv(false, true),
-        new WaitCommand(2),
-        pos(-1.00, 25.50),
+        new ParallelCommandGroup(
+            pos(-1.00, 25.50),
+            new SequentialCommandGroup(
+                new WaitCommand(1.5),
+                piv(true, false)
+            )
+        ),
         waitForAdvance(),
 
         /* PART 4: CLIMB L4 */
-        piv(false, false),
+        piv(true, true),
         pos(00.00, 22.00),
+        piv(true, false),
 
         /* PART 5: CLEAN UP */
         new InstantCommand(() -> climber_.setBrake(true)),
@@ -88,7 +94,7 @@ public class ClimbAutomatic extends SequentialCommandGroup {
    * @return The command to pivot the climber arms.
    */
   private Command piv(boolean l, boolean r) {
-    return new InstantCommand(() -> climber_.setPivot(l, r), climber_);
+    return new InstantCommand(() -> climber_.setPivot(l, r));
   }
 
   /**
