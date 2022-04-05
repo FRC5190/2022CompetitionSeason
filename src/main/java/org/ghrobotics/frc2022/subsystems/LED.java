@@ -159,14 +159,9 @@ public class LED extends SubsystemBase {
     TURRET_NO_ZERO(Color.kRed, 0.5, 0.5),
     TURRET_ZEROING(Color.kGreen, 0.075, 0.075),
 
-    // Robot State
-    ROBOT_STATE_ONE_BALL(Color.kDeepPink, 1.0, 0.0),
-    ROBOT_STATE_TWO_BALL(Color.kDeepPink, 0.5, 0.5),
-
-    // Score
-    SCORING_TUNING(Color.kGreen, 0.5, 0.5),
-    SCORING_PRESET(Color.kBlue, 0.075, 0.075),
-    SCORING_AUTOMATIC(Color.kGreen, 0.075, 0.075);
+    // Tracking
+    TRACKING_TARGET(Color.kGreen, 1.0, 0.0),
+    TRACKING_NO_TARGET(Color.kDarkMagenta, 1.0, 0.0);
 
     // Stores the color and on percentage for the current output.
     Color c;

@@ -329,7 +329,10 @@ public class Robot extends TimedRobot {
     else if (isDisabled())
       led_.setOutput(LED.OutputType.RAINBOW);
 
+    else if (limelight_manager_.isTrackingTargets())
+      led_.setOutput(LED.StandardLEDOutput.TRACKING_TARGET);
+
     else
-      led_.setOutput(LED.StandardLEDOutput.BLANK);
+      led_.setOutput(LED.StandardLEDOutput.TRACKING_NO_TARGET);
   }
 }

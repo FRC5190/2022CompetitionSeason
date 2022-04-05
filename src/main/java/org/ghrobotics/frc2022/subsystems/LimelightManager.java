@@ -18,6 +18,9 @@ public class LimelightManager extends SubsystemBase {
   // Limelight
   private final Limelight limelight_;
 
+  // Targets
+  private boolean tracking_target_ = false;
+
   // Alive Tracker
   private final LinearFilter alive_filter_;
   private boolean is_alive_ = false;
@@ -51,8 +54,11 @@ public class LimelightManager extends SubsystemBase {
     double latency = limelight_.getLatency();
     is_alive_ = alive_filter_.calculate(latency) > 11;
 
+    // Check whether the Limelight is tracking targets.
+    tracking_target_ = limelight_.hasTarget();
+
     // Check whether we have a target.
-    if (limelight_.hasTarget()) {
+    if (tracking_target_) {
       // Get timestamp of capture (convert latency to seconds).
       double timestamp = Timer.getFPGATimestamp() - latency / 1000;
 
@@ -120,6 +126,15 @@ public class LimelightManager extends SubsystemBase {
    */
   public boolean isLimelightAlive() {
     return is_alive_;
+  }
+
+  /**
+   * Returns whether we are currently tracking targets.
+   *
+   * @return Whether we are currently tracking targets.
+   */
+  public boolean isTrackingTargets() {
+    return tracking_target_;
   }
 
   public static class Constants {
