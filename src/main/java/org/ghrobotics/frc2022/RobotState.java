@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import java.util.Objects;
 import org.ghrobotics.lib.estimator.PoseEstimator;
+import org.ghrobotics.lib.telemetry.MissionControl;
 
 public class RobotState {
   // Pose Estimator
@@ -55,6 +56,13 @@ public class RobotState {
     pose_buffer_ = TimeInterpolatableBuffer.createBuffer(Constants.kBufferLifetime);
     turret_buffer_ = TimeInterpolatableBuffer.createBuffer(Constants.kBufferLifetime);
     hood_buffer_ = TimeInterpolatableBuffer.createBuffer(Constants.kBufferLifetime);
+
+    // Add telemetry.
+    MissionControl.addDouble("robot_state/x", () -> getRobotPose().getX());
+    MissionControl.addDouble("robot_state/y", () -> getRobotPose().getY());
+    MissionControl.addDouble("robot_state/theta", () -> getRobotPose().getRotation().getRadians());
+    MissionControl.addDouble("robot_state/goal_distance",
+        () -> getRobotPose().getTranslation().getDistance(Arena.kGoal));
   }
 
   /**

@@ -59,6 +59,8 @@ public class Feeder extends SubsystemBase {
     io_.lower_sensor = color_sensors_.getProximity0() > Constants.kLowerProximityThreshold;
     io_.upper_sensor = color_sensors_.getProximity1() > Constants.kUpperProximityThreshold;
 
+    color_sensors_.getRawColor0(io_.upper_sensor_color);
+
     io_.floor_supply_current = floor_leader_.getOutputCurrent();
     io_.wall_supply_current = wall_leader_.getOutputCurrent();
 
@@ -67,10 +69,18 @@ public class Feeder extends SubsystemBase {
     wall_leader_.set(io_.wall_demand);
   }
 
+  /**
+   * Sets the feeder floor percent.
+   * @param value The feeder floor percent in [-1, 1].
+   */
   public void setFloorPercent(double value) {
     io_.floor_demand = value;
   }
 
+  /**
+   * Sets the feeder wall percent.
+   * @param value The feeder wall percent in [-1, 1].
+   */
   public void setWallPercent(double value) {
     io_.wall_demand = value;
   }
@@ -93,9 +103,19 @@ public class Feeder extends SubsystemBase {
     return io_.upper_sensor;
   }
 
+  /**
+   * Returns the color detected by the upper sensor.
+   * @return The color detected by the upper sensor.
+   */
+  public PicoColorSensor.RawColor getUpperSensorColor() {
+    return io_.upper_sensor_color;
+  }
+
   public static class PeriodicIO {
     boolean lower_sensor;
     boolean upper_sensor;
+
+    PicoColorSensor.RawColor upper_sensor_color = new PicoColorSensor.RawColor();
 
     double floor_supply_current;
     double wall_supply_current;

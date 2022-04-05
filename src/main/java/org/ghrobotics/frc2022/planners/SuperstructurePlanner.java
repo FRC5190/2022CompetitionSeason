@@ -6,6 +6,7 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.DriverStation;
 import org.ghrobotics.frc2022.Arena;
 import org.ghrobotics.frc2022.RobotState;
 import org.ghrobotics.frc2022.subsystems.Feeder;
@@ -13,11 +14,12 @@ import org.ghrobotics.frc2022.subsystems.Hood;
 import org.ghrobotics.frc2022.subsystems.Intake;
 import org.ghrobotics.frc2022.subsystems.Shooter;
 import org.ghrobotics.frc2022.subsystems.Turret;
+import org.ghrobotics.lib.sensor.PicoColorSensor;
 import org.ghrobotics.lib.telemetry.MissionControl;
 
 /**
  * This class is responsible for planning out the motor and pneumatics outputs for all subsystems
- * in the "superstructure" (turret, shooter, hood, intake).
+ * in the "superstructure" (turret, shooter, hood, feeder, intake).
  */
 public class SuperstructurePlanner {
   // Robot State
@@ -53,6 +55,16 @@ public class SuperstructurePlanner {
   // Next Cargo
   private Cargo next_up_cargo_ = Cargo.NONE;
 
+  /**
+   * Constructs an instance of the superstructure planner.
+   *
+   * @param robot_state Reference to robot state.
+   * @param turret      Reference to the turret subsystem.
+   * @param shooter     Reference to the shooter subsystem.
+   * @param hood        Reference to the hood subsystem.
+   * @param feeder      Reference to the feeder subsystem.
+   * @param intake      Reference to the intake subsystem.
+   */
   public SuperstructurePlanner(RobotState robot_state, Turret turret, Shooter shooter, Hood hood,
                                Feeder feeder, Intake intake) {
     // Assign robot state and subsystems.
@@ -82,6 +94,8 @@ public class SuperstructurePlanner {
     MissionControl.addString("superstructure/hood_state", () -> hood_state_.name());
     MissionControl.addString("superstructure/feeder_state", () -> feeder_state_.name());
     MissionControl.addString("superstructure/intake_state", () -> intake_state_.name());
+
+    MissionControl.addString("superstructure/next_up_cargo", () -> next_up_cargo_.name());
   }
 
   /**
@@ -125,6 +139,11 @@ public class SuperstructurePlanner {
     // Use adjusted distance to adjust shooter speed.
     maybe_shooter_speed = (adjusted_distance / t) / Math.sin(maybe_hood_angle) /
         Shooter.Constants.kWheelRadius;
+
+    // Update next up cargo from feeder.
+    if (feeder_.getUpperSensor()) {
+      next_up_cargo_ = toCargo(robot_state_.getAlliance(), feeder_.getUpperSensorColor());
+    }
 
     // Go through the state for each subsystem and assign references.
     switch (turret_state_) {
@@ -173,6 +192,8 @@ public class SuperstructurePlanner {
 
     switch (hood_state_) {
       case TRACK:
+      case HIGH_GOAL:
+        hood_angle_ = maybe_hood_angle;
         break;
       case STOW:
         hood_angle_ = Constants.kStowHoodAngle;
@@ -186,9 +207,6 @@ public class SuperstructurePlanner {
       case FENDER_HIGH_GOAL:
         hood_angle_ = Constants.kFenderHighGoalHoodAngle;
         break;
-      case HIGH_GOAL:
-        hood_angle_ = maybe_hood_angle;
-        break;
     }
 
     switch (feeder_state_) {
@@ -197,8 +215,17 @@ public class SuperstructurePlanner {
         feeder_wall_pct_ = Constants.kIdleFeederPct;
         break;
       case INDEX:
+        if (!feeder_.getUpperSensor()) {
+          feeder_floor_pct_ = Constants.kFeederIndexPct;
+          feeder_wall_pct_ = Constants.kFeederIndexPct;
+        } else {
+          feeder_floor_pct_ = feeder_.getLowerSensor() ? 0 : Constants.kFeederIndexPct;
+          feeder_wall_pct_ = 0;
+        }
         break;
       case FEED:
+        feeder_floor_pct_ = Constants.kFeederFeedPct;
+        feeder_wall_pct_ = Constants.kFeederFeedPct;
         break;
     }
 
@@ -231,10 +258,8 @@ public class SuperstructurePlanner {
           if (turret_.atGoal() && shooter_.atGoal() && hood_.atGoal())
             feeder_state_ = FeederState.FEED;
 
-      // If the next ball up is one of the wrong color, we need to eject it. But make sure hood
-      // is tracking before doing this. Otherwise, for example, if we are stowed and raise the
-      // hood to eject, we might hit the L1 bar on the hangar.
-      if (next_up_cargo_ == Cargo.OPPOSITE && hood_state_ == HoodState.TRACK) {
+      // If the next ball up is one of the wrong color, we need to eject it.
+      if (next_up_cargo_ == Cargo.OPPOSITE) {
         shooter_state_ = ShooterState.EJECT;
         hood_state_ = HoodState.EJECT;
         feeder_state_ = FeederState.FEED;
@@ -260,52 +285,152 @@ public class SuperstructurePlanner {
   }
 
   /**
-   * Scores cargo into the low goal from the fender.
+   * Sets the superstructure to its default state, where the turret is tracking the goal, the
+   * shooter is spinning at the idle RPM, and the hood is tracking the goal.
    */
-  public void scoreFenderLowGoal() {
-    turret_state_ = TurretState.FENDER_SHOT;
-    shooter_state_ = ShooterState.FENDER_LOW_GOAL;
-    hood_state_ = HoodState.FENDER_LOW_GOAL;
-  }
-
-  /**
-   * Scores cargo into the high goal from the fender.
-   */
-  public void scoreFenderHighGoal() {
-    turret_state_ = TurretState.FENDER_SHOT;
-    shooter_state_ = ShooterState.FENDER_HIGH_GOAL;
-    hood_state_ = HoodState.FENDER_HIGH_GOAL;
-  }
-
-  /**
-   * Scores cargo into the high goal.
-   */
-  public void scoreHighGoal() {
-    turret_state_ = TurretState.TRACK;
-    shooter_state_ = ShooterState.HIGH_GOAL;
-    hood_state_ = HoodState.TRACK;
-  }
-
-  /**
-   * Sets the superstructure into its climb state.
-   */
-  public void climb() {
-    turret_state_ = TurretState.CLIMB;
-    shooter_state_ = ShooterState.CLIMB;
-    hood_state_ = HoodState.STOW;
-    intake_state_ = IntakeState.IDLE;
-    feeder_state_ = FeederState.IDLE;
-  }
-
-  /**
-   * Sets the superstructure into its default state.
-   */
-  public void defaultState() {
+  public void setDefault() {
     turret_state_ = TurretState.TRACK;
     shooter_state_ = ShooterState.IDLE;
     hood_state_ = HoodState.TRACK;
-    intake_state_ = IntakeState.IDLE;
     feeder_state_ = FeederState.IDLE;
+    intake_state_ = IntakeState.IDLE;
+  }
+
+  /**
+   * Sets the superstructure to its climb state, with all systems off and stowed.
+   */
+  public void setClimb() {
+    turret_state_ = TurretState.CLIMB;
+    shooter_state_ = ShooterState.CLIMB;
+    hood_state_ = HoodState.STOW;
+    feeder_state_ = FeederState.IDLE;
+    intake_state_ = IntakeState.IDLE;
+  }
+
+  /**
+   * Scores cargo into the low goal, assuming that the robot is at the fender.
+   */
+  public void setFenderLowGoal() {
+    turret_state_ = TurretState.FENDER_SHOT;
+    shooter_state_ = ShooterState.FENDER_LOW_GOAL;
+    hood_state_ = HoodState.FENDER_LOW_GOAL;
+    feeder_state_ = FeederState.FEED;
+
+    if (intake_state_ == IntakeState.IDLE)
+      intake_state_ = IntakeState.FEED;
+  }
+
+  /**
+   * Scores cargo into the high goal, assuming that the robot is at the fender.
+   */
+  public void setFenderHighGoal() {
+    turret_state_ = TurretState.FENDER_SHOT;
+    shooter_state_ = ShooterState.FENDER_HIGH_GOAL;
+    hood_state_ = HoodState.FENDER_HIGH_GOAL;
+    feeder_state_ = FeederState.FEED;
+
+    if (intake_state_ == IntakeState.IDLE)
+      intake_state_ = IntakeState.FEED;
+  }
+
+  /**
+   * Scores cargo into the high goal, using robot pose data to determine aiming and shooting
+   * parameters.
+   */
+  public void setHighGoal() {
+    turret_state_ = TurretState.TRACK;
+    shooter_state_ = ShooterState.HIGH_GOAL;
+    hood_state_ = HoodState.HIGH_GOAL;
+    feeder_state_ = FeederState.FEED;
+
+    if (intake_state_ == IntakeState.IDLE)
+      intake_state_ = IntakeState.FEED;
+  }
+
+  /**
+   * Toggles the hood stow feature.
+   */
+  public void toggleHoodStow() {
+    hood_state_ = hood_state_ == HoodState.STOW ? HoodState.TRACK : HoodState.STOW;
+  }
+
+  /**
+   * Intakes cargo through the intake and indexes balls if necessary.
+   */
+  public void setIntake() {
+    intake_state_ = IntakeState.INTAKE;
+    if (feeder_state_ == FeederState.IDLE)
+      feeder_state_ = FeederState.INDEX;
+  }
+
+  /**
+   * Returns the current state of the turret.
+   *
+   * @return The current state of the turret.
+   */
+  public TurretState getTurretState() {
+    return turret_state_;
+  }
+
+  /**
+   * Returns the current state of the shooter.
+   *
+   * @return The current state of the shooter.
+   */
+  public ShooterState getShooterState() {
+    return shooter_state_;
+  }
+
+  /**
+   * Returns the current state of the hood.
+   *
+   * @return The current state of the hood.
+   */
+  public HoodState getHoodState() {
+    return hood_state_;
+  }
+
+  /**
+   * Returns the current state of the feeder.
+   *
+   * @return The current state of the feeder.
+   */
+  public FeederState getFeederState() {
+    return feeder_state_;
+  }
+
+  /**
+   * Returns the current state of the intake.
+   *
+   * @return The current state of the intake.
+   */
+  public IntakeState getIntakeState() {
+    return intake_state_;
+  }
+
+  /**
+   * Converts a color reading and current alliance to a cargo.
+   *
+   * @param alliance The alliance that the robot is on.
+   * @param color    The color as reported by the sensor.
+   * @return The type of cargo.
+   */
+  private static Cargo toCargo(DriverStation.Alliance alliance, PicoColorSensor.RawColor color) {
+    // If we have an invalid alliance for some reason, just assume that it's our own cargo.
+    if (alliance == DriverStation.Alliance.Invalid)
+      return Cargo.OWN;
+
+    // Normalize the color measurements.
+    double magnitude = color.red + color.blue + color.blue;
+    double r = color.red / magnitude;
+    double g = color.green / magnitude;
+    double b = color.blue / magnitude;
+
+    boolean red = r > b;
+    if (alliance == DriverStation.Alliance.Red)
+      return red ? Cargo.OWN : Cargo.OPPOSITE;
+
+    return red ? Cargo.OPPOSITE : Cargo.OWN;
   }
 
   public enum TurretState {
@@ -384,5 +509,9 @@ public class SuperstructurePlanner {
 
     // Feed
     public static final double kIntakeFeedPct = 0.5;
+    public static final double kFeederFeedPct = 1.0;
+
+    // Index
+    public static final double kFeederIndexPct = 1.0;
   }
 }

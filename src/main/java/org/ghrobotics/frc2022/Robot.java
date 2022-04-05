@@ -228,7 +228,7 @@ public class Robot extends TimedRobot {
     new Button(driver_controller_::getBButton).whenPressed(() -> {
       climb_mode_ = true;
       clear_buttons_ = true;
-      superstructure_planner_.climb();
+      superstructure_planner_.setClimb();
     });
 
     // X: drivetrain cheesy drive quick turn (in command)
@@ -241,24 +241,25 @@ public class Robot extends TimedRobot {
 
     // LB: low goal fender preset
     new Button(driver_controller_::getLeftBumper)
-        .whenPressed(superstructure_planner_::scoreFenderLowGoal)
+        .whenPressed(superstructure_planner_::setFenderLowGoal)
         .whenPressed(new InstantCommand(robot_state_::resetPositionFromFender))
-        .whenReleased(superstructure_planner_::defaultState);
+        .whenReleased(superstructure_planner_::setDefault);
 
     // RB: high goal fender preset
     new Button(driver_controller_::getRightBumper)
-        .whenPressed(superstructure_planner_::scoreFenderHighGoal)
+        .whenPressed(superstructure_planner_::setFenderHighGoal)
         .whenPressed(new InstantCommand(robot_state_::resetPositionFromFender))
-        .whenReleased(superstructure_planner_::defaultState);
+        .whenReleased(superstructure_planner_::setDefault);
 
     // LT: intake
-//    new Button(() -> driver_controller_.getLeftTriggerAxis() > 0.1)
-//        .whenHeld(superstructure_.intake());
+    new Button(() -> driver_controller_.getLeftTriggerAxis() > 0.1)
+        .whenPressed(superstructure_planner_::setIntake)
+        .whenReleased(superstructure_planner_::setDefault);
 
     // RT: score
     new Button(() -> driver_controller_.getRightTriggerAxis() > 0.1)
-        .whenPressed(superstructure_planner_::scoreHighGoal)
-        .whenReleased(superstructure_planner_::defaultState);
+        .whenPressed(superstructure_planner_::setHighGoal)
+        .whenReleased(superstructure_planner_::setDefault);
   }
 
   /**
@@ -272,7 +273,7 @@ public class Robot extends TimedRobot {
     new JoystickButton(driver_controller_, XboxController.Button.kB.value).whenPressed(() -> {
       climb_mode_ = false;
       clear_buttons_ = true;
-      superstructure_planner_.defaultState();
+      superstructure_planner_.setDefault();
     });
 
     // X: drivetrain cheesy drive quick turn (in command)
