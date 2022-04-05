@@ -1,10 +1,6 @@
 package org.ghrobotics.frc2022.planners;
 
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Filesystem;
-import java.io.IOException;
-import java.util.Scanner;
 import org.ghrobotics.lib.interpolation.LookupTable;
 
 /**
@@ -29,32 +25,15 @@ public class HighGoalPlanner {
         Units.radiansPerSecondToRotationsPerMinute(default_shooter_rpm));
     hood_angle_table_ = new LookupTable(default_hood_angle);
 
-    // Read tables from filesystem (need try-catch due to checked exception).
-    try {
-      // Create and configure scanner to read file.
-      Scanner scanner = new Scanner(
-          Filesystem.getDeployDirectory().toPath().resolve("shooter_lut.csv"));
-
-      // Read each line of the CSV and add to lookup table.
-      while (scanner.hasNextLine()) {
-        // Split each line into distance, rpm, and exit angle values.
-        String[] values = scanner.nextLine().split(",");
-
-        // Parse numerical values.
-        double distance = Double.parseDouble(values[0]);
-        double rpm = Double.parseDouble(values[1]);
-        double exit_angle = Double.parseDouble(values[2]);
-
-        // Populate tables.
-        shooter_speed_table.put(distance, Units.rotationsPerMinuteToRadiansPerSecond(rpm * 1.075));
-        hood_angle_table_.put(distance, Math.toRadians(90 - exit_angle));
-      }
-
-    } catch (IOException ex) {
-      // Report IO error to Driver Station.
-      DriverStation.reportError("Could not read shooter lookup table!", false);
-      ex.printStackTrace();
-    }
+    // Add values.
+    add(1.0, 2090, 8);
+    add(2.0, 2450, 22);
+    add(3.0, 2610, 31);
+    add(4.0, 2820, 38);
+    add(5.0, 3020, 42);
+    add(6.0, 3210, 44);
+    add(7.0, 3400, 47);
+    add(8.0, 3560, 48);
   }
 
   /**
