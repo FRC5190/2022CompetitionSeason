@@ -7,6 +7,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj2.command.button.Button;
 import org.ghrobotics.frc2022.Arena;
 import org.ghrobotics.frc2022.RobotState;
 import org.ghrobotics.frc2022.subsystems.Feeder;
@@ -96,6 +97,11 @@ public class SuperstructurePlanner {
     MissionControl.addString("superstructure/intake_state", () -> intake_state_.name());
 
     MissionControl.addString("superstructure/next_up_cargo", () -> next_up_cargo_.name());
+
+    // Add button to tune.
+    new Button(() -> MissionControl.getBoolean(Constants.kStartTuneKey))
+        .whenPressed(this::setTuning)
+        .whenReleased(this::setDefault);
   }
 
   /**
@@ -174,6 +180,9 @@ public class SuperstructurePlanner {
       case CLIMB:
         shooter_speed_ = Units.rotationsPerMinuteToRadiansPerSecond(Constants.kClimbShooterPct);
         break;
+      case TUNING:
+        shooter_speed_ = MissionControl.getDouble(Constants.kShooterSpeedKey);
+        break;
       case EJECT:
         shooter_speed_ = Units.rotationsPerMinuteToRadiansPerSecond(Constants.kEjectShooterRPM);
         break;
@@ -197,6 +206,9 @@ public class SuperstructurePlanner {
         break;
       case STOW:
         hood_angle_ = Constants.kStowHoodAngle;
+        break;
+      case TUNING:
+        hood_angle_ = MissionControl.getDouble(Constants.kHoodAngleKey);
         break;
       case EJECT:
         hood_angle_ = Constants.kEjectHoodAngle;
@@ -348,6 +360,19 @@ public class SuperstructurePlanner {
   }
 
   /**
+   * Uses the Mission Control dashboard to tune superstructure values.
+   */
+  public void setTuning() {
+    turret_state_ = TurretState.TRACK;
+    shooter_state_ = ShooterState.TUNING;
+    hood_state_ = HoodState.TUNING;
+    feeder_state_ = FeederState.FEED;
+
+    if (intake_state_ == IntakeState.IDLE)
+      intake_state_ = IntakeState.FEED;
+  }
+
+  /**
    * Toggles the hood stow feature.
    */
   public void toggleHoodStow() {
@@ -442,6 +467,7 @@ public class SuperstructurePlanner {
   public enum ShooterState {
     IDLE,
     CLIMB,
+    TUNING,
     EJECT,
     FENDER_LOW_GOAL,
     FENDER_HIGH_GOAL,
@@ -451,6 +477,7 @@ public class SuperstructurePlanner {
   public enum HoodState {
     TRACK,
     STOW,
+    TUNING,
     EJECT,
     FENDER_LOW_GOAL,
     FENDER_HIGH_GOAL,
@@ -479,6 +506,11 @@ public class SuperstructurePlanner {
 
     // Shooting While Moving
     public static final double kTOFAdjustment = 1.0;
+
+    // Tuning
+    public static final String kShooterSpeedKey = "superstructure/tuning_shooter_speed";
+    public static final String kHoodAngleKey = "superstructure/tuning_hood_angle";
+    public static final String kStartTuneKey = "superstructure/start_tune";
 
     // Climb
     public static final double kClimbTurretAngle = Math.PI / 2;
