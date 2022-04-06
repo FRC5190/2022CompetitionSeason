@@ -256,6 +256,20 @@ public class SuperstructurePlanner {
         break;
     }
 
+    // Set references.
+    turret_.setGoal(turret_pos_, turret_vel_);
+
+    if (shooter_state_ == ShooterState.CLIMB)
+      shooter_.setPercent(0);
+    else
+      shooter_.setVelocity(shooter_speed_);
+
+    hood_.setPosition(hood_angle_);
+    feeder_.setFloorPercent(feeder_floor_pct_);
+    feeder_.setWallPercent(feeder_wall_pct_);
+    intake_.setPercent(intake_pct_);
+    intake_.setPivot(intake_out_);
+
     // Handle automatic state machine transitions:
     // There are no transitions to handle if the turret isn't tracking because it doesn't make
     // any sense if we aren't tracking the target but feeding balls, etc.
@@ -285,20 +299,6 @@ public class SuperstructurePlanner {
         feeder_state_ = FeederState.IDLE;
       }
     }
-
-    // Set references.
-    turret_.setGoal(turret_pos_, turret_vel_);
-
-    if (shooter_state_ == ShooterState.IDLE || shooter_state_ == ShooterState.CLIMB)
-      shooter_.setPercent(0);
-    else
-      shooter_.setVelocity(shooter_speed_);
-
-    hood_.setPosition(hood_angle_);
-    feeder_.setFloorPercent(feeder_floor_pct_);
-    feeder_.setWallPercent(feeder_wall_pct_);
-    intake_.setPercent(intake_pct_);
-    intake_.setPivot(intake_out_);
   }
 
   /**
@@ -522,7 +522,7 @@ public class SuperstructurePlanner {
     public static final double kClimbShooterPct = 0;
 
     // Idle
-    public static final double kIdleShooterRPM = 0;
+    public static final double kIdleShooterRPM = 2000;
     public static final double kIdleIntakePct = 0;
     public static final double kIdleFeederPct = 0;
 
