@@ -69,7 +69,7 @@ public class Shooter extends SubsystemBase {
     encoder_.configFeedbackCoefficient(
         2 * Math.PI / Constants.kEncoderGearRatio / Constants.kEncoderResolution,
         "rad", SensorTimeBase.PerSecond);
-    encoder_.configSensorDirection(true);
+    encoder_.configSensorDirection(false);
     encoder_.configVelocityMeasurementPeriod(SensorVelocityMeasPeriod.Period_2Ms);
     encoder_.configVelocityMeasurementWindow(4);
 

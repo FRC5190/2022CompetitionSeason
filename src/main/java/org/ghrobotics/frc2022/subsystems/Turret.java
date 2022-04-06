@@ -126,6 +126,10 @@ public class Turret extends SubsystemBase {
       return;
     }
 
+    if (true) {
+      leader_.set(0);
+    }
+
     switch (output_type_) {
       case PERCENT:
         // Send the percent output value directly to the motor controller.
@@ -226,7 +230,7 @@ public class Turret extends SubsystemBase {
    * @return Whether the turret is at the goal position and velocity.
    */
   public boolean atGoal() {
-    return pid_controller_.atGoal();
+    return pid_controller_.atSetpoint();
   }
 
   /**
@@ -271,7 +275,7 @@ public class Turret extends SubsystemBase {
    * @param setpoint The angular setpoint in radians.
    * @return The constrained setpoint.
    */
-  private static double constrainSetpoint(double setpoint) {
+  public static double constrainSetpoint(double setpoint) {
     while (setpoint >= Constants.kMaxAngle)
       setpoint -= 2 * Math.PI;
     while (setpoint < Constants.kMinAngle)

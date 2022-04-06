@@ -66,6 +66,7 @@ public class Hood extends SubsystemBase {
     feedforward_ = new ArmFeedforward(Constants.kS, Constants.kG, Constants.kV, Constants.kA);
 
     // Add telemetry.
+    MissionControl.addDouble("hood/raw_enc", () -> io_.raw_enc);
     MissionControl.addDouble("hood/position", () -> io_.position);
     MissionControl.addDouble("hood/supply_current", () -> io_.supply_current);
   }
@@ -77,7 +78,8 @@ public class Hood extends SubsystemBase {
   @Override
   public void periodic() {
     // Read inputs.
-    io_.position = Constants.kEncoderSlope * (encoder_.get() - Constants.kMinEncoderValue)
+    io_.raw_enc = encoder_.get();
+    io_.position = Constants.kEncoderSlope * (io_.raw_enc - Constants.kMinEncoderValue)
         + Constants.kMinAngle;
     io_.supply_current = leader_.getOutputCurrent();
 
@@ -169,6 +171,7 @@ public class Hood extends SubsystemBase {
 
   public static class PeriodicIO {
     // Inputs
+    double raw_enc;
     double position;
     double supply_current;
 
@@ -187,21 +190,21 @@ public class Hood extends SubsystemBase {
     public static final int kCurrentLimit = 20;
 
     // Hardware
-    public static final double kMinEncoderValue = 0.495;
-    public static final double kMaxEncoderValue = 0.265;
+    public static final double kMinEncoderValue = 0.599;
+    public static final double kMaxEncoderValue = 0.837;
     public static final double kMaxAngle = Units.degreesToRadians(42.4);
-    public static final double kMinAngle = Units.degreesToRadians(5.0);
+    public static final double kMinAngle = Units.degreesToRadians(2.6);
     public static final double kEncoderSlope =
         (kMaxAngle - kMinAngle) / (kMaxEncoderValue - kMinEncoderValue);
 
     // Control
     public static final double kS = 0.00;
     public static final double kG = 0.0;
-    public static final double kV = 1.52;
+    public static final double kV = 2.736;
     public static final double kA = 0.03;
     public static final double kP = 5.0;
     public static final double kMaxVelocity = 2 * Math.PI;
     public static final double kMaxAcceleration = 2 * Math.PI;
-    public static final double kTolerance = Math.toRadians(7);
+    public static final double kTolerance = Math.toRadians(3);
   }
 }

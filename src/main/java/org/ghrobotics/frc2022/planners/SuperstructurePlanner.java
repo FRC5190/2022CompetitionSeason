@@ -155,9 +155,9 @@ public class SuperstructurePlanner {
     switch (turret_state_) {
       case TRACK:
         // Calculate turret angle adjustment.
-        turret_pos_ = turret_to_goal_angle +
+        turret_pos_ = Turret.constrainSetpoint(turret_to_goal_angle +
             Math.asin(robot_speeds.vxMetersPerSecond * t * Math.sin(turret_to_goal_angle) /
-                adjusted_distance);
+                adjusted_distance));
 
         // Calculate angular velocity to track goal.
         turret_vel_ = -robot_speeds.omegaRadiansPerSecond - robot_speeds.vxMetersPerSecond *
@@ -288,7 +288,12 @@ public class SuperstructurePlanner {
 
     // Set references.
     turret_.setGoal(turret_pos_, turret_vel_);
-    shooter_.setVelocity(shooter_speed_);
+
+    if (shooter_state_ == ShooterState.IDLE || shooter_state_ == ShooterState.CLIMB)
+      shooter_.setPercent(0);
+    else
+      shooter_.setVelocity(shooter_speed_);
+
     hood_.setPosition(hood_angle_);
     feeder_.setFloorPercent(feeder_floor_pct_);
     feeder_.setWallPercent(feeder_wall_pct_);
@@ -513,11 +518,11 @@ public class SuperstructurePlanner {
     public static final String kStartTuneKey = "superstructure/start_tune";
 
     // Climb
-    public static final double kClimbTurretAngle = Math.PI / 2;
+    public static final double kClimbTurretAngle = 3 * Math.PI / 2;
     public static final double kClimbShooterPct = 0;
 
     // Idle
-    public static final double kIdleShooterRPM = 500;
+    public static final double kIdleShooterRPM = 0;
     public static final double kIdleIntakePct = 0;
     public static final double kIdleFeederPct = 0;
 
