@@ -49,7 +49,12 @@
       }
     }
   },
-  "NetworkTables View": {
-    "visible": false
+  "NetworkTables": {
+    "robot": {
+      "open": true,
+      "shooter": {
+        "open": true
+      }
+    }
   }
 }

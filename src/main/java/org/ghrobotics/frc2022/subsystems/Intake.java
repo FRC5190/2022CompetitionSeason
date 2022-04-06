@@ -4,6 +4,7 @@ import com.revrobotics.CANSparkMax;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import org.ghrobotics.lib.telemetry.MissionControl;
 import static com.revrobotics.CANSparkMax.IdleMode;
 import static com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
@@ -49,6 +50,13 @@ public class Intake extends SubsystemBase {
     // Initialize pneumatics.
     pivot_ = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, Constants.kPivotForwardId,
         Constants.kPivotReverseId);
+
+    // Add telemetry.
+    MissionControl.addDouble("intake/intake_supply_current", () -> io_.intake_supply_current);
+    MissionControl.addDouble("intake/bridge_l_supply_current",
+        () -> io_.bridge_leader_supply_current);
+    MissionControl.addDouble("intake/bridge_f_supply_current",
+        () -> io_.bridge_follower_supply_current);
   }
 
   /**
