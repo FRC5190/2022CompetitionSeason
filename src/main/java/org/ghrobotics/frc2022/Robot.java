@@ -222,7 +222,9 @@ public class Robot extends TimedRobot {
    * already configured in the respective subsystem default commands.
    */
   private void setupTeleopControls() {
-    // A: none
+    // A: hood stow toggle
+    new Button(driver_controller_::getAButton)
+        .whenPressed(superstructure_planner_::toggleHoodStow);
 
     // B: climb mode toggle
     new Button(driver_controller_::getBButton).whenPressed(() -> {
