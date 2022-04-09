@@ -30,6 +30,7 @@ public class Shooter extends SubsystemBase {
 
   // Control
   private final BangBangController bang_bang_controller_;
+  private final PIDController pid_controller_;
   private final SimpleMotorFeedforward feedforward_;
   private double last_velocity_setpoint_ = 0;
 
@@ -75,6 +76,8 @@ public class Shooter extends SubsystemBase {
 
     // Initialize bang-bang controller.
     bang_bang_controller_ = new BangBangController(Constants.kErrorTolerance);
+    pid_controller_ = new PIDController(Constants.kP, 0, 0);
+    pid_controller_.setTolerance(Constants.kErrorTolerance);
 
     // Initialize feedforward.
     feedforward_ = new SimpleMotorFeedforward(Constants.kS, Constants.kV, Constants.kA);
@@ -119,8 +122,8 @@ public class Shooter extends SubsystemBase {
         break;
       case VELOCITY:
         // Calculate motor controller voltage from feedback and feedforward.
-        double feedback = bang_bang_controller_.calculate(io_.velocity);
-        double setpoint = bang_bang_controller_.getSetpoint();
+        double feedback = pid_controller_.calculate(io_.velocity);
+        double setpoint = pid_controller_.getSetpoint();
         double feedforward = feedforward_.calculate(setpoint,
             (setpoint - last_velocity_setpoint_) / 0.02);
 
@@ -129,7 +132,7 @@ public class Shooter extends SubsystemBase {
 
         // We multiply by 0.9 to avoid overshoot. Divide by 12 to change voltage to percent.
         // See: https://docs.wpilib.org/en/stable/docs/software/advanced-controls/controllers/bang-bang.html#combining-bang-bang-control-with-feedforward
-        leader_.setVoltage(feedback * 3 + 0.8 * feedforward);
+        leader_.setVoltage(feedback + feedforward);
         break;
     }
   }
@@ -173,6 +176,7 @@ public class Shooter extends SubsystemBase {
   public void setVelocity(double value) {
     output_type_ = OutputType.VELOCITY;
     bang_bang_controller_.setSetpoint(value);
+    pid_controller_.setSetpoint(value);
   }
 
   /**
@@ -190,7 +194,7 @@ public class Shooter extends SubsystemBase {
    * @return Whether the shooter is at the goal (velocity setpoint).
    */
   public boolean atGoal() {
-    return bang_bang_controller_.atSetpoint();
+    return pid_controller_.atSetpoint();
   }
 
   /**
@@ -225,7 +229,7 @@ public class Shooter extends SubsystemBase {
     public static final int kEncoderId = 19;
 
     // Current Limits
-    public static final int kCurrentLimit = 80;
+    public static final int kCurrentLimit = 75;
 
     // Hardware
     public static final double kGearRatio = 0.5;
@@ -234,9 +238,10 @@ public class Shooter extends SubsystemBase {
     public static final double kWheelRadius = 0.0508;
 
     // Control
-    public static final double kS = 0.27687;
-    public static final double kV = 0.011204;
-    public static final double kA = 0.0023133;
-    public static final double kErrorTolerance = Units.rotationsPerMinuteToRadiansPerSecond(250);
+    public static final double kS = 0.48924;
+    public static final double kV = 0.010637;
+    public static final double kA = 0.002818;
+    public static final double kP = 0.03;
+    public static final double kErrorTolerance = Units.rotationsPerMinuteToRadiansPerSecond(50);
   }
 }

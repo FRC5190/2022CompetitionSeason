@@ -7,6 +7,7 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.ghrobotics.frc2022.RobotState;
 import org.ghrobotics.frc2022.vision.Limelight;
@@ -97,6 +98,9 @@ public class LimelightManager extends SubsystemBase {
           // same as the yaw to it.
           new Rotation2d(angle_to_goal));
 
+      SmartDashboard.putNumber("Cam Angle", Units.radiansToDegrees(camera_angle));
+      SmartDashboard.putNumber("Cam Distance", Units.metersToInches(distance_to_goal));
+
       // Calculate turret to camera transform.
       Transform2d turret_to_camera = new Transform2d(
           new Translation2d(-turret_to_camera_x, 0), new Rotation2d());
@@ -117,6 +121,20 @@ public class LimelightManager extends SubsystemBase {
       // Add to pose estimator.
       robot_state_.addVisionMeasurement(timestamp, vision_robot_pose);
     }
+  }
+
+  /**
+   * Turns on the Limelight LEDs.
+   */
+  public void turnOnLED() {
+    limelight_.setLED(Limelight.LEDMode.ON);
+  }
+
+  /**
+   * Turns off the Limelight LEDs.
+   */
+  public void turnOffLED() {
+    limelight_.setLED(Limelight.LEDMode.OFF);
   }
 
   /**
@@ -152,9 +170,9 @@ public class LimelightManager extends SubsystemBase {
         new Translation2d(Units.inchesToMeters(27), 0), new Rotation2d());
 
     // Robot Measurements
-    public static final double kHoodToCameraOffset = Math.toRadians(30);
+    public static final double kHoodToCameraOffset = Math.toRadians(26);
     public static final double kTurretToCameraDistance = Units.inchesToMeters(12);
-    public static final double kTurretHeight = Units.inchesToMeters(40);
+    public static final double kTurretHeight = Units.inchesToMeters(39.75);
     public static final double kRobotToTurretDistance = Units.inchesToMeters(8);
   }
 }

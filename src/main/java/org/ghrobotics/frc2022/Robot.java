@@ -14,9 +14,11 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.Button;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import org.ghrobotics.frc2022.auto.HighRight2;
+import org.ghrobotics.frc2022.auto.HighRight3;
+import org.ghrobotics.frc2022.auto.HighRight5;
 import org.ghrobotics.frc2022.commands.ClimbAutomatic;
 import org.ghrobotics.frc2022.commands.ClimbReset;
 import org.ghrobotics.frc2022.commands.ClimbTeleop;
@@ -59,7 +61,7 @@ public class Robot extends TimedRobot {
   private final Hood hood_ = new Hood(robot_state_);
   private final Feeder feeder_ = new Feeder();
   private final Intake intake_ = new Intake();
-  private final Climber climber_ = new Climber();
+  private final Climber climber_ = new Climber(robot_state_);
   private final LED led_ = new LED();
   private final LimelightManager limelight_manager_ = new LimelightManager(robot_state_);
 
@@ -104,6 +106,7 @@ public class Robot extends TimedRobot {
 
     // Setup auto.
     setupAuto();
+    MissionControl.addSendable("auto_selector", auto_selector_);
 
     // Set default commands for subsystems:
     setDefaultCommands();
@@ -164,7 +167,8 @@ public class Robot extends TimedRobot {
     CommandScheduler.getInstance().run();
 
     // Update superstructure planner.
-    superstructure_planner_.update();
+    if (isEnabled())
+      superstructure_planner_.update();
 
     // Update telemetry.
     telemetry_.periodic();
@@ -191,19 +195,14 @@ public class Robot extends TimedRobot {
    * Creates auto modes and adds them to the selector.
    */
   private void setupAuto() {
-//    auto_selector_.addOption("High Left 2",
-//        new HighLeft2(robot_state_, drivetrain_, superstructure_));
-//    auto_selector_.addOption("High Left 2 Steal 2",
-//        new HighLeft2Steal2(robot_state_, drivetrain_, superstructure_));
-//    auto_selector_.addOption("High Left 4",
-//        new HighLeft4(robot_state_, drivetrain_, superstructure_));
-//
-//    auto_selector_.addOption("High Right 3",
-//        new HighRight3(robot_state_, drivetrain_, superstructure_));
-//    auto_selector_.addOption("High Right 3 Steal 1",
-//        new HighRight3Steal1(robot_state_, drivetrain_, superstructure_));
-//    auto_selector_.addOption("High Right 5",
-//        new HighRight5(robot_state_, drivetrain_, superstructure_));
+    auto_selector_.addOption("High Right 2",
+        new HighRight2(robot_state_, drivetrain_, superstructure_planner_));
+
+    auto_selector_.addOption("High Right 3",
+        new HighRight3(robot_state_, drivetrain_, superstructure_planner_));
+
+    auto_selector_.addOption("High Right 5",
+        new HighRight5(robot_state_, drivetrain_, superstructure_planner_));
   }
 
   /**
@@ -231,6 +230,7 @@ public class Robot extends TimedRobot {
       climb_mode_ = true;
       clear_buttons_ = true;
       superstructure_planner_.setClimb();
+      limelight_manager_.turnOffLED();
     });
 
     // X: drivetrain cheesy drive quick turn (in command)
@@ -245,23 +245,23 @@ public class Robot extends TimedRobot {
     new Button(driver_controller_::getLeftBumper)
         .whenPressed(superstructure_planner_::setFenderLowGoal)
         .whenPressed(new InstantCommand(robot_state_::resetPositionFromFender))
-        .whenReleased(superstructure_planner_::setDefault);
+        .whenReleased(superstructure_planner_::cancelScoring);
 
     // RB: high goal fender preset
     new Button(driver_controller_::getRightBumper)
         .whenPressed(superstructure_planner_::setFenderHighGoal)
         .whenPressed(new InstantCommand(robot_state_::resetPositionFromFender))
-        .whenReleased(superstructure_planner_::setDefault);
+        .whenReleased(superstructure_planner_::cancelScoring);
 
     // LT: intake
     new Button(() -> driver_controller_.getLeftTriggerAxis() > 0.1)
         .whenPressed(superstructure_planner_::setIntake)
-        .whenReleased(superstructure_planner_::setDefault);
+        .whenReleased(superstructure_planner_::cancelIntake);
 
     // RT: score
     new Button(() -> driver_controller_.getRightTriggerAxis() > 0.1)
         .whenPressed(superstructure_planner_::setHighGoal)
-        .whenReleased(superstructure_planner_::setDefault);
+        .whenReleased(superstructure_planner_::cancelScoring);
   }
 
   /**
@@ -276,6 +276,7 @@ public class Robot extends TimedRobot {
       climb_mode_ = false;
       clear_buttons_ = true;
       superstructure_planner_.setDefault();
+      limelight_manager_.turnOnLED();
     });
 
     // X: drivetrain cheesy drive quick turn (in command)
@@ -330,6 +331,9 @@ public class Robot extends TimedRobot {
 
     else if (isDisabled())
       led_.setOutput(LED.OutputType.RAINBOW);
+
+    else if (!robot_state_.isTurretSafeToTurn())
+      led_.setOutput(LED.StandardLEDOutput.TURRET_CLIMB_INTERFERENCE);
 
     else if (limelight_manager_.isTrackingTargets())
       led_.setOutput(LED.StandardLEDOutput.TRACKING_TARGET);

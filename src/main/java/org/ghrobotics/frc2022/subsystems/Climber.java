@@ -9,15 +9,21 @@ import com.ctre.phoenix.music.Orchestra;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.AnalogInput;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.List;
+import org.ghrobotics.frc2022.RobotState;
 import org.ghrobotics.lib.telemetry.MissionControl;
 
 public class Climber extends SubsystemBase {
+  // Robot State
+  private final RobotState robot_state_;
+
   // Motor Controllers
   private final WPI_TalonFX left_leader_;
   private final WPI_TalonFX right_leader_;
@@ -28,7 +34,8 @@ public class Climber extends SubsystemBase {
   private final DoubleSolenoid right_pivot_;
 
   // Sensors
-  private final AnalogInput pressure_sensor_;
+  private final DigitalInput left_pivot_sensor_;
+  private final DigitalInput right_pivot_sensor_;
 
   // Control
   private final SimpleMotorFeedforward left_feedforward_;
@@ -46,8 +53,13 @@ public class Climber extends SubsystemBase {
    * Constructs an instance of the Climber subsystem. Only one instance of this subsystem should
    * be created in the main Robot class and references to this instance should be passed around
    * the robot code.
+   *
+   * @param robot_state Reference to the global robot state instance.
    */
-  public Climber() {
+  public Climber(RobotState robot_state) {
+    // Assign robot state.
+    robot_state_ = robot_state;
+
     // Initialize motor controllers.
     left_leader_ = new WPI_TalonFX(Constants.kLeftLeaderId);
     left_leader_.configFactoryDefault();
@@ -72,8 +84,9 @@ public class Climber extends SubsystemBase {
     right_pivot_ = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, Constants.kRightPivotForwardId,
         Constants.kRightPivotReverseId);
 
-    // Initialize pressure sensor.
-    pressure_sensor_ = new AnalogInput(Constants.kPressureSensorId);
+    // Initialize pivot sensors.
+    left_pivot_sensor_ = new DigitalInput(Constants.kLPivotSensorId);
+    right_pivot_sensor_ = new DigitalInput(Constants.kRPivotSensorId);
 
     // Initialize feedback.
     left_leader_.configMotionCruiseVelocity(toCTREVelocity(Constants.kMaxVelocity));
@@ -107,6 +120,9 @@ public class Climber extends SubsystemBase {
     MissionControl.addDouble("climber/l_supply_current", () -> io_.l_supply_current);
     MissionControl.addDouble("climber/r_supply_current", () -> io_.r_supply_current);
 
+    MissionControl.addBoolean("climber/l_pivot_sensor", () -> io_.l_pivot_sensor);
+    MissionControl.addBoolean("climber/r_pivot_sensor", () -> io_.r_pivot_sensor);
+
     // Zero encoders.
     zero();
   }
@@ -122,9 +138,11 @@ public class Climber extends SubsystemBase {
     io_.r_position = fromCTREPosition(right_leader_.getSelectedSensorPosition());
     io_.l_supply_current = left_leader_.getSupplyCurrent();
     io_.r_supply_current = right_leader_.getSupplyCurrent();
-    io_.pressure = 250 * (pressure_sensor_.getAverageVoltage() / 5.0) - 25;
 
-    SmartDashboard.putNumber("L Climb Enc", left_leader_.getSelectedSensorPosition());
+    io_.l_pivot_sensor = RobotBase.isSimulation() || !left_pivot_sensor_.get();
+    io_.r_pivot_sensor = RobotBase.isSimulation() || !right_pivot_sensor_.get();
+
+    robot_state_.setTurretSafeToTurn(io_.l_pivot_sensor && io_.r_pivot_sensor);
 
     // Zero
     if (io_.wants_zero) {
@@ -309,15 +327,6 @@ public class Climber extends SubsystemBase {
   }
 
   /**
-   * Returns the pressure in the system.
-   *
-   * @return The pressure in the system in psi.
-   */
-  public double getPressure() {
-    return io_.pressure;
-  }
-
-  /**
    * Returns the state of the left pivot.
    *
    * @return The state of the left pivot.
@@ -394,7 +403,9 @@ public class Climber extends SubsystemBase {
     double r_position;
     double l_supply_current;
     double r_supply_current;
-    double pressure;
+
+    boolean l_pivot_sensor;
+    boolean r_pivot_sensor;
 
     // Outputs
     double l_demand;
@@ -422,7 +433,8 @@ public class Climber extends SubsystemBase {
     public static final int kRightPivotReverseId = 4;
 
     // Sensors
-    public static final int kPressureSensorId = 3;
+    public static final int kLPivotSensorId = 7;
+    public static final int kRPivotSensorId = 8;
 
     // Hardware
     public static final double kMaxHeightNativeUnits = 151543;

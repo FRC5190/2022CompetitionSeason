@@ -19,6 +19,7 @@ import org.ghrobotics.frc2022.subsystems.Hood;
 import org.ghrobotics.frc2022.subsystems.Intake;
 import org.ghrobotics.frc2022.subsystems.Shooter;
 import org.ghrobotics.frc2022.subsystems.Turret;
+import org.ghrobotics.lib.telemetry.MissionControl;
 
 public class Telemetry {
   // Shuffleboard Tab
@@ -85,6 +86,7 @@ public class Telemetry {
     // Shuffleboard tab).
     field_ = new Field2d();
     SmartDashboard.putData("Field", field_);
+    MissionControl.addSendable("field", field_);
 
     // Put autonomous mode selector on Shuffleboard.
     tab_.add("Autonomous Mode Selector", auto_selector_)
@@ -146,8 +148,6 @@ public class Telemetry {
         .withPosition(0, 1);
     climber_layout.addNumber("R Current (A)", climber::getRightSupplyCurrent)
         .withPosition(1, 1);
-    climber_layout.addNumber("Pressure (psi)", climber::getPressure)
-        .withPosition(0, 2);
     climber_layout.addBoolean("Climb Mode", climb_mode_)
         .withPosition(2, 0);
   }

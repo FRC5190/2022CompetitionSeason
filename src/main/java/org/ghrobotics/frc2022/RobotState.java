@@ -36,6 +36,9 @@ public class RobotState {
   private double r_encoder_ = 0.0;
   private Rotation2d gyro_ = new Rotation2d();
 
+  // Turret Safety
+  private boolean turret_safe_to_turn_ = false;
+
   // Last Vision Pose
   private Pose2d last_vision_pose_ = new Pose2d();
 
@@ -194,6 +197,15 @@ public class RobotState {
   }
 
   /**
+   * Sets whether it is safe for the turret to turn.
+   *
+   * @param value Whether it is safe for the turret to turn.
+   */
+  public void setTurretSafeToTurn(boolean value) {
+    turret_safe_to_turn_ = value;
+  }
+
+  /**
    * Returns the robot speeds at the current time.
    *
    * @return The robot speeds at the current time.
@@ -275,6 +287,15 @@ public class RobotState {
    */
   public DriverStation.Alliance getAlliance() {
     return alliance_;
+  }
+
+  /**
+   * Returns whether it is safe for the turret to turn.
+   *
+   * @return Whether it is safe for the turret to turn.
+   */
+  public boolean isTurretSafeToTurn() {
+    return turret_safe_to_turn_;
   }
 
   public static class Constants {

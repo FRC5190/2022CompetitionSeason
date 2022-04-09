@@ -1,7 +1,10 @@
 package org.ghrobotics.lib.telemetry;
 
+import edu.wpi.first.networktables.NTSendable;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.util.sendable.SendableRegistry;
+import edu.wpi.first.wpilibj.smartdashboard.SendableBuilderImpl;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
@@ -53,7 +56,25 @@ public class MissionControl {
   }
 
   /**
+   * Adds a sendable to the dashboard.
+   *
+   * @param k The key to use.
+   * @param s The sendable value.
+   */
+  public static void addSendable(String k, NTSendable s) {
+    SendableBuilderImpl builder = new SendableBuilderImpl();
+    builder.setTable(robot_table_.getSubTable(k));
+    SendableRegistry.publish(s, builder);
+    builder.startListeners();
+
+    String[] split = k.split("/");
+
+    robot_table_.getSubTable(k).getEntry(".name").setString(split[split.length - 1]);
+  }
+
+  /**
    * Retrieves a numerical value from the dashboard.
+   *
    * @param k The key to use.
    * @return The numerical value from the dashboard.
    */
@@ -63,6 +84,7 @@ public class MissionControl {
 
   /**
    * Retrieves a boolean value from the dashboard.
+   *
    * @param k The key to use.
    * @return The boolean value from the dashboard.
    */
@@ -72,6 +94,7 @@ public class MissionControl {
 
   /**
    * Retrieves a string value from the dashboard.
+   *
    * @param k The key to use.
    * @return The string value from the dashboard.
    */

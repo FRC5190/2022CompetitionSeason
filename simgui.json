@@ -27,7 +27,9 @@
       "/LiveWindow/Ungrouped/Talon FX [14]": "Motor Controller",
       "/LiveWindow/Ungrouped/Talon FX [15]": "Motor Controller",
       "/Shuffleboard/Apex/Autonomous Mode Selector": "String Chooser",
-      "/SmartDashboard/Field": "Field2d"
+      "/SmartDashboard/Field": "Field2d",
+      "/robot/auto_selector": "String Chooser",
+      "/robot/field": "Field2d"
     },
     "windows": {
       "/Shuffleboard/Apex/Autonomous Mode Selector": {
@@ -46,6 +48,16 @@
         "window": {
           "visible": true
         }
+      },
+      "/robot/auto_selector": {
+        "window": {
+          "visible": true
+        }
+      },
+      "/robot/field": {
+        "window": {
+          "visible": true
+        }
       }
     }
   },
@@ -56,5 +68,8 @@
         "open": true
       }
     }
+  },
+  "NetworkTables View": {
+    "visible": false
   }
 }

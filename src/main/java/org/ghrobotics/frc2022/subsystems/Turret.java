@@ -8,6 +8,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.simulation.SimDeviceSim;
@@ -114,6 +115,11 @@ public class Turret extends SubsystemBase {
     // Update robot state.
     robot_state_.updateTurretAngle(new Rotation2d(io_.position));
 
+    if (!DriverStation.isEnabled()) {
+      reset_pid_ = true;
+      return;
+    }
+
     // Reset PID controller if we have to.
     if (reset_pid_) {
       reset_pid_ = false;
@@ -121,13 +127,9 @@ public class Turret extends SubsystemBase {
     }
 
     // Write outputs.
-    if (status_ != Status.READY) {
+    if (status_ != Status.READY || !robot_state_.isTurretSafeToTurn()) {
       leader_.set(0);
       return;
-    }
-
-    if (true) {
-      leader_.set(0);
     }
 
     switch (output_type_) {
@@ -316,7 +318,7 @@ public class Turret extends SubsystemBase {
     public static final int kCurrentLimit = 30;
 
     // Hardware
-    public static final double kZeroPosition = Math.toRadians(84);
+    public static final double kZeroPosition = Math.toRadians(280);
     public static final double kMinAngle = 0;
     public static final double kMaxAngle = 2 * Math.PI;
     public static final double kGearRatio = 7.0 * 150 / 16.0;

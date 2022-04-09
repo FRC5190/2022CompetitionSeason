@@ -1,6 +1,7 @@
 package org.ghrobotics.frc2022.subsystems;
 
 import com.revrobotics.CANSparkMax;
+import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.ghrobotics.lib.sensor.PicoColorSensor;
 import org.ghrobotics.lib.telemetry.MissionControl;
@@ -43,10 +44,16 @@ public class Feeder extends SubsystemBase {
     color_sensors_ = new PicoColorSensor();
 
     // Add telemetry.
+    MissionControl.addDouble("feeder/lower_sensor_prox", () -> io_.lower_sensor_prox);
+    MissionControl.addDouble("feeder/upper_sensor_prox", () -> io_.upper_sensor_prox);
     MissionControl.addBoolean("feeder/lower_sensor", () -> io_.lower_sensor);
     MissionControl.addBoolean("feeder/upper_sensor", () -> io_.upper_sensor);
     MissionControl.addDouble("feeder/floor_supply_current", () -> io_.floor_supply_current);
     MissionControl.addDouble("feeder/wall_supply_current", () -> io_.wall_supply_current);
+
+    MissionControl.addString("feeder/upper_sensor_color",
+        () -> String.format("r: %.3f, g: %.3f, b: %.3f", io_.upper_sensor_color.red,
+            io_.upper_sensor_color.green, io_.upper_sensor_color.blue));
   }
 
   /**
@@ -56,10 +63,17 @@ public class Feeder extends SubsystemBase {
   @Override
   public void periodic() {
     // Read inputs.
-    io_.lower_sensor = color_sensors_.getProximity0() > Constants.kLowerProximityThreshold;
-    io_.upper_sensor = color_sensors_.getProximity1() > Constants.kUpperProximityThreshold;
+    io_.lower_sensor_prox = color_sensors_.getProximity0();
+    io_.upper_sensor_prox = color_sensors_.getProximity1();
 
-    color_sensors_.getRawColor0(io_.upper_sensor_color);
+    io_.lower_sensor = io_.lower_sensor_prox > Constants.kLowerProximityThreshold;
+    io_.upper_sensor = io_.upper_sensor_prox > Constants.kUpperProximityThreshold;
+
+    PicoColorSensor.RawColor raw_upper = color_sensors_.getRawColor1();
+    double mag = raw_upper.red + raw_upper.green + raw_upper.blue;
+
+    io_.upper_sensor_color = new Color(raw_upper.red / mag, raw_upper.green / mag,
+        raw_upper.blue / mag);
 
     io_.floor_supply_current = floor_leader_.getOutputCurrent();
     io_.wall_supply_current = wall_leader_.getOutputCurrent();
@@ -71,6 +85,7 @@ public class Feeder extends SubsystemBase {
 
   /**
    * Sets the feeder floor percent.
+   *
    * @param value The feeder floor percent in [-1, 1].
    */
   public void setFloorPercent(double value) {
@@ -79,6 +94,7 @@ public class Feeder extends SubsystemBase {
 
   /**
    * Sets the feeder wall percent.
+   *
    * @param value The feeder wall percent in [-1, 1].
    */
   public void setWallPercent(double value) {
@@ -105,17 +121,21 @@ public class Feeder extends SubsystemBase {
 
   /**
    * Returns the color detected by the upper sensor.
+   *
    * @return The color detected by the upper sensor.
    */
-  public PicoColorSensor.RawColor getUpperSensorColor() {
+  public Color getUpperSensorColor() {
     return io_.upper_sensor_color;
   }
 
   public static class PeriodicIO {
+    double lower_sensor_prox;
+    double upper_sensor_prox;
+
     boolean lower_sensor;
     boolean upper_sensor;
 
-    PicoColorSensor.RawColor upper_sensor_color = new PicoColorSensor.RawColor();
+    Color upper_sensor_color;
 
     double floor_supply_current;
     double wall_supply_current;
@@ -133,7 +153,7 @@ public class Feeder extends SubsystemBase {
     public static final int kCurrentLimit = 30;
 
     // Thresholds
-    public static final int kUpperProximityThreshold = 125;
+    public static final int kUpperProximityThreshold = 275;
     public static final int kLowerProximityThreshold = 275;
   }
 }

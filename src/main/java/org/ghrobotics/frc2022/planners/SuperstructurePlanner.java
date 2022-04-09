@@ -7,6 +7,8 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.button.Button;
 import org.ghrobotics.frc2022.Arena;
 import org.ghrobotics.frc2022.RobotState;
@@ -15,7 +17,6 @@ import org.ghrobotics.frc2022.subsystems.Hood;
 import org.ghrobotics.frc2022.subsystems.Intake;
 import org.ghrobotics.frc2022.subsystems.Shooter;
 import org.ghrobotics.frc2022.subsystems.Turret;
-import org.ghrobotics.lib.sensor.PicoColorSensor;
 import org.ghrobotics.lib.telemetry.MissionControl;
 
 /**
@@ -32,6 +33,10 @@ public class SuperstructurePlanner {
   private final Hood hood_;
   private final Feeder feeder_;
   private final Intake intake_;
+
+  // Hints
+  private double shooter_hint_ = 0;
+  private double hood_hint_ = 0;
 
   // Subsystem States
   private TurretState turret_state_ = TurretState.TRACK;
@@ -53,8 +58,12 @@ public class SuperstructurePlanner {
   // High Goal Planner
   private final HighGoalPlanner hg_planner_;
 
+  // Misc Values
+  double distance_ = 0;
+
   // Next Cargo
   private Cargo next_up_cargo_ = Cargo.NONE;
+  private double sensor_time_ = 0;
 
   /**
    * Constructs an instance of the superstructure planner.
@@ -85,6 +94,8 @@ public class SuperstructurePlanner {
     MissionControl.addDouble("superstructure/turret_velocity_setpoint", () -> turret_vel_);
     MissionControl.addDouble("superstructure/shooter_speed_setpoint", () -> shooter_speed_);
     MissionControl.addDouble("superstructure/hood_angle_setpoint", () -> hood_angle_);
+
+    MissionControl.addDouble("superstructure/turret_to_goal_distance", () -> distance_);
 
     MissionControl.addBoolean("superstructure/turret_at_goal", turret_::atGoal);
     MissionControl.addBoolean("superstructure/shooter_at_goal", shooter_::atGoal);
@@ -125,6 +136,9 @@ public class SuperstructurePlanner {
     double turret_to_goal_distance = turret_to_goal.getNorm();
     double turret_to_goal_angle = Math.atan2(turret_to_goal.getY(), turret_to_goal.getX());
 
+    // Set variable for telemetry.
+    distance_ = turret_to_goal_distance;
+
     // Calculate potential shooter speed and hood angle from lookup table at this distance.
     double maybe_shooter_speed = hg_planner_.getShooterSpeed(turret_to_goal_distance);
     double maybe_hood_angle = hg_planner_.getHoodAngle(turret_to_goal_distance);
@@ -143,12 +157,15 @@ public class SuperstructurePlanner {
                 Math.cos(turret_to_goal_angle));
 
     // Use adjusted distance to adjust shooter speed.
-    maybe_shooter_speed = (adjusted_distance / t) / Math.sin(maybe_hood_angle) /
-        Shooter.Constants.kWheelRadius;
+    maybe_shooter_speed = (adjusted_distance / t * Constants.kTOFAdjustment) /
+        Math.sin(maybe_hood_angle) / Shooter.Constants.kWheelRadius;
 
     // Update next up cargo from feeder.
     if (feeder_.getUpperSensor()) {
       next_up_cargo_ = toCargo(robot_state_.getAlliance(), feeder_.getUpperSensorColor());
+      sensor_time_ = Timer.getFPGATimestamp();
+    } else if (Timer.getFPGATimestamp() - sensor_time_ > 1.5 && !feeder_.getUpperSensor()) {
+      next_up_cargo_ = Cargo.NONE;
     }
 
     // Go through the state for each subsystem and assign references.
@@ -175,10 +192,8 @@ public class SuperstructurePlanner {
 
     switch (shooter_state_) {
       case IDLE:
-        shooter_speed_ = Units.rotationsPerMinuteToRadiansPerSecond(Constants.kIdleShooterRPM);
-        break;
       case CLIMB:
-        shooter_speed_ = Units.rotationsPerMinuteToRadiansPerSecond(Constants.kClimbShooterPct);
+        shooter_speed_ = 0;
         break;
       case TUNING:
         shooter_speed_ = MissionControl.getDouble(Constants.kShooterSpeedKey);
@@ -197,10 +212,14 @@ public class SuperstructurePlanner {
       case HIGH_GOAL:
         shooter_speed_ = maybe_shooter_speed;
         break;
+      case USE_HINT:
+        shooter_speed_ = shooter_hint_;
     }
 
     switch (hood_state_) {
       case TRACK:
+        hood_angle_ = Math.toRadians(35);
+        break;
       case HIGH_GOAL:
         hood_angle_ = maybe_hood_angle;
         break;
@@ -219,13 +238,12 @@ public class SuperstructurePlanner {
       case FENDER_HIGH_GOAL:
         hood_angle_ = Constants.kFenderHighGoalHoodAngle;
         break;
+      case USE_HINT:
+        hood_angle_ = hood_hint_;
     }
 
     switch (feeder_state_) {
       case IDLE:
-        feeder_floor_pct_ = Constants.kIdleFeederPct;
-        feeder_wall_pct_ = Constants.kIdleFeederPct;
-        break;
       case INDEX:
         if (!feeder_.getUpperSensor()) {
           feeder_floor_pct_ = Constants.kFeederIndexPct;
@@ -239,6 +257,9 @@ public class SuperstructurePlanner {
         feeder_floor_pct_ = Constants.kFeederFeedPct;
         feeder_wall_pct_ = Constants.kFeederFeedPct;
         break;
+      case CLIMB:
+        feeder_floor_pct_ = 0;
+        feeder_wall_pct_ = 0;
     }
 
     switch (intake_state_) {
@@ -260,7 +281,9 @@ public class SuperstructurePlanner {
     turret_.setGoal(turret_pos_, turret_vel_);
 
     if (shooter_state_ == ShooterState.CLIMB)
-      shooter_.setPercent(0);
+      shooter_.setPercent(Constants.kClimbShooterPct);
+    else if (shooter_state_ == ShooterState.IDLE)
+      shooter_.setPercent(Constants.kIdleShooterPct);
     else
       shooter_.setVelocity(shooter_speed_);
 
@@ -277,10 +300,13 @@ public class SuperstructurePlanner {
       // If we are in shooting states (fender low goal, fender high goal, or high goal), make sure
       // all systems are at reference before changing feeder state. Before that, make sure that
       // hood is tracking.
-      if (hood_state_ == HoodState.TRACK)
+      if (hood_state_ == HoodState.TRACK || hood_state_ == HoodState.HIGH_GOAL ||
+          hood_state_ == HoodState.FENDER_LOW_GOAL || hood_state_ == HoodState.FENDER_HIGH_GOAL ||
+          hood_state_ == HoodState.TUNING)
         if (shooter_state_ == ShooterState.FENDER_LOW_GOAL ||
             shooter_state_ == ShooterState.FENDER_HIGH_GOAL ||
-            shooter_state_ == ShooterState.HIGH_GOAL)
+            shooter_state_ == ShooterState.HIGH_GOAL ||
+            shooter_state_ == ShooterState.TUNING)
           if (turret_.atGoal() && shooter_.atGoal() && hood_.atGoal())
             feeder_state_ = FeederState.FEED;
 
@@ -320,7 +346,7 @@ public class SuperstructurePlanner {
     turret_state_ = TurretState.CLIMB;
     shooter_state_ = ShooterState.CLIMB;
     hood_state_ = HoodState.STOW;
-    feeder_state_ = FeederState.IDLE;
+    feeder_state_ = FeederState.CLIMB;
     intake_state_ = IntakeState.IDLE;
   }
 
@@ -331,7 +357,6 @@ public class SuperstructurePlanner {
     turret_state_ = TurretState.FENDER_SHOT;
     shooter_state_ = ShooterState.FENDER_LOW_GOAL;
     hood_state_ = HoodState.FENDER_LOW_GOAL;
-    feeder_state_ = FeederState.FEED;
 
     if (intake_state_ == IntakeState.IDLE)
       intake_state_ = IntakeState.FEED;
@@ -344,7 +369,6 @@ public class SuperstructurePlanner {
     turret_state_ = TurretState.FENDER_SHOT;
     shooter_state_ = ShooterState.FENDER_HIGH_GOAL;
     hood_state_ = HoodState.FENDER_HIGH_GOAL;
-    feeder_state_ = FeederState.FEED;
 
     if (intake_state_ == IntakeState.IDLE)
       intake_state_ = IntakeState.FEED;
@@ -358,10 +382,22 @@ public class SuperstructurePlanner {
     turret_state_ = TurretState.TRACK;
     shooter_state_ = ShooterState.HIGH_GOAL;
     hood_state_ = HoodState.HIGH_GOAL;
-    feeder_state_ = FeederState.FEED;
 
     if (intake_state_ == IntakeState.IDLE)
       intake_state_ = IntakeState.FEED;
+  }
+
+  /**
+   * Cancels the scoring process.
+   */
+  public void cancelScoring() {
+    turret_state_ = TurretState.TRACK;
+    shooter_state_ = ShooterState.IDLE;
+    hood_state_ = HoodState.TRACK;
+    feeder_state_ = FeederState.IDLE;
+
+    if (intake_state_ == IntakeState.FEED)
+      intake_state_ = IntakeState.IDLE;
   }
 
   /**
@@ -371,7 +407,6 @@ public class SuperstructurePlanner {
     turret_state_ = TurretState.TRACK;
     shooter_state_ = ShooterState.TUNING;
     hood_state_ = HoodState.TUNING;
-    feeder_state_ = FeederState.FEED;
 
     if (intake_state_ == IntakeState.IDLE)
       intake_state_ = IntakeState.FEED;
@@ -391,6 +426,32 @@ public class SuperstructurePlanner {
     intake_state_ = IntakeState.INTAKE;
     if (feeder_state_ == FeederState.IDLE)
       feeder_state_ = FeederState.INDEX;
+  }
+
+  /**
+   * Cancels the intaking process.
+   */
+  public void cancelIntake() {
+    intake_state_ = IntakeState.IDLE;
+    if (feeder_state_ != FeederState.FEED)
+      feeder_state_ = FeederState.IDLE;
+  }
+
+  /**
+   * Sets the shooter rpm and hood angle to the given hint (only used in auto) to speed up spin time.
+   * @param pose The pose that the shot will be taken from.
+   */
+  public void setHint(Pose2d pose) {
+    // Calculate distance to goal.
+    double distance = pose.getTranslation().getDistance(Arena.kGoal);
+
+    // Set hints.
+    shooter_hint_ = hg_planner_.getShooterSpeed(distance);
+    hood_hint_ = hg_planner_.getHoodAngle(distance);
+
+    // Set states.
+    shooter_state_ = ShooterState.USE_HINT;
+    hood_state_ = HoodState.USE_HINT;
   }
 
   /**
@@ -445,18 +506,12 @@ public class SuperstructurePlanner {
    * @param color    The color as reported by the sensor.
    * @return The type of cargo.
    */
-  private static Cargo toCargo(DriverStation.Alliance alliance, PicoColorSensor.RawColor color) {
+  private static Cargo toCargo(DriverStation.Alliance alliance, Color color) {
     // If we have an invalid alliance for some reason, just assume that it's our own cargo.
     if (alliance == DriverStation.Alliance.Invalid)
       return Cargo.OWN;
 
-    // Normalize the color measurements.
-    double magnitude = color.red + color.blue + color.blue;
-    double r = color.red / magnitude;
-    double g = color.green / magnitude;
-    double b = color.blue / magnitude;
-
-    boolean red = r > b;
+    boolean red = color.red > 0.25;
     if (alliance == DriverStation.Alliance.Red)
       return red ? Cargo.OWN : Cargo.OPPOSITE;
 
@@ -476,7 +531,8 @@ public class SuperstructurePlanner {
     EJECT,
     FENDER_LOW_GOAL,
     FENDER_HIGH_GOAL,
-    HIGH_GOAL
+    HIGH_GOAL,
+    USE_HINT,
   }
 
   public enum HoodState {
@@ -486,13 +542,15 @@ public class SuperstructurePlanner {
     EJECT,
     FENDER_LOW_GOAL,
     FENDER_HIGH_GOAL,
-    HIGH_GOAL
+    HIGH_GOAL,
+    USE_HINT
   }
 
   public enum FeederState {
     IDLE,
     INDEX,
-    FEED
+    FEED,
+    CLIMB
   }
 
   public enum IntakeState {
@@ -510,7 +568,7 @@ public class SuperstructurePlanner {
     public static final double kRobotToTurretDistance = 0.2;
 
     // Shooting While Moving
-    public static final double kTOFAdjustment = 1.0;
+    public static final double kTOFAdjustment = 1.2;
 
     // Tuning
     public static final String kShooterSpeedKey = "superstructure/tuning_shooter_speed";
@@ -522,7 +580,7 @@ public class SuperstructurePlanner {
     public static final double kClimbShooterPct = 0;
 
     // Idle
-    public static final double kIdleShooterRPM = 2000;
+    public static final double kIdleShooterPct = 0;
     public static final double kIdleIntakePct = 0;
     public static final double kIdleFeederPct = 0;
 
@@ -530,25 +588,25 @@ public class SuperstructurePlanner {
     public static final double kStowHoodAngle = Hood.Constants.kMinAngle;
 
     // Eject
-    public static final double kEjectShooterRPM = 750;
-    public static final double kEjectHoodAngle = Math.toRadians(9);
+    public static final double kEjectShooterRPM = 1000;
+    public static final double kEjectHoodAngle = Math.toRadians(20);
 
     // Fender Low Goal
-    public static final double kFenderLowGoalShooterRPM = 1200;
-    public static final double kFenderLowGoalHoodAngle = Math.toRadians(42);
+    public static final double kFenderLowGoalShooterRPM = 800;
+    public static final double kFenderLowGoalHoodAngle = Math.toRadians(53);
 
     // Fender High Goal
     public static final double kFenderHighGoalShooterRPM = 2600;
-    public static final double kFenderHighGoalHoodAngle = Math.toRadians(10);
+    public static final double kFenderHighGoalHoodAngle = Math.toRadians(13);
 
     // Intake
     public static final double kIntakeIntakePct = 1.0;
 
     // Feed
-    public static final double kIntakeFeedPct = 0.5;
-    public static final double kFeederFeedPct = 1.0;
+    public static final double kIntakeFeedPct = 0.1;
+    public static final double kFeederFeedPct = 0.4;
 
     // Index
-    public static final double kFeederIndexPct = 1.0;
+    public static final double kFeederIndexPct = 0.3;
   }
 }

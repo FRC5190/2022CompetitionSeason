@@ -22,18 +22,14 @@ public class HighGoalPlanner {
   public HighGoalPlanner(double default_shooter_rpm, double default_hood_angle) {
     // Initialize tables.
     shooter_speed_table = new LookupTable(
-        Units.radiansPerSecondToRotationsPerMinute(default_shooter_rpm));
+        Units.rotationsPerMinuteToRadiansPerSecond(default_shooter_rpm));
     hood_angle_table_ = new LookupTable(default_hood_angle);
 
     // Add values.
-    add(1.0, 2090, 8);
-    add(2.0, 2450, 22);
-    add(3.0, 2610, 31);
-    add(4.0, 2820, 38);
-    add(5.0, 3020, 42);
-    add(6.0, 3210, 44);
-    add(7.0, 3400, 47);
-    add(8.0, 3560, 48);
+    add(3.05, 2000, 17);
+    add(4.60, 2000, 19);
+    add(6.10, 2425, 26);
+    add(8.50, 2525, 30);
   }
 
   /**

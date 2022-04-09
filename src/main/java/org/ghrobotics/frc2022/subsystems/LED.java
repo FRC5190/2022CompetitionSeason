@@ -53,7 +53,8 @@ public class LED extends SubsystemBase {
 
         // Set the buffer.
         for (int i = 0; i < Constants.kBufferSize; i++) {
-          led_buffer_.setLED(i, on ? standard_led_output_.c : Color.kBlack);
+          led_buffer_.setLED(i,
+              on ? standard_led_output_.on_color : standard_led_output_.off_color);
         }
         break;
 
@@ -158,25 +159,40 @@ public class LED extends SubsystemBase {
     // Turret
     TURRET_NO_ZERO(Color.kRed, 0.5, 0.5),
     TURRET_ZEROING(Color.kGreen, 0.075, 0.075),
+    TURRET_CLIMB_INTERFERENCE(Color.kRed, Color.kOrange, 0.5, 0.5),
 
     // Tracking
     TRACKING_TARGET(Color.kGreen, 1.0, 0.0),
     TRACKING_NO_TARGET(Color.kDarkMagenta, 1.0, 0.0);
 
     // Stores the color and on percentage for the current output.
-    Color c;
+    Color on_color;
+    Color off_color;
     double on_time;
     double off_time;
 
     /**
      * Constructs an enum instance of a standard LED output (solid color with an on-off duration).
      *
-     * @param c        The color of the LED.
+     * @param on_color The color of the LED.
      * @param on_time  The length of time that the LED is on.
      * @param off_time The length of time that the LED is off.
      */
-    StandardLEDOutput(Color c, double on_time, double off_time) {
-      this.c = c;
+    StandardLEDOutput(Color on_color, double on_time, double off_time) {
+      this(on_color, Color.kBlack, on_time, off_time);
+    }
+
+    /**
+     * Constructs an enum instance of a standard LED output (solid color with an on-off duration).
+     *
+     * @param on_color  The color of the LED when on.
+     * @param off_color The color of the LED when off.
+     * @param on_time   The length of time that the LED is on.
+     * @param off_time  The length of time that the LED is off.
+     */
+    StandardLEDOutput(Color on_color, Color off_color, double on_time, double off_time) {
+      this.on_color = on_color;
+      this.off_color = off_color;
       this.on_time = on_time;
       this.off_time = off_time;
     }

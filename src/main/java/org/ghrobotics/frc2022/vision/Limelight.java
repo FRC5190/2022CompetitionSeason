@@ -81,7 +81,7 @@ public class Limelight {
   }
 
   // LED Modes
-  enum LEDMode {
+  public enum LEDMode {
     PIPELINE, OFF, BLINK, ON
   }
 

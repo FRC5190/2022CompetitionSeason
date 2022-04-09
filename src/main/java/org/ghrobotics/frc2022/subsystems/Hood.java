@@ -111,7 +111,7 @@ public class Hood extends SubsystemBase {
         last_velocity_setpoint_ = setpoint.velocity;
 
         // Set voltage.
-        leader_.setVoltage(feedback + feedforward);
+        leader_.setVoltage(feedback + feedforward * 0.95);
         break;
     }
   }
@@ -143,7 +143,7 @@ public class Hood extends SubsystemBase {
    */
   public void setPosition(double value) {
     output_type_ = OutputType.POSITION;
-    io_.demand = MathUtil.clamp(value, Constants.kMinAngle + Math.toRadians(0.5), Constants.kMaxAngle);
+    io_.demand = MathUtil.clamp(value, Constants.kMinAngle, Constants.kMaxAngle);
     pid_controller_.setGoal(io_.demand);
   }
 
@@ -153,7 +153,7 @@ public class Hood extends SubsystemBase {
    * @return Whether the hood is at the position goal.
    */
   public boolean atGoal() {
-    return pid_controller_.atGoal();
+    return pid_controller_.atSetpoint();
   }
 
   /**
@@ -190,21 +190,21 @@ public class Hood extends SubsystemBase {
     public static final int kCurrentLimit = 20;
 
     // Hardware
-    public static final double kMinEncoderValue = 0.599;
-    public static final double kMaxEncoderValue = 0.837;
-    public static final double kMaxAngle = Units.degreesToRadians(42.4);
-    public static final double kMinAngle = Units.degreesToRadians(2.6);
+    public static final double kMinEncoderValue = 0.485;
+    public static final double kMaxEncoderValue = 0.720;
+    public static final double kMaxAngle = Units.degreesToRadians(53);
+    public static final double kMinAngle = Units.degreesToRadians(13);
     public static final double kEncoderSlope =
         (kMaxAngle - kMinAngle) / (kMaxEncoderValue - kMinEncoderValue);
 
     // Control
-    public static final double kS = 0.00;
+    public static final double kS = 0.13938;
     public static final double kG = 0.0;
-    public static final double kV = 2.736;
-    public static final double kA = 0.03;
-    public static final double kP = 5.0;
+    public static final double kV = 2.4396;
+    public static final double kA = 0.098304;
+    public static final double kP = 7.1496;
     public static final double kMaxVelocity = 2 * Math.PI;
     public static final double kMaxAcceleration = 2 * Math.PI;
-    public static final double kTolerance = Math.toRadians(3);
+    public static final double kTolerance = Math.toRadians(1.5);
   }
 }

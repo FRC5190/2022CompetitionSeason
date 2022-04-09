@@ -123,7 +123,7 @@ public class Intake extends SubsystemBase {
     public static final int kPivotReverseId = 6;
 
     // Current Limits
-    public static final int kIntakeCurrentLimit = 80;
+    public static final int kIntakeCurrentLimit = 70;
     public static final int kBridgeCurrentLimit = 20;
   }
 }
