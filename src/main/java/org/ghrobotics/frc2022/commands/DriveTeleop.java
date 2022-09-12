@@ -4,13 +4,13 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import org.ghrobotics.frc2022.subsystems.Drivetrain;
-import edu.wpi.first.wpilibj.SlewRateLimiter;
+import edu.wpi.first.math.filter.SlewRateLimiter;
 
 public class DriveTeleop extends CommandBase {
   // Store references to drivetrain and Xbox controller.
   private final Drivetrain drivetrain_;
   private final XboxController controller_;
-  private final SlewRateLimiter limiter_;
+  private SlewRateLimiter limiter_;
 
   // Constructor
   public DriveTeleop(Drivetrain drivetrain, XboxController controller) {
@@ -35,7 +35,7 @@ public class DriveTeleop extends CommandBase {
     boolean quick_turn = controller_.getXButton();
 
     // Adds a limit to acceleration (for smooth motion)
-    limiter_ = new SlewRateLimiter(3);
+    limiter_ = new SlewRateLimiter(Constants.kSlewRateLimiter);
     forward = limiter_.calculate(forward);
 
     // Compute the individual wheel percentages.
@@ -44,5 +44,10 @@ public class DriveTeleop extends CommandBase {
 
     // Set the wheel percentages.
     drivetrain_.setPercent(speeds.left, speeds.right);
+  }
+
+  public static class Constants {
+    public static int kSlewRateLimiter = 3;
+
   }
 }
