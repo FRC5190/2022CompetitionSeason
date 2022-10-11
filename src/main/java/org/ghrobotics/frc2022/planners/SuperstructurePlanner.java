@@ -60,7 +60,10 @@ public class SuperstructurePlanner {
 
   // Misc Values
   double distance_ = 0;
-
+  double turret_to_goal_distance = 0;
+  double turret_to_goal_angle;
+  double adjusted_distance = 0;
+  
   // Next Cargo
   private Cargo next_up_cargo_ = Cargo.NONE;
   private double sensor_time_ = 0;
@@ -133,8 +136,8 @@ public class SuperstructurePlanner {
         .relativeTo(turret_pose).getTranslation();
 
     // Calculate distance and angle to goal.
-    double turret_to_goal_distance = turret_to_goal.getNorm();
-    double turret_to_goal_angle = Math.atan2(turret_to_goal.getY(), turret_to_goal.getX());
+    turret_to_goal_distance = turret_to_goal.getNorm();
+    turret_to_goal_angle = Math.atan2(turret_to_goal.getY(), turret_to_goal.getX());
 
     // Set variable for telemetry.
     distance_ = turret_to_goal_distance;
@@ -151,11 +154,11 @@ public class SuperstructurePlanner {
     double t = turret_to_goal_distance / ball_vxy * Constants.kTOFAdjustment;
 
     // Calculate new distance to goal, assuming approximately same time of flight.
-    double adjusted_distance = Math.sqrt(
+    adjusted_distance = Math.sqrt(
         Math.pow(turret_to_goal_distance, 2) + Math.pow(robot_speeds.vxMetersPerSecond, 2) -
             2 * turret_to_goal_distance * robot_speeds.vxMetersPerSecond * t *
                 Math.cos(turret_to_goal_angle));
-
+    
     // Use adjusted distance to adjust shooter speed.
     maybe_shooter_speed = (adjusted_distance / t * Constants.kTOFAdjustment) /
         Math.sin(maybe_hood_angle) / Shooter.Constants.kWheelRadius;
@@ -189,6 +192,10 @@ public class SuperstructurePlanner {
         turret_vel_ = 0;
         break;
     }
+    
+    if (shooter_state_ == ShooterState.IDLE && adjusted_distance >= Constants.kMinShootingDist && adjusted_distance <= Constants.kMaxShootingDist){
+      shooter_state_ = ShooterState.HIGH_GOAL;
+    }
 
     switch (shooter_state_) {
       case IDLE:
@@ -210,7 +217,9 @@ public class SuperstructurePlanner {
             Constants.kFenderHighGoalShooterRPM);
         break;
       case HIGH_GOAL:
+        System.out.println("Inside High goal");
         shooter_speed_ = maybe_shooter_speed;
+        System.out.println(maybe_shooter_speed);
         break;
       case USE_HINT:
         shooter_speed_ = shooter_hint_;
@@ -273,19 +282,33 @@ public class SuperstructurePlanner {
         break;
       case FEED:
         intake_out_ = false;
-        intake_pct_ = Constants.kIntakeFeedPct;
+        //intake_pct_ = Constants.kIntakeFeedPct;
+        intake_pct_ = Constants.kIdleIntakePct;
         break;
     }
 
     // Set references.
     turret_.setGoal(turret_pos_, turret_vel_);
 
-    if (shooter_state_ == ShooterState.CLIMB)
+    System.out.println(shooter_speed_);
+
+    if (shooter_state_ == ShooterState.CLIMB){
+      System.out.println("Inside First Statement");
       shooter_.setPercent(Constants.kClimbShooterPct);
-    else if (shooter_state_ == ShooterState.IDLE)
-      shooter_.setPercent(Constants.kIdleShooterPct);
-    else
+    }
+    else if (shooter_state_ == ShooterState.IDLE && adjusted_distance >= Constants.kMinShootingDist && adjusted_distance <= Constants.kMaxShootingDist){
+      System.out.println("Inside Second Statement");
       shooter_.setVelocity(shooter_speed_);
+      feeder_wall_pct_ = Constants.kFeederIndexPct;
+    }
+    else if (shooter_state_ == ShooterState.IDLE) {
+      System.out.println("Inside Third Statement");
+      shooter_.setPercent(Constants.kIdleShooterPct);
+    }
+    else {
+      System.out.println("Inside Else Statement");
+      shooter_.setVelocity(shooter_speed_);
+    }
 
     hood_.setPosition(hood_angle_);
     feeder_.setFloorPercent(feeder_floor_pct_);
@@ -499,6 +522,18 @@ public class SuperstructurePlanner {
     return intake_state_;
   }
 
+  public Double getAdjustedDistance() {
+    return adjusted_distance;
+  }
+
+  public Double getTurretToGoalDistance() {
+    return turret_to_goal_distance;
+  }
+
+  public Double getTurretToGoalAngle() {
+    return turret_to_goal_angle;
+  }
+
   /**
    * Converts a color reading and current alliance to a cargo.
    *
@@ -608,5 +643,12 @@ public class SuperstructurePlanner {
 
     // Index
     public static final double kFeederIndexPct = 0.3;
+
+    //Shooting Range
+    public static final double kMinShootingDist = 2.0;
+    public static final double kMaxShootingDist = 4.0;
+
+    //Hood
+    public static final double kHoodAngle = 25;
   }
 }

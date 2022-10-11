@@ -19,7 +19,9 @@ import org.ghrobotics.frc2022.subsystems.Hood;
 import org.ghrobotics.frc2022.subsystems.Intake;
 import org.ghrobotics.frc2022.subsystems.Shooter;
 import org.ghrobotics.frc2022.subsystems.Turret;
+import org.ghrobotics.frc2022.planners.SuperstructurePlanner;
 import org.ghrobotics.lib.telemetry.MissionControl;
+
 
 public class Telemetry {
   // Shuffleboard Tab
@@ -35,6 +37,9 @@ public class Telemetry {
   private final Hood hood_;
   private final Intake intake_;
   private final Climber climber_;
+
+// Planners
+  private final SuperstructurePlanner superstructureplanner_;
 
   // Sendable Chooser
   private final SendableChooser<Command> auto_selector_;
@@ -60,7 +65,7 @@ public class Telemetry {
    * @param climb_mode    Supplier for climb mode.
    */
   public Telemetry(RobotState robot_state, Drivetrain drivetrain, Turret turret, Shooter shooter,
-                   Hood hood, Intake intake, Climber climber,
+Hood hood, Intake intake, Climber climber, SuperstructurePlanner superstructureplanner,
                    SendableChooser<Command> auto_selector, BooleanSupplier climb_mode) {
     // Create Shuffleboard tab to show all robot information.
     tab_ = Shuffleboard.getTab("Apex");
@@ -75,6 +80,9 @@ public class Telemetry {
     hood_ = hood;
     intake_ = intake;
     climber_ = climber;
+
+    //Assign Planners
+    superstructureplanner_ = superstructureplanner;
 
     // Assign auto selector.
     auto_selector_ = auto_selector;
@@ -122,7 +130,7 @@ public class Telemetry {
 
     // Add scoring subsystem information (turret, shooter, hood).
     ShuffleboardLayout scoring_layout = tab_.getLayout("Scoring Subsystems", BuiltInLayouts.kGrid)
-        .withSize(3, 2)
+        .withSize(4, 2)
         .withPosition(0, 2);
     scoring_layout.addNumber("Turret Position (deg)", () -> Math.toDegrees(turret_.getPosition()))
         .withPosition(0, 0);
@@ -133,6 +141,12 @@ public class Telemetry {
         .withPosition(0, 1);
     scoring_layout.addNumber("Hood Position (deg)", () -> Math.toDegrees(hood_.getPosition()))
         .withPosition(1, 1);
+    scoring_layout.addNumber("Turret to Goal Distance (Stationary)", () -> superstructureplanner_.getTurretToGoalDistance())
+        .withPosition(2, 0);
+    scoring_layout.addNumber("Adjusted Distance", () -> superstructureplanner_.getAdjustedDistance())
+        .withPosition(2, 1);
+    scoring_layout.addNumber("Turret to Goal Angle", () -> superstructureplanner_.getTurretToGoalAngle())
+        .withPosition(3, 0);
 
     // Add climber information.
     ShuffleboardLayout climber_layout = tab_.getLayout("Climber", BuiltInLayouts.kGrid)

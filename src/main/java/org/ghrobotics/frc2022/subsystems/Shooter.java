@@ -175,6 +175,10 @@ public class Shooter extends SubsystemBase {
    */
   public void setVelocity(double value) {
     output_type_ = OutputType.VELOCITY;
+    System.out.println("Actual Velocity: " + io_.velocity);
+    System.out.println("Set Vel Value: " + value);
+    //if (io_.velocity < Units.rotationsPerMinuteToRadiansPerSecond(2500)) {
+    if (value > Units.rotationsPerMinuteToRadiansPerSecond(2500)) value = Units.rotationsPerMinuteToRadiansPerSecond(2500);
     bang_bang_controller_.setSetpoint(value);
     pid_controller_.setSetpoint(value);
   }

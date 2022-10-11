@@ -39,7 +39,10 @@ public class HighGoalPlanner {
    * @return The shooter speed.
    */
   public double getShooterSpeed(double distance) {
-    return shooter_speed_table.get(distance);
+    //return shooter_speed_table.get(distance);
+    double shooterSpeed = distance * Constants.kDistToRpmProportionality;
+    //if (shooterSpeed > 250) shooterSpeed = 250;
+    return shooterSpeed;
   }
 
   /**
@@ -49,7 +52,8 @@ public class HighGoalPlanner {
    * @return The hood angle.
    */
   public double getHoodAngle(double distance) {
-    return hood_angle_table_.get(distance);
+    //return hood_angle_table_.get(distance);
+    return 30;
   }
 
   /**
@@ -62,6 +66,11 @@ public class HighGoalPlanner {
   private void add(double distance, double rpm, double angle_deg) {
     shooter_speed_table.put(distance, Units.rotationsPerMinuteToRadiansPerSecond(rpm));
     hood_angle_table_.put(distance, Math.toRadians(angle_deg));
+  }
+
+  public static class Constants {
+    // Measurements
+    public static final double kDistToRpmProportionality = Units.rotationsPerMinuteToRadiansPerSecond(2000/3);
   }
 }
 

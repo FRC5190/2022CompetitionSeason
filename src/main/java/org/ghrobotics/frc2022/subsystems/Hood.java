@@ -93,7 +93,7 @@ public class Hood extends SubsystemBase {
       reset_pid_ = false;
       pid_controller_.reset(io_.position);
     }
-
+/* 
     // Write outputs.
     switch (output_type_) {
       case PERCENT:
@@ -113,7 +113,7 @@ public class Hood extends SubsystemBase {
         // Set voltage.
         leader_.setVoltage(feedback + feedforward * 0.95);
         break;
-    }
+    }*/
   }
 
   /**
