@@ -47,6 +47,6 @@ public class DriveTeleop extends CommandBase {
   }
 
   public static class Constants {
-    public static double kSlewRateLimiter = 0.5;
+    public static double kSlewRateLimiter = 0.75;
   }
 }

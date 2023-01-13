@@ -85,7 +85,7 @@ public class Robot extends TimedRobot {
   private boolean clear_buttons_ = false;
 
   // Create telemetry. 
-  private final Telemetry telemetry_ = new Telemetry(robot_state_, drivetrain_, turret_, shooter_, hood_, intake_, climber_, superstructure_planner_, 
+  private final Telemetry telemetry_ = new Telemetry(robot_state_, drivetrain_, turret_, shooter_, hood_, intake_, feeder_, climber_, superstructure_planner_, 
       auto_selector_, () -> climb_mode_);
 
   @Override

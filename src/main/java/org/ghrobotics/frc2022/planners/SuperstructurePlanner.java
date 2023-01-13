@@ -159,6 +159,12 @@ public class SuperstructurePlanner {
             2 * turret_to_goal_distance * robot_speeds.vxMetersPerSecond * t *
                 Math.cos(turret_to_goal_angle));
     
+    //adjusted_distance = Math.sqrt(
+    //    Math.pow(turret_to_goal_distance, 2) + 
+    //    Math.pow(robot_speeds.vxMetersPerSecond*Math.cos(turret_to_goal_angle)*t,2));
+    
+    //adjusted_distance = turret_to_goal_distance;
+
     // Use adjusted distance to adjust shooter speed.
     maybe_shooter_speed = (adjusted_distance / t * Constants.kTOFAdjustment) /
         Math.sin(maybe_hood_angle) / Shooter.Constants.kWheelRadius;
@@ -193,9 +199,9 @@ public class SuperstructurePlanner {
         break;
     }
     
-    if (shooter_state_ == ShooterState.IDLE && adjusted_distance >= Constants.kMinShootingDist && adjusted_distance <= Constants.kMaxShootingDist){
-      shooter_state_ = ShooterState.HIGH_GOAL;
-    }
+    //if (shooter_state_ == ShooterState.IDLE && adjusted_distance >= Constants.kMinShootingDist && adjusted_distance <= Constants.kMaxShootingDist){
+    //  shooter_state_ = ShooterState.HIGH_GOAL;
+    //}
 
     switch (shooter_state_) {
       case IDLE:
@@ -217,9 +223,9 @@ public class SuperstructurePlanner {
             Constants.kFenderHighGoalShooterRPM);
         break;
       case HIGH_GOAL:
-        System.out.println("Inside High goal");
+        //System.out.println("Inside High goal");
         shooter_speed_ = maybe_shooter_speed;
-        System.out.println(maybe_shooter_speed);
+        //System.out.println(maybe_shooter_speed);
         break;
       case USE_HINT:
         shooter_speed_ = shooter_hint_;
@@ -227,7 +233,7 @@ public class SuperstructurePlanner {
 
     switch (hood_state_) {
       case TRACK:
-        hood_angle_ = Math.toRadians(35);
+        hood_angle_ = Math.toRadians(30);
         break;
       case HIGH_GOAL:
         hood_angle_ = maybe_hood_angle;
@@ -290,23 +296,35 @@ public class SuperstructurePlanner {
     // Set references.
     turret_.setGoal(turret_pos_, turret_vel_);
 
-    System.out.println(shooter_speed_);
+    //System.out.println(shooter_speed_);
 
     if (shooter_state_ == ShooterState.CLIMB){
-      System.out.println("Inside First Statement");
+      //System.out.println("Inside First Statement");
       shooter_.setPercent(Constants.kClimbShooterPct);
     }
-    else if (shooter_state_ == ShooterState.IDLE && adjusted_distance >= Constants.kMinShootingDist && adjusted_distance <= Constants.kMaxShootingDist){
-      System.out.println("Inside Second Statement");
-      shooter_.setVelocity(shooter_speed_);
-      feeder_wall_pct_ = Constants.kFeederIndexPct;
+    //else if ((shooter_state_ == ShooterState.IDLE || shooter_state_ == ShooterState.HIGH_GOAL) && adjusted_distance >= Constants.kMinShootingDist && adjusted_distance <= Constants.kMaxShootingDist){
+      //System.out.println("Inside Second Statement");
+      //if (robot_speeds.vxMetersPerSecond > 0.5 && feeder_.getUpperSensor()) { 
+        //feeder_wall_pct_ = 0;
+      //}
+      //else {
+    //   feeder_wall_pct_ = Constants.kFeederIndexPct;
+      //}
+    //  shooter_.setVelocity(shooter_speed_);
+    //}
+    else if (shooter_state_ == ShooterState.HIGH_GOAL){
+      shooter_.setVelocity(shooter_speed_);      
     }
     else if (shooter_state_ == ShooterState.IDLE) {
-      System.out.println("Inside Third Statement");
+      //System.out.println("Inside Third Statement");
       shooter_.setPercent(Constants.kIdleShooterPct);
     }
+    //else if (adjusted_distance > Constants.kMaxShootingDist) {
+    //  if (feeder_.getUpperSensor()) feeder_wall_pct_ = 0;
+    //  shooter_.setVelocity(shooter_speed_);
+      //shooter_state_ = ShooterState.IDLE;
+    //}
     else {
-      System.out.println("Inside Else Statement");
       shooter_.setVelocity(shooter_speed_);
     }
 
@@ -405,6 +423,7 @@ public class SuperstructurePlanner {
     turret_state_ = TurretState.TRACK;
     shooter_state_ = ShooterState.HIGH_GOAL;
     hood_state_ = HoodState.HIGH_GOAL;
+    feeder_state_ = FeederState.FEED;
 
     if (intake_state_ == IntakeState.IDLE)
       intake_state_ = IntakeState.FEED;
@@ -419,7 +438,7 @@ public class SuperstructurePlanner {
     hood_state_ = HoodState.TRACK;
     feeder_state_ = FeederState.IDLE;
 
-    if (intake_state_ == IntakeState.FEED)
+    //if (intake_state_ == IntakeState.FEED)
       intake_state_ = IntakeState.IDLE;
   }
 

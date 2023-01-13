@@ -66,7 +66,7 @@ public class HighGoalPlanner {
   private void add(double distance, double rpm, double angle_deg) {
     shooter_speed_table.put(distance, Units.rotationsPerMinuteToRadiansPerSecond(rpm));
     hood_angle_table_.put(distance, Math.toRadians(angle_deg));
-  }
+  } 
 
   public static class Constants {
     // Measurements
