@@ -290,10 +290,10 @@ public class SuperstructurePlanner {
     // Set references.
     turret_.setGoal(turret_pos_, turret_vel_);
 
-    System.out.println(shooter_speed_);
+    //System.out.println(shooter_speed_);
 
     if (shooter_state_ == ShooterState.CLIMB){
-      System.out.println("Inside First Statement");
+      //System.out.println("Inside First Statement");
       shooter_.setPercent(Constants.kClimbShooterPct);
     }
     else if (shooter_state_ == ShooterState.IDLE && adjusted_distance >= Constants.kMinShootingDist && adjusted_distance <= Constants.kMaxShootingDist){

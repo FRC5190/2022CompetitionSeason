@@ -167,6 +167,7 @@ public class Drivetrain extends SubsystemBase {
     io_.l_velocity = left_encoder_.getVelocity();
     io_.r_velocity = right_encoder_.getVelocity();
     io_.angle = gyro_.getRotation2d();
+    io_.pitch = gyro_.getPitch();
     io_.angular_rate = -Math.toRadians(gyro_.getRate());
 
     io_.l_leader_supply_current = left_leader_.getOutputCurrent();
@@ -330,6 +331,10 @@ public class Drivetrain extends SubsystemBase {
     return io_.r_velocity;
   }
 
+  public double getPitch(){
+    return io_.pitch * (180/3.14) - 7.55;
+  }
+
   /**
    * Returns the kinematics for the drivetrain.
    *
@@ -359,6 +364,7 @@ public class Drivetrain extends SubsystemBase {
     double l_velocity;
     double r_velocity;
     Rotation2d angle = new Rotation2d();
+    double pitch;
     double angular_rate;
 
     double l_leader_supply_current;
