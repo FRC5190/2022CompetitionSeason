@@ -36,6 +36,8 @@ import org.ghrobotics.frc2022.subsystems.PressureSensor;
 import org.ghrobotics.frc2022.subsystems.Shooter;
 import org.ghrobotics.frc2022.subsystems.Turret;
 import org.ghrobotics.lib.telemetry.MissionControl;
+// Added a new import for the PigeonIMU
+import com.ctre.phoenix.sensors.PigeonIMU;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -53,6 +55,22 @@ public class Robot extends TimedRobot {
 
   // Initialize robot state.
   private final RobotState robot_state_ = new RobotState();
+
+  // Testing Pigeon IMU Gyro
+  PigeonIMU _pigeon = new PigeonIMU(0);
+  int _loopCount = 0;
+
+  public void teleopPeriodic() {
+      if(_loopCount++ > 10)
+      {
+          _loopCount = 0;
+          double[] ypr = new double[3];
+          _pigeon.getYawPitchRoll(ypr);
+          System.out.println("Pigeon Pitch is: " + ypr[1]);
+      }
+  }
+  // End of Pigeon IMU Gyro Testing
+
 
   // Create subsystems.
   private final Drivetrain drivetrain_ = new Drivetrain(robot_state_);
