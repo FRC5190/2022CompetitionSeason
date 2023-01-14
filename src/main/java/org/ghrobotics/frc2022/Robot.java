@@ -61,12 +61,14 @@ public class Robot extends TimedRobot {
   int _loopCount = 0;
 
   public void teleopPeriodic() {
-      if(_loopCount++ > 10)
+    // System.out.println("hihihi");
+    if(_loopCount++ > 10)
       {
+          //System.out.println("inside if-statement!!");
           _loopCount = 0;
           double[] ypr = new double[3];
           _pigeon.getYawPitchRoll(ypr);
-          System.out.println("Pigeon Pitch is: " + ypr[1]);
+          System.out.println(ypr);
       }
   }
   // End of Pigeon IMU Gyro Testing
