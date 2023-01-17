@@ -56,19 +56,43 @@ public class Robot extends TimedRobot {
   // Initialize robot state.
   private final RobotState robot_state_ = new RobotState();
 
-  // Testing Pigeon IMU Gyro
+  // Beginning of testing Pigeon IMU Gyro
+
+  // Assigns variables and calls the _pigeon object
   PigeonIMU _pigeon = new PigeonIMU(0);
   int _loopCount = 0;
+  double rollValue;
+  double motorOutput;
+
 
   public void teleopPeriodic() {
-    // System.out.println("hihihi");
-    if(_loopCount++ > 10)
+      // Runs every 4 loops
+      if(_loopCount++ > 3)
       {
           //System.out.println("inside if-statement!!");
           _loopCount = 0;
           double[] ypr = new double[3];
           _pigeon.getYawPitchRoll(ypr);
-          System.out.println(ypr);
+          // We use roll instead of pitch because the Pigeon IMU is mounted on the robot incorectly
+          rollValue = ypr[2];
+          System.out.println("Pigeon Roll is: " + ypr[2]);
+
+          // Checks if the rollValue is negative and if it is, it will multiply it by -1 to make it positive
+          // I used the 1.03^x formula to make the motor output increase exponentially and I checked on Desmos and it should work
+          // I also added a 100 to the end to make the motor output a percentage
+          // I don't know how the negative motor output will work, but we will see
+
+          if(rollValue < 0)
+          {
+            rollValue = rollValue * -1;
+            motorOutput = (Math.pow(1.03, rollValue) - 1) * 100;
+            System.out.println("Motor Output should be: " + (-1 * motorOutput) + "%");
+          }
+          else
+          {
+            motorOutput = (Math.pow(1.03, rollValue) - 1) * 100;
+            System.out.println("Motor Output should be: " + motorOutput + "%");
+          }
       }
   }
   // End of Pigeon IMU Gyro Testing
