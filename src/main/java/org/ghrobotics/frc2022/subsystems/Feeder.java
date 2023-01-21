@@ -79,8 +79,8 @@ public class Feeder extends SubsystemBase {
     io_.wall_supply_current = wall_leader_.getOutputCurrent();
 
     // Write outputs.
-    floor_leader_.set(io_.floor_demand);
-    wall_leader_.set(io_.wall_demand);
+    //floor_leader_.set(io_.floor_demand);
+    //wall_leader_.set(io_.wall_demand);
   }
 
   /**

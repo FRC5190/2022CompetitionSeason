@@ -129,6 +129,11 @@ Hood hood, Intake intake, Climber climber, SuperstructurePlanner superstructurep
         .withPosition(1, 1);
     drivetrain_layout.addNumber("Gyro Pitch ", drivetrain::getPitch)
         .withPosition(1,3);
+    drivetrain_layout.addNumber("Gyro Roll", drivetrain::getRoll)
+        .withPosition(2, 3);
+    drivetrain_layout.addNumber("Motor Output", drivetrain::getMotorOutput)
+        .withPosition(3,3);
+    
 
     // Add scoring subsystem information (turret, shooter, hood).
     ShuffleboardLayout scoring_layout = tab_.getLayout("Scoring Subsystems", BuiltInLayouts.kGrid)
