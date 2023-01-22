@@ -157,44 +157,36 @@ public class Drivetrain extends SubsystemBase {
 
   public static double motorOutput;
 
+  public void balanceTesting()
+  {
+    double[] ypr = new double[3];
+    gyro_.getYawPitchRoll(ypr);
+    // We use roll instead of pitch because the Pigeon IMU is mounted on the robot incorectly
+    rollValue = ypr[2];
+    System.out.println("Pigeon Roll is: " + ypr[2]);
+    if(rollValue < 0)
+    {
+      rollValue = rollValue * -1;
+      motorOutput = (Math.pow(1.03, rollValue) - 1) * 100;
+      motorOutput = motorOutput * -1;
+      System.out.println("Motor Output should be: " + (1 * motorOutput) + "%");
+      // return motorOutput * -1;
+    }
+    else
+    {
+      motorOutput = (Math.pow(1.03, rollValue) - 1) * 100;
+      System.out.println("Motor Output should be: " + motorOutput + "%");
+      return motorOutput;
+    }
+    setPercent(motorOutput, motorOutput);
+  }
+
   /**
    * This method runs periodically every 20 ms. Here, all sensor values are read and all motor
    * outputs should be set.
    */
   @Override
   public void periodic() {
-     // Beginning of testing Pigeon IMU Gyro
-    //int _loopCount = 0;
-    double rollValue;
-      // Runs every 4 loops
-      //if(_loopCount++ > 3)
-      //{
-          //System.out.println("inside if-statement!!");
-          //_loopCount = 0;
-          double[] ypr = new double[3];
-          gyro_.getYawPitchRoll(ypr);
-          // We use roll instead of pitch because the Pigeon IMU is mounted on the robot incorectly
-          rollValue = ypr[2];
-          System.out.println("Pigeon Roll is: " + ypr[2]);
-
-          // Checks if the rollValue is negative and if it is, it will multiply it by -1 to make it positive
-          // I used the 1.03^x formula to make the motor output increase exponentially and I checked on Desmos and it should work
-          // I also added a 100 to the end to make the motor output a percentage
-          // I don't know how the negative motor output will work, but we will see
-
-          if(rollValue < 0)
-          {
-            rollValue = rollValue * -1;
-            motorOutput = (Math.pow(1.03, rollValue) - 1) * 100;
-            System.out.println("Motor Output should be: " + (-1 * motorOutput) + "%");
-          }
-          else
-          {
-            motorOutput = (Math.pow(1.03, rollValue) - 1) * 100;
-            System.out.println("Motor Output should be: " + motorOutput + "%");
-          }
-      //}
-      // End of Pigeon IMU Gyro Testing
     // Read inputs.
     io_.l_position = left_encoder_.getPosition();
     io_.r_position = right_encoder_.getPosition();

@@ -306,6 +306,9 @@ public class Robot extends TimedRobot {
     // Start: toggle automatic climb
     new JoystickButton(driver_controller_, XboxController.Button.kStart.value)
         .toggleWhenPressed(climb_auto_);
+    
+    new JoystickButton(driver_controller_, XboxController.Button.kA.value)
+        .toggleWhenPressed(whenToBalance);    
   }
 
   /**
