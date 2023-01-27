@@ -131,8 +131,8 @@ Hood hood, Intake intake, Climber climber, SuperstructurePlanner superstructurep
         .withPosition(1,3);
     drivetrain_layout.addNumber("Gyro Roll", drivetrain::getRoll)
         .withPosition(2, 3);
-    drivetrain_layout.addNumber("Motor Output", drivetrain::getMotorOutput)
-        .withPosition(3,3);
+    //drivetrain_layout.addNumber("Motor Output", drivetrain::getMotorOutput)
+      //  .withPosition(3,3);
     
 
     // Add scoring subsystem information (turret, shooter, hood).

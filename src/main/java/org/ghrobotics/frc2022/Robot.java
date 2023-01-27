@@ -23,6 +23,7 @@ import org.ghrobotics.frc2022.commands.ClimbAutomatic;
 import org.ghrobotics.frc2022.commands.ClimbReset;
 import org.ghrobotics.frc2022.commands.ClimbTeleop;
 import org.ghrobotics.frc2022.commands.DriveTeleop;
+import org.ghrobotics.frc2022.commands.Gyroscope;
 import org.ghrobotics.frc2022.commands.TurretZero;
 import org.ghrobotics.frc2022.planners.SuperstructurePlanner;
 import org.ghrobotics.frc2022.subsystems.Climber;
@@ -80,6 +81,7 @@ public class Robot extends TimedRobot {
   // Create climber commands and tracker for climb mode.
   private final Command climb_auto_ = new ClimbAutomatic(climber_, driver_controller_::getAButton);
   private final Command climb_reset_ = new ClimbReset(climber_);
+  private final Command gyro_auto = new Gyroscope();
   private boolean climb_mode_ = false;
 
   // Create autonomous mode selector.
@@ -308,7 +310,7 @@ public class Robot extends TimedRobot {
         .toggleWhenPressed(climb_auto_);
     
     new JoystickButton(driver_controller_, XboxController.Button.kA.value)
-        .toggleWhenPressed(whenToBalance);    
+        .toggleWhenPressed(gyro_auto);  
   }
 
   /**
