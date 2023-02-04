@@ -67,6 +67,7 @@ public class Robot extends TimedRobot {
   // If it is within 1 degree it should stop
   double slackAngle = 1.0;
   
+  boolean onPlatform;
 
 
   public void teleopPeriodic() {
@@ -77,7 +78,11 @@ public class Robot extends TimedRobot {
     rollValue = ypr[2] + 0.175;
     // System.out.println("Pigeon Roll is: " + ypr[2]);
 
-    if (rollValue > 5){
+    if(rollValue > 5){
+      onPlatform = true;
+    }
+
+    if (onPlatform == true){
       teleopGyroscope();
     }
   }
@@ -94,12 +99,12 @@ public class Robot extends TimedRobot {
     if(rollValue < -slackAngle)
     {
       rollValue = rollValue * -1;
-      motorOutput = (Math.pow(1.01, rollValue) - 1) * 100;
+      motorOutput = (Math.pow(1.01, rollValue) - 1);
       System.out.println("Motor Output should be: " + (-1 * motorOutput) + "%");
     }
     else if (rollValue > slackAngle)
     {
-      motorOutput = (Math.pow(1.01, rollValue) - 1) * 100;
+      motorOutput = (Math.pow(1.01, rollValue) - 1);
       System.out.println("Motor Output should be: " + motorOutput + "%");
     } else{
       drivetrain_.setPercent(0, 0);
