@@ -57,8 +57,58 @@ public class Robot extends TimedRobot {
   // Initialize robot state.
   private final RobotState robot_state_ = new RobotState();
 
- 
+  // Beginning of testing Pigeon IMU Gyro
 
+  // Assigns variables and calls the _pigeon object
+  PigeonIMU _pigeon = new PigeonIMU(0);
+  int _loopCount = 0;
+  double rollValue;
+  double motorOutput;
+  // If it is within 1 degree it should stop
+  double slackAngle = 1.0;
+  
+
+
+  public void teleopPeriodic() {
+    double[] ypr = new double[3];
+    _pigeon.getYawPitchRoll(ypr);
+    // We use roll instead of pitch because the Pigeon IMU is mounted on the robot incorectly
+    // 0.175 is value in ground level
+    rollValue = ypr[2] + 0.175;
+    // System.out.println("Pigeon Roll is: " + ypr[2]);
+
+    if (rollValue > 5){
+      teleopGyroscope();
+    }
+  }
+  // End of Pigeon IMU Gyro Testing
+
+  public void teleopGyroscope(){
+
+    System.out.println("The angle is: " + rollValue);
+    // Checks if the rollValue is negative and if it is, it will multiply it by -1 to make it positive
+    // I used the 1.01^x formula to make the motor output increase exponentially and I checked on Desmos and it should work
+    // I also added a 100 to the end to make the motor output a percentage
+    // I don't know how the negative motor output will work, but we will see
+
+    if(rollValue < -slackAngle)
+    {
+      rollValue = rollValue * -1;
+      motorOutput = (Math.pow(1.01, rollValue) - 1) * 100;
+      System.out.println("Motor Output should be: " + (-1 * motorOutput) + "%");
+    }
+    else if (rollValue > slackAngle)
+    {
+      motorOutput = (Math.pow(1.01, rollValue) - 1) * 100;
+      System.out.println("Motor Output should be: " + motorOutput + "%");
+    } else{
+      drivetrain_.setPercent(0, 0);
+    }
+    
+    // Sets motor percent
+    drivetrain_.setPercent(motorOutput, motorOutput);
+  }
+  // End Gyro Testing
 
   // Create subsystems.
   private final Drivetrain drivetrain_ = new Drivetrain(robot_state_);
@@ -81,7 +131,7 @@ public class Robot extends TimedRobot {
   // Create climber commands and tracker for climb mode.
   private final Command climb_auto_ = new ClimbAutomatic(climber_, driver_controller_::getAButton);
   private final Command climb_reset_ = new ClimbReset(climber_);
-  private final Command gyro_auto = new Gyroscope();
+  // private final Command gyro_auto = new Gyroscope();
   private boolean climb_mode_ = false;
 
   // Create autonomous mode selector.
@@ -309,8 +359,10 @@ public class Robot extends TimedRobot {
     new JoystickButton(driver_controller_, XboxController.Button.kStart.value)
         .toggleWhenPressed(climb_auto_);
     
+    /* 
     new JoystickButton(driver_controller_, XboxController.Button.kA.value)
         .toggleWhenPressed(gyro_auto);  
+     */
   }
 
   /**
