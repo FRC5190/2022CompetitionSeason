@@ -60,14 +60,15 @@ public class Robot extends TimedRobot {
   // Beginning of testing Pigeon IMU Gyro
 
   // Assigns variables and calls the _pigeon object
-  PigeonIMU _pigeon = new PigeonIMU(0);
+  PigeonIMU _pigeon = new PigeonIMU(17);
   int _loopCount = 0;
   double rollValue;
   double motorOutput;
+  boolean finished = false;
   // If it is within 1 degree it should stop
-  double slackAngle = 1.0;
+  double slackAngle = 7.5;
   
-  boolean onPlatform;
+  boolean onPlatform = false;
 
 
   public void teleopPeriodic() {
@@ -76,42 +77,50 @@ public class Robot extends TimedRobot {
     // We use roll instead of pitch because the Pigeon IMU is mounted on the robot incorectly
     // 0.175 is value in ground level
     rollValue = ypr[2] + 0.175;
-    // System.out.println("Pigeon Roll is: " + ypr[2]);
+    System.out.println("Pigeon Roll is: " + ypr[2]);
 
-    if(rollValue > 5){
+    if(rollValue > 7.5){
       onPlatform = true;
+      System.out.println("On Platform");
     }
 
     if (onPlatform == true){
       teleopGyroscope();
+      System.out.println("Gryoscope code Running...");
     }
   }
   // End of Pigeon IMU Gyro Testing
 
   public void teleopGyroscope(){
-
+    int random = 0;
+    if (random == 0){
+      System.out.println("The gryo telop JUST started");
+      random++;
+    }
     System.out.println("The angle is: " + rollValue);
     // Checks if the rollValue is negative and if it is, it will multiply it by -1 to make it positive
     // I used the 1.01^x formula to make the motor output increase exponentially and I checked on Desmos and it should work
     // I also added a 100 to the end to make the motor output a percentage
     // I don't know how the negative motor output will work, but we will see
 
-    if(rollValue < -slackAngle)
+    if((rollValue < -slackAngle) && !finished)
     {
       rollValue = rollValue * -1;
-      motorOutput = (Math.pow(1.01, rollValue) - 1);
-      System.out.println("Motor Output should be: " + (-1 * motorOutput) + "%");
+      motorOutput = (Math.pow(1.007, rollValue) - 1);
+      System.out.println("Motor Output should be: " + (1 * motorOutput) + "%");
     }
-    else if (rollValue > slackAngle)
+    else if ((rollValue > slackAngle) && !finished)
     {
-      motorOutput = (Math.pow(1.01, rollValue) - 1);
-      System.out.println("Motor Output should be: " + motorOutput + "%");
+      motorOutput = (Math.pow(1.007, rollValue) - 1);
+      System.out.println("Motor Output should be: " + (1 * motorOutput) + "%");
     } else{
+      finished = true;
       drivetrain_.setPercent(0, 0);
+      System.out.println("Speed is zero");
     }
     
     // Sets motor percent
-    drivetrain_.setPercent(motorOutput, motorOutput);
+    drivetrain_.setPercent(-motorOutput, -motorOutput);
   }
   // End Gyro Testing
 
