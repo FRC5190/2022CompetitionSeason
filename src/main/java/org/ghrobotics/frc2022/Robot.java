@@ -106,21 +106,25 @@ public class Robot extends TimedRobot {
     if((rollValue < -slackAngle) && !finished)
     {
       rollValue = rollValue * -1;
-      motorOutput = (Math.pow(1.007, rollValue) - 1);
+      // motorOutput = (Math.pow(1.007, rollValue) - 1);
+      rollValue = Math.toRadians(rollValue);
+      motorOutput = Math.sin(rollValue)/4;
       System.out.println("Motor Output should be: " + (1 * motorOutput) + "%");
     }
     else if ((rollValue > slackAngle) && !finished)
     {
-      motorOutput = (Math.pow(1.007, rollValue) - 1);
+      // motorOutput = (Math.pow(1.007, rollValue) - 1);
+      rollValue = Math.toRadians(rollValue);
+      motorOutput = Math.sin(rollValue)/4;
       System.out.println("Motor Output should be: " + (1 * motorOutput) + "%");
     } else{
       finished = true;
-      drivetrain_.setPercent(0, 0);
+      drivetrain_.setVelocity(0, 0);
       System.out.println("Speed is zero");
     }
     
     // Sets motor percent
-    drivetrain_.setPercent(-motorOutput, -motorOutput);
+    drivetrain_.setVelocity(-motorOutput, -motorOutput);
   }
   // End Gyro Testing
 
