@@ -66,7 +66,7 @@ public class Robot extends TimedRobot {
   double motorOutput;
   boolean finished = false;
   // If it is within 1 degree it should stop
-  double slackAngle = 7.5;
+  double slackAngle = 8;
   
   boolean onPlatform = false;
 
@@ -76,10 +76,11 @@ public class Robot extends TimedRobot {
     _pigeon.getYawPitchRoll(ypr);
     // We use roll instead of pitch because the Pigeon IMU is mounted on the robot incorectly
     // 0.175 is value in ground level
-    rollValue = ypr[2] + 0.175;
+    double offset = 0.175;
+    rollValue = ypr[2] + offset;
     System.out.println("Pigeon Roll is: " + ypr[2]);
 
-    if(rollValue > 7.5){
+    if(rollValue > 8){
       onPlatform = true;
       System.out.println("On Platform");
     }
@@ -103,19 +104,19 @@ public class Robot extends TimedRobot {
     // I also added a 100 to the end to make the motor output a percentage
     // I don't know how the negative motor output will work, but we will see
 
-    if((rollValue < -slackAngle) && !finished)
+   if((rollValue < -slackAngle) && !finished)
     {
       rollValue = rollValue * -1;
       // motorOutput = (Math.pow(1.007, rollValue) - 1);
       rollValue = Math.toRadians(rollValue);
-      motorOutput = Math.sin(rollValue)/4;
+      motorOutput = Math.sin(rollValue)/3;
       System.out.println("Motor Output should be: " + (1 * motorOutput) + "%");
     }
     else if ((rollValue > slackAngle) && !finished)
     {
       // motorOutput = (Math.pow(1.007, rollValue) - 1);
       rollValue = Math.toRadians(rollValue);
-      motorOutput = Math.sin(rollValue)/4;
+      motorOutput = Math.sin(rollValue)/3;
       System.out.println("Motor Output should be: " + (1 * motorOutput) + "%");
     } else{
       finished = true;
@@ -124,7 +125,9 @@ public class Robot extends TimedRobot {
     }
     
     // Sets motor percent
-    drivetrain_.setVelocity(-motorOutput, -motorOutput);
+
+    
+    drivetrain_.setVelocity(-motorOutput, -motorOutput*1.15);
   }
   // End Gyro Testing
 
